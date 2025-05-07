@@ -1,16 +1,16 @@
     import React from 'react';
     import {Link, useMatch} from 'react-router-dom';
     import {
-      Box,
-        Divider,
-      Drawer,
-      List,
-      ListItemButton,
-      ListItemIcon,
-      ListItemText,
-      Toolbar,
-      Tooltip
-    } from '@mui/material';
+    Box,
+    Divider,
+    Drawer, IconButton,
+    List, ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Toolbar,
+    Tooltip
+} from '@mui/material';
     import InboxIcon from '@mui/icons-material/Inbox';
     import PersonIcon from '@mui/icons-material/Person';
     import {HasRole} from '../auth';
