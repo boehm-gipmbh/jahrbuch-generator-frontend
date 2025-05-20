@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import {
     Box, Toolbar
 } from '@mui/material';
-import {toggleDrawer} from './';
+import {newTask, toggleDrawer} from './';
 import {TopBar} from './TopBar';
 import {MainDrawer} from './MainDrawer';
 import {ChangePasswordDialog} from "../users/ChangePasswordDialog";
@@ -20,10 +20,13 @@ export const Layout = ({children}) => {
     }, [navigate, jwt]);
     const drawerOpen = useSelector(state => state.layout.drawerOpen);
     const doToggleDrawer = () => dispatch(toggleDrawer());
+    // const {data: projects} = api.endpoints.getProjects.useQuery(undefined, {pollingInterval: 10000});
+    // const doOpenNewProject = () => dispatch(openNewProject());
     return (
         <Box sx={{display: 'flex'}}>
             <TopBar
                 goHome={() => navigate('/')}
+                newTask={() => dispatch(newTask())}
                 toggleDrawer={doToggleDrawer} drawerOpen={drawerOpen}
             />
             <MainDrawer
