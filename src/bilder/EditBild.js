@@ -59,7 +59,7 @@ export const EditBild = () => {
       [name]: value,
     }));
   };
-  const setPriority = priority => dispatch(setOpenTask({...openTask, priority}));
+  const setPriority = quality => dispatch(setOpenTask({...openTask, quality}));
   return (
     <Dialog
       fullScreen
@@ -139,7 +139,7 @@ export const EditBild = () => {
                 />
                 <EditPriority
                   disabled={isComplete}
-                  priority={openTask.priority} setPriority={setPriority}
+                  quality={openTask.quality} setPriority={setPriority}
                 />
               </Grid>
             </Grid>
