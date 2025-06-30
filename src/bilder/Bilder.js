@@ -16,19 +16,20 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import {api} from './api';
+import {api as bilderApi} from './api';
 import {Priority} from './Priority';
 import {Layout, newTask, setOpenTask} from '../layout';
 import {api as projectApi} from '../projects';
 import {ProjectChip} from './ProjectChip';
+import {TextFields} from "@mui/icons-material";
 
 const bildSort = (t1, t2) => {
-    const p1 = t1.quality ?? Number.MAX_SAFE_INTEGER;
-    const p2 = t2.quality ?? Number.MAX_SAFE_INTEGER;
+    const p1 = t1.id ?? Number.MAX_SAFE_INTEGER;
+    const p2 = t2.id ?? Number.MAX_SAFE_INTEGER;
     if (p1 !== p2) {
-        return p1 - p2
+        return p2 - p1
     }
-    return t1.id - t2.id;
+    return t2.id - t1.id;
 };
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
@@ -41,9 +42,15 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
         filter = bild => bild.project?.id === project.id;
     }
     const dispatch = useDispatch();
-    const {data} = api.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
-    const [setProtect] = api.endpoints.setProtect.useMutation();
+    const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
+    const [setProtect] = bilderApi.endpoints.setProtect.useMutation();
+    const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     return <Layout>
+        <Box sx={{mt: 2}}>
+            <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
+                Add Bild
+            </Button>
+        </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>
                 <Typography component="h2" variant="h6" color="primary" gutterBottom>
@@ -72,25 +79,21 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                             {!Boolean(project) && <ProjectChip bild={bild} size='small'/>}
                                             <img
                                                 src={bild.pfad.replace(/^.*\/captures\//, '/captures/')}
-                                                alt={bild.beschreibung || ''}
-                                                style={{ maxWidth: 800 , maxHeight: 400, marginRight: 8, verticalAlign: 'middle' }}
+                                                alt={bild.description || ''}
+                                                style={{ maxWidth: 600 , maxHeight: 300, marginRight: 8, verticalAlign: 'middle' }}
                                             />
+                                            <Typography variant="body2">{bild.description}</Typography>
                                         </Box>
 
-                                        <Box>
-                                            {Boolean(bild.quality) && <Priority quality={bild.quality}/>}
-                                        </Box>
+                                        {/*<Box>*/}
+                                        {/*    {Boolean(bild.quality) && <Priority quality={bild.quality}/>}*/}
+                                        {/*</Box>*/}
                                     </Box>
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
-                <Box sx={{mt: 2}}>
-                    <Button startIcon={<AddIcon/>} onClick={() => dispatch(newTask({project: project}))}>
-                        Add Bild
-                    </Button>
-                </Box>
             </Paper>
         </Container>
     </Layout>;
