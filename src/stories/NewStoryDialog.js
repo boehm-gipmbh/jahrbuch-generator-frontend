@@ -11,20 +11,20 @@ import {
   DialogTitle,
   TextField
 } from '@mui/material';
-import {closeNewProject} from '../layout';
+import {closeNewStory} from '../layout';
 import {api} from './';
 
-export const NewProjectDialog = () => {
+export const NewStoryDialog = () => {
   const {values, invalid, isValid, error, setError, clearForm, onChange} = useForm({
     initialValues: {name: ''}
   });
   const dispatch = useDispatch();
-  const newProjectOpen = useSelector(state => state.layout.newProjectOpen);
-  const close = () => dispatch(closeNewProject());
-  const [addProject] = api.endpoints.addProject.useMutation();
+  const newStoryOpen = useSelector(state => state.layout.newStoryOpen);
+  const close = () => dispatch(closeNewStory());
+  const [addStory] = api.endpoints.addStory.useMutation();
   const canSave = isValid && Boolean(values.name);
   const save = () => {
-    addProject(values).then(({error: saveError}) => {
+    addStory(values).then(({error: saveError}) => {
       if (!Boolean(saveError)) {
         clearForm();
         close();
@@ -34,11 +34,11 @@ export const NewProjectDialog = () => {
     });
   };
   return (
-    <Dialog open={newProjectOpen} onClose={close}>
-      <DialogTitle>New Project</DialogTitle>
+    <Dialog open={newStoryOpen} onClose={close}>
+      <DialogTitle>New Story</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Add a new project.
+          Add a new story.
         </DialogContentText>
         {Boolean(error) && <Alert severity='error'>{error}</Alert>}
         <TextField

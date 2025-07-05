@@ -4,9 +4,11 @@ import {useNavigate} from 'react-router-dom';
 import {
     Box, Toolbar
 } from '@mui/material';
-import {newTask, toggleDrawer} from './';
+import {newText, newBild, toggleDrawer, openNewStory} from './';
 import {TopBar} from './TopBar';
 import {MainDrawer} from './MainDrawer';
+import {api, NewStoryDialog} from '../stories';
+import {EditBild} from '../bilder';
 import {ChangePasswordDialog} from "../users/ChangePasswordDialog";
 
 export const Layout = ({children}) => {
@@ -20,13 +22,14 @@ export const Layout = ({children}) => {
     }, [navigate, jwt]);
     const drawerOpen = useSelector(state => state.layout.drawerOpen);
     const doToggleDrawer = () => dispatch(toggleDrawer());
-    // const {data: projects} = api.endpoints.getProjects.useQuery(undefined, {pollingInterval: 10000});
-    // const doOpenNewProject = () => dispatch(openNewProject());
+    const {data: stories} = api.endpoints.getStories.useQuery(undefined, {pollingInterval: 10000});
+    const doOpenNewStory = () => dispatch(openNewStory());
     return (
         <Box sx={{display: 'flex'}}>
             <TopBar
                 goHome={() => navigate('/')}
-                newTask={() => dispatch(newTask())}
+                newBild={() => dispatch(newBild())}
+                newText={() => dispatch(newText())}
                 toggleDrawer={doToggleDrawer} drawerOpen={drawerOpen}
             />
             <MainDrawer

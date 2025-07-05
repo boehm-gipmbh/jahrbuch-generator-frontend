@@ -1,6 +1,6 @@
-    import React from 'react';
-    import {Link, useMatch} from 'react-router-dom';
-    import {
+import React from 'react';
+import {Link, useMatch} from 'react-router-dom';
+import {
     Box,
     Divider,
     Drawer, IconButton,
@@ -11,46 +11,88 @@
     Toolbar,
     Tooltip
 } from '@mui/material';
-    import InboxIcon from '@mui/icons-material/Inbox';
-    import PersonIcon from '@mui/icons-material/Person';
-    import {HasRole} from '../auth';
+import AddIcon from '@mui/icons-material/Add';
+import InboxIcon from '@mui/icons-material/Inbox';
+import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
+import CircleIcon from '@mui/icons-material/Circle';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import CheckIcon from '@mui/icons-material/Check';
+import PersonIcon from '@mui/icons-material/Person';
+import {HasRole} from '../auth';
 
-    const Item = ({Icon, iconSize, title, to, disableTooltip=false}) => {
-      const match = Boolean(useMatch(to));
-      return (
+const Item = ({Icon, iconSize, title, to, disableTooltip = false}) => {
+    const match = Boolean(useMatch(to));
+    return (
         <ListItemButton component={Link} to={to} selected={match}>
-          {Icon && <Tooltip title={title} placement='right' disableHoverListener={disableTooltip}>
-            <ListItemIcon><Icon fontSize={iconSize}/></ListItemIcon>
-          </Tooltip>
-          }
-          <ListItemText primary={title}/>
+            {Icon && <Tooltip title={title} placement='right' disableHoverListener={disableTooltip}>
+                <ListItemIcon><Icon fontSize={iconSize}/></ListItemIcon>
+            </Tooltip>
+            }
+            <ListItemText primary={title}/>
         </ListItemButton>
-      )
-    };
+    )
+};
 
-    export const MainDrawer = ({drawerOpen, toggleDrawer}) => (
-      <Drawer
+const Stories = ({drawerOpen, openNewStory, stories}) => (
+    <>
+        <Divider/>
+        <ListItem
+            secondaryAction={drawerOpen &&
+                <IconButton edge='end' onClick={openNewStory}>
+                    <AddIcon/>
+                </IconButton>
+            }
+        >
+            <ListItemIcon><SnippetFolderIcon/></ListItemIcon>
+            <ListItemText
+                primaryTypographyProps={{fontWeight: 'medium'}}
+            >
+                Stories
+            </ListItemText>
+        </ListItem>
+        {Array.from(stories).map(s => (
+            <Item
+                key={s.id} disableTooltip={drawerOpen}
+                Icon={CircleIcon} iconSize='small'
+                title={s.name} to={`/texte/story/${s.id}`}/>
+        ))}
+    </>
+);
+
+export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild, stories = [], bilder ={}}) => (
+    <Drawer
         open={drawerOpen} onClose={toggleDrawer} variant='permanent'
         sx={{
-          width: theme => drawerOpen ? theme.layout.drawerWidth : theme.spacing(7),
-          '& .MuiDrawer-paper': theme => ({
-            width: theme.layout.drawerWidth,
-            ...(!drawerOpen && {
-              width: theme.spacing(7),
-              overflowX: 'hidden'
+            width: theme => drawerOpen ? theme.layout.drawerWidth : theme.spacing(7),
+            '& .MuiDrawer-paper': theme => ({
+                width: theme.layout.drawerWidth,
+                ...(!drawerOpen && {
+                    width: theme.spacing(7),
+                    overflowX: 'hidden'
+                })
             })
-          })
         }}
-      >
+    >
         <Toolbar/>
         <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden'}}>
-          <List>
-            <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder' to='/'/>
-              <HasRole role='admin'>
-                  <Divider/>
-                  <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Users' to='/users'/>
-              </HasRole>
-          </List>
+            <List>
+                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Texte' to='/texte/pending'/>
+                <Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/texte/completed'/>
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='All' to='/texte'/>
+
+                <Divider/>
+                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder' to='/bilder/pending'/>
+                <Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/bilder/completed'/>
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='All' to='/bilder'/>
+                <Stories
+                    drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
+                />
+
+                <HasRole role='admin'>
+                    <Divider/>
+                    <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Users' to='/users'/>
+                </HasRole>
+            </List>
         </Box>
-      </Drawer>
-    );
+    </Drawer>
+);

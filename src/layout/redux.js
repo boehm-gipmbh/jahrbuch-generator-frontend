@@ -5,8 +5,9 @@ const layoutSlice = createSlice({
     initialState: {
         changePasswordOpen: false,
         drawerOpen: true,
-        newProjectOpen: false,
-        openTask: undefined
+        newStoryOpen: false,
+        openText: undefined,
+        openBild: undefined
     },
     reducers: {
         openChangePassword: state => {
@@ -18,24 +19,37 @@ const layoutSlice = createSlice({
         toggleDrawer: state => {
             state.drawerOpen = !state.drawerOpen;
         },
-        openNewProject: state => {
-            state.newProjectOpen = true;
+        openNewStory: state => {
+            state.newStoryOpen = true;
         },
-        closeNewProject: state => {
-            state.newProjectOpen = false;
+        closeNewStory: state => {
+            state.newStoryOpen = false;
         },
-        newTask: (state, action={}) => {
-            state.openTask = {
+        newText: (state, action={}) => {
+            state.openText = {
                 title: '',
                 description: '',
                 ...action.payload ?? {}
             };
         },
-        clearOpenTask: state => {
-            state.openTask = undefined;
+        clearOpenText: state => {
+            state.openText = undefined;
         },
-        setOpenTask: (state, action) => {
-            state.openTask = action.payload;
+        setOpenText: (state, action) => {
+            state.openText = action.payload;
+        },
+        newBild: (state, action={}) => {
+            state.openBild = {
+                title: '',
+                description: '',
+                ...action.payload ?? {}
+            };
+        },
+        clearOpenBild: state => {
+            state.openBild = undefined;
+        },
+        setOpenBild: (state, action) => {
+            state.openBild = action.payload;
         },
     }
 });
@@ -44,10 +58,13 @@ export const {
     closeChangePassword,
     openChangePassword,
     toggleDrawer,
-    closeNewProject,
-    openNewProject,
-    clearOpenTask,
-    newTask,
-    setOpenTask
+    closeNewStory,
+    openNewStory,
+    clearOpenText,
+    newText,
+    setOpenText,
+    clearOpenBild,
+    newBild,
+    setOpenBild
 } = layoutSlice.actions;
 export const {reducer} = layoutSlice;

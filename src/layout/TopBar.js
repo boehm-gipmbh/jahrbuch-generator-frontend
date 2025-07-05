@@ -5,7 +5,7 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import {UserIcon} from "./UserIcon";
 
-export const TopBar = ({goHome, newTask, toggleDrawer}) => (
+export const TopBar = ({goHome, newText, toggleDrawer}) => (
   <AppBar
     position='fixed'
     sx={{
@@ -36,7 +36,7 @@ export const TopBar = ({goHome, newTask, toggleDrawer}) => (
       <Tooltip title='Quick Add'>
         <IconButton
           color='inherit'
-          onClick={newTask}
+          onClick={newText}
         >
           <AddIcon />
         </IconButton>

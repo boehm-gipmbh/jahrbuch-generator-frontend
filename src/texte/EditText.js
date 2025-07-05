@@ -16,25 +16,25 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {api} from './api';
 import {CompleteChip} from './CompleteChip';
 import {EditPriority} from './Priority';
-import {clearOpenBild, setOpenBild} from '../layout';
+import {clearOpenText, setOpenText} from '../layout';
 import {SelectStory} from '../stories';
 import {StoryChip} from './StoryChip';
 
 
-export const EditBild = () => {
+export const EditText = () => {
   const dispatch = useDispatch();
-  const openBild = useSelector(state => state.layout.openBild);
-  const isNew = openBild && !Boolean(openBild.id);
-  const isComplete = openBild && Boolean(openBild.complete);
-  const dialogOpen = Boolean(openBild);
-  const close = () => dispatch(clearOpenBild());
+  const openText = useSelector(state => state.layout.openText);
+  const isNew = openText && !Boolean(openText.id);
+  const isComplete = openText && Boolean(openText.complete);
+  const dialogOpen = Boolean(openText);
+  const close = () => dispatch(clearOpenText());
   const [addText] = api.endpoints.addText.useMutation();
   const [updateText] = api.endpoints.updateText.useMutation();
   const save = event => {
     event.preventDefault();
     if (event.currentTarget.checkValidity()) {
       const operation = isNew ? addText: updateText;
-      operation(openBild).then(({error}) => {
+      operation(openText).then(({error}) => {
         if (!Boolean(error)) {
           close();
         } else {
@@ -43,9 +43,9 @@ export const EditBild = () => {
       });
     }
   };
-  const [deleteBild] = api.endpoints.deleteBild.useMutation();
-  const doDeleteBild = () => {
-    deleteBild(openBild).then(({error}) => {
+  const [deleteText] = api.endpoints.deleteText.useMutation();
+  const doDeleteText = () => {
+    deleteText(openText).then(({error}) => {
       if (!Boolean(error)) {
         close();
       }
@@ -55,17 +55,17 @@ export const EditBild = () => {
   const onChange = event => {
     const {name, value} = event.currentTarget;
     setInvalid({...invalid, [name]: !event.currentTarget.checkValidity()});
-    dispatch(setOpenBild({...openBild,
+    dispatch(setOpenText({...openText,
       [name]: value,
     }));
   };
-  const setPriority = quality => dispatch(setOpenBild({...openBild, quality}));
+  const setPriority = priority => dispatch(setOpenText({...openText, priority}));
   return (
     <Dialog
       fullScreen
       open={dialogOpen}
     >
-      {Boolean(openBild) && (
+      {Boolean(openText) && (
         <Box component='form' onSubmit={save}>
           <AppBar sx={{position: 'relative'}}>
             <Toolbar>
@@ -78,13 +78,13 @@ export const EditBild = () => {
                 <CloseIcon />
               </IconButton>
               <Typography sx={{ ml: 2, flex: 1 }} variant='h6' component='div'>
-                {isNew ? 'New Bild' : 'Edit Bild'}
+                {isNew ? 'New Text' : 'Edit Text'}
               </Typography>
               <IconButton
                 color='inherit'
                 aria-label='delete'
                 disabled={isComplete}
-                onClick={doDeleteBild}
+                onClick={doDeleteText}
               >
                 <DeleteIcon />
               </IconButton>
@@ -100,7 +100,7 @@ export const EditBild = () => {
                 margin='normal'
                 label='Title'
                 name='title'
-                value={openBild.title}
+                value={openText.title}
                 onChange={onChange}
                 error={Boolean(invalid.title)}
                 required
@@ -116,7 +116,7 @@ export const EditBild = () => {
                 margin='normal'
                 label='Description'
                 name='description'
-                value={openBild.description ?? ''}
+                value={openText.description ?? ''}
                 onChange={onChange}
                 error={Boolean(invalid.description)}
                 multiline
@@ -129,17 +129,17 @@ export const EditBild = () => {
             </Grid>
             <Grid container>
               <Grid item xs={6}>
-                <CompleteChip bild={openBild} />
-                <StoryChip bild={openBild} onDelete={() => dispatch(setOpenBild({...openBild, story: null}))} />
+                <CompleteChip text={openText} />
+                <StoryChip text={openText} onDelete={() => dispatch(setOpenText({...openText, story: null}))} />
               </Grid>
               <Grid item xs={6} display='flex' justifyContent='flex-end'>
                 <SelectStory
                   disabled={isComplete}
-                  onSelectStory={story => dispatch(setOpenBild({...openBild, story}))}
+                  onSelectStory={story => dispatch(setOpenText({...openText, story}))}
                 />
-                <EditPriority
+                <SelectStory
                   disabled={isComplete}
-                  quality={openBild.quality} setPriority={setPriority}
+                  priority={openText.priority} setPriority={setPriority}
                 />
               </Grid>
             </Grid>

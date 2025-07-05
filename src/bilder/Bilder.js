@@ -18,9 +18,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {api as bilderApi} from './api';
 import {Priority} from './Priority';
-import {Layout, newTask, setOpenTask} from '../layout';
-import {api as projectApi} from '../projects';
-import {ProjectChip} from './ProjectChip';
+import {Layout, newBild, setOpenBild} from '../layout';
+import {api as storyApi} from '../stories';
+import {StoryChip} from './StoryChip';
 import {TextFields} from "@mui/icons-material";
 
 const bildSort = (t1, t2) => {
@@ -33,13 +33,13 @@ const bildSort = (t1, t2) => {
 };
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
-    const {projectId} = useParams();
-    const {project} = projectApi.endpoints.getProjects.useQuery(undefined, {
-        selectFromResult: ({data}) => ({project: data?.find(p => p.id === parseInt(projectId))})
+    const {storyId} = useParams();
+    const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
+        selectFromResult: ({data}) => ({story: data?.find(s => s.id === parseInt(storyId))})
     });
-    if (Boolean(project)) {
-        title = project?.name;
-        filter = bild => bild.project?.id === project.id;
+    if (Boolean(story)) {
+        title = story?.name;
+        filter = bild => bild.story?.id === story.id;
     }
     const dispatch = useDispatch();
     const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
@@ -70,13 +70,13 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                 </TableCell>
 
                                 <TableCell
-                                    onClick={() => dispatch(setOpenTask(bild))}
+                                    onClick={() => dispatch(setOpenBild(bild))}
                                     sx={{cursor: 'pointer'}}
                                 >
 
                                     <Box sx={{display: 'flex', alignItems: 'center'}}>
                                         <Box sx={{flex: 1}}>
-                                            {!Boolean(project) && <ProjectChip bild={bild} size='small'/>}
+                                            {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
                                             <img
                                                 src={bild.pfad.replace(/^.*\/captures\//, '/captures/')}
                                                 alt={bild.description || ''}
