@@ -16,16 +16,13 @@ const layoutSlice = createSlice({
         closeChangePassword: state => {
             state.changePasswordOpen = false;
         },
-        toggleDrawer: state => {
-            state.drawerOpen = !state.drawerOpen;
-        },
         openNewStory: state => {
             state.newStoryOpen = true;
         },
         closeNewStory: state => {
             state.newStoryOpen = false;
         },
-        newText: (state, action={}) => {
+        newText: (state, action = {}) => {
             state.openText = {
                 title: '',
                 description: '',
@@ -38,7 +35,7 @@ const layoutSlice = createSlice({
         setOpenText: (state, action) => {
             state.openText = action.payload;
         },
-        newBild: (state, action={}) => {
+        newBild: (state, action = {}) => {
             state.openBild = {
                 title: '',
                 description: '',
@@ -51,6 +48,9 @@ const layoutSlice = createSlice({
         setOpenBild: (state, action) => {
             state.openBild = action.payload;
         },
+        toggleDrawer: state => {
+            state.drawerOpen = !state.drawerOpen;
+        }
     }
 });
 
