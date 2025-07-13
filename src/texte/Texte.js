@@ -31,7 +31,7 @@ const textSort = (t1, t2) => {
   return t1.id - t2.id;
 };
 
-export const Texte = ({title = 'Texte', filter = () => true}) => {
+export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
   const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
     selectFromResult: ({data}) => ({story: data?.find(p => p.id === parseInt(storyId))})

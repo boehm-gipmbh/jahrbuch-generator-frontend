@@ -76,14 +76,14 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
         <Toolbar/>
         <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden'}}>
             <List>
-                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Texte' to='/texte/pending'/>
-                <Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/texte/completed'/>
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='All' to='/texte'/>
+                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Erinnerungen' to='/texte/pending'/>
+                {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/texte/completed'/>*/}
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Erinnerungen' to='/texte'/>
 
                 <Divider/>
                 <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder' to='/bilder/pending'/>
-                <Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/bilder/completed'/>
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='All' to='/bilder'/>
+                {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/bilder/completed'/>*/}
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Bilder' to='/bilder'/>
                 <Stories
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
                 />

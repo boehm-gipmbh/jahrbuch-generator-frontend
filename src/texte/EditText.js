@@ -78,7 +78,7 @@ export const EditText = () => {
                 <CloseIcon />
               </IconButton>
               <Typography sx={{ ml: 2, flex: 1 }} variant='h6' component='div'>
-                {isNew ? 'New Text' : 'Edit Text'}
+                {isNew ? 'Neue Erinnerung' : 'Ändere Erinnerung'}
               </Typography>
               <IconButton
                 color='inherit'
