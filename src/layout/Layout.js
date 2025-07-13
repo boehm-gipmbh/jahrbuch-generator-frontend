@@ -9,6 +9,7 @@ import {TopBar} from './TopBar';
 import {MainDrawer} from './MainDrawer';
 import {api, NewStoryDialog} from '../stories';
 import {EditBild} from '../bilder';
+import {EditText} from '../texte';
 import {ChangePasswordDialog} from "../users/ChangePasswordDialog";
 
 export const Layout = ({children}) => {
@@ -41,6 +42,9 @@ export const Layout = ({children}) => {
                     {children}
                 </Box>
             </Box>
+            {/*<EditBild />*/}
+            <EditText />
+            <NewStoryDialog />
             <ChangePasswordDialog />
         </Box>
     );
