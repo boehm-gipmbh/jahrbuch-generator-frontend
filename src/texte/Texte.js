@@ -79,7 +79,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
           </TableBody>
         </Table>
         <Box sx={{mt: 2}}>
-          <Button startIcon={<AddIcon />} onClick={() => dispatch(newStory({story: story}))}>
+          <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
             Add text
           </Button>
         </Box>
