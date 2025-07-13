@@ -15,7 +15,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {api} from './api';
 import {CompleteChip} from './CompleteChip';
-import {EditPriority} from './Priority';
+import {EditTextPriority} from './Priority';
 import {clearOpenText, setOpenText} from '../layout';
 import {SelectStory} from '../stories';
 import {StoryChip} from './StoryChip';
@@ -137,9 +137,9 @@ export const EditText = () => {
                   disabled={isComplete}
                   onSelectStory={story => dispatch(setOpenText({...openText, story}))}
                 />
-                <SelectStory
-                  disabled={isComplete}
-                  priority={openText.priority} setPriority={setPriority}
+                <EditTextPriority
+                    disabled={isComplete}
+                    priority={openText.priority} setPriority={setPriority}
                 />
               </Grid>
             </Grid>
