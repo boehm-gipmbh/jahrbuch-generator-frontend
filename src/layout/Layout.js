@@ -35,6 +35,7 @@ export const Layout = ({children}) => {
             />
             <MainDrawer
                 toggleDrawer={doToggleDrawer} drawerOpen={drawerOpen}
+                openNewStory={doOpenNewStory} stories={stories}
             />
             <Box sx={{flex: 1}}>
                 <Toolbar />
