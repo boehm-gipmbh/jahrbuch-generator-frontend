@@ -14,7 +14,7 @@ export const api = createApi({
       query: text => ({
         url: '/',
         method: 'POST',
-        body: text
+        body: { ...text, priority: 3 }  // Default priority set to 3, d.h. Freigabe
       }),
       invalidatesTags: ['Text'],
     }),
