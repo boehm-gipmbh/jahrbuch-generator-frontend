@@ -8,9 +8,9 @@ export const api = createApi({
   endpoints: builder => ({
     getTexte: builder.query({
       query: () => '/',
-      providesTags: ['Texte'],
+      providesTags: ['Text'],
     }),
-    addTexte: builder.mutation({
+    addText: builder.mutation({
       query: text => ({
         url: '/',
         method: 'POST',
