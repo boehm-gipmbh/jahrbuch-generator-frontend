@@ -24,7 +24,7 @@ import {StoryChip} from './StoryChip';
 export const EditText = () => {
   const dispatch = useDispatch();
   const openText = useSelector(state => state.layout.openText);
-  const isNew = openText && !Boolean(openText.id);
+  const isNew = openText && (openText.id === undefined || openText.id === null);
   const isComplete = openText && Boolean(openText.complete);
   const dialogOpen = Boolean(openText);
   const close = () => dispatch(clearOpenText());
