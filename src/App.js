@@ -16,13 +16,13 @@ export const App = () => (
             <Route exact path='/login' element={<Login />} />
 
             <Route exact path='/texte' element={<Texte />} />
-            <Route exact path='/texte/stories/:storyId' element={<Texte />} />
+            <Route exact path='/texte/story/:storyId' element={<Texte />} />
             <Route exact path='/texte/pending'
                    element={<Texte title='Erinnerungen' filter={t => !Boolean(t.complete)} />} />
             <Route exact path='/texte/completed'
                    element={<Texte title='Completed' filter={t => Boolean(t.complete)} />} />
             <Route exact path='/bilder' element={<Bilder />} />
-            <Route exact path='/bilder/stories/:storyId' element={<Bilder />} />
+            <Route exact path='/bilder/story/:storyId' element={<Bilder />} />
             <Route exact path='/bilder/pending'
                    element={<Bilder title='Bilder' filter={b => !Boolean(b.complete)} />} />
             <Route exact path='/bilder/completed'
