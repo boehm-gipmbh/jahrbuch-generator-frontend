@@ -16,7 +16,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import {api} from './api';
+import {api as texteApi} from './api';
 import {Priority} from './Priority';
 import {Layout, newText, setOpenText} from '../layout';
 import {api as storyApi} from '../stories';
@@ -41,9 +41,14 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
     filter = text => text.story?.id === story.id;
   }
   const dispatch = useDispatch();
-  const {data} = api.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
-  const [setComplete] = api.endpoints.setComplete.useMutation();
+  const {data} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
+  const [setComplete] = texteApi.endpoints.setComplete.useMutation();
   return <Layout>
+    <Box sx={{mt: 2}}>
+      <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
+        Füge Deine Erinnerungen hinzu
+      </Button>
+    </Box>
     <Container sx={{mt: theme => theme.spacing(2)}}>
       <Paper sx={{p: 2}}>
         <Typography component="h2" variant="h6" color="primary" gutterBottom>
@@ -78,11 +83,6 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
             )}
           </TableBody>
         </Table>
-        <Box sx={{mt: 2}}>
-          <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
-            Add text
-          </Button>
-        </Box>
       </Paper>
     </Container>
   </Layout>;

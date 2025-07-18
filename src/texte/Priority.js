@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {IconButton, ListItemIcon, Menu, MenuItem} from '@mui/material';
 import TrafficIcon from '@mui/icons-material/Traffic';
-import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 
 const colorMap = {
     1: '#d32f2f',   // rot
