@@ -43,7 +43,7 @@ export const Layout = ({children}) => {
                     {children}
                 </Box>
             </Box>
-            {/*<EditBild />*/}
+            <EditBild />
             <EditText />
             <NewStoryDialog />
             <ChangePasswordDialog />

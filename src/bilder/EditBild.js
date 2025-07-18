@@ -15,7 +15,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {api} from './api';
 import {CompleteChip} from './CompleteChip';
-import {EditPriority} from './Priority';
+import {EditBildPriority} from './Priority';
 import {clearOpenBild, setOpenBild} from '../layout';
 import {SelectStory} from '../stories';
 import {StoryChip} from './StoryChip';
@@ -24,16 +24,16 @@ import {StoryChip} from './StoryChip';
 export const EditBild = () => {
   const dispatch = useDispatch();
   const openBild = useSelector(state => state.layout.openBild);
-  const isNew = openBild && !Boolean(openBild.id);
+  const isNew = openBild && (openBild.id === undefined || openBild.id === null);
   const isComplete = openBild && Boolean(openBild.complete);
   const dialogOpen = Boolean(openBild);
   const close = () => dispatch(clearOpenBild());
-  const [addText] = api.endpoints.addText.useMutation();
-  const [updateText] = api.endpoints.updateText.useMutation();
+  const [addBild] = api.endpoints.addBild.useMutation();
+  const [updateBild] = api.endpoints.updateBild.useMutation();
   const save = event => {
     event.preventDefault();
     if (event.currentTarget.checkValidity()) {
-      const operation = isNew ? addText: updateText;
+      const operation = isNew ? addBild: updateBild;
       operation(openBild).then(({error}) => {
         if (!Boolean(error)) {
           close();
@@ -59,7 +59,7 @@ export const EditBild = () => {
       [name]: value,
     }));
   };
-  const setPriority = quality => dispatch(setOpenBild({...openBild, quality}));
+  const setPriority = priority => dispatch(setOpenBild({...openBild, priority}));
   return (
     <Dialog
       fullScreen
@@ -78,7 +78,7 @@ export const EditBild = () => {
                 <CloseIcon />
               </IconButton>
               <Typography sx={{ ml: 2, flex: 1 }} variant='h6' component='div'>
-                {isNew ? 'New Bild' : 'Edit Bild'}
+                {isNew ? 'Neues Bild' : 'Ändere Bild'}
               </Typography>
               <IconButton
                 color='inherit'
@@ -137,9 +137,9 @@ export const EditBild = () => {
                   disabled={isComplete}
                   onSelectStory={story => dispatch(setOpenBild({...openBild, story}))}
                 />
-                <EditPriority
+                <EditBildPriority
                   disabled={isComplete}
-                  quality={openBild.quality} setPriority={setPriority}
+                  priority={openBild.priority} setPriority={setPriority}
                 />
               </Grid>
             </Grid>

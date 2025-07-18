@@ -1,19 +1,25 @@
 import React, {useState} from 'react';
 import {IconButton, ListItemIcon, Menu, MenuItem} from '@mui/material';
-import FlagIcon from '@mui/icons-material/Flag';
-import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import TrafficIcon from "@mui/icons-material/Traffic";
 
 const colorMap = {
-  1: 'error',
-  2: 'warning',
-  3: 'info'
-}
+    1: '#d32f2f',   // rot
+    2: '#fbc02d',   // gelb
+    3: '#388e3c'    // grün
+};
+
+const texteMap = {
+    1: 'keine Freigabe',   // rot
+    2: 'evtl. Freigabe',   // gelb
+    3: 'Freigabe erteilt'    // grün
+};
+
 
 export const Priority = ({priority}) => Boolean(priority) ?
-  <FlagIcon color={colorMap[priority]}/> :
-  <FlagOutlinedIcon/>;
+    <TrafficIcon sx={{ color: colorMap[priority] }}/> :
+    <TrafficIcon sx={{ color: colorMap[3] }}/>;  // default to green if no priority is set
 
-export const EditPriority = ({priority, setPriority, disabled}) => {
+export const EditBildPriority = ({priority, setPriority, disabled}) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
   const onClick = val => () => {
@@ -36,17 +42,17 @@ export const EditPriority = ({priority, setPriority, disabled}) => {
         {[...Array(3).keys()].map(i => i + 1).map(p =>
           <MenuItem key={p} onClick={onClick(p)}>
             <ListItemIcon>
-              <FlagIcon color={colorMap[p]} />
+                <TrafficIcon sx={{ color: colorMap[p] }} />
             </ListItemIcon>
-            Priority {p}
+              {texteMap[p]}
           </MenuItem>
         )}
-        <MenuItem onClick={onClick(null)}>
-          <ListItemIcon>
-            <FlagOutlinedIcon />
-          </ListItemIcon>
-          No Priority
-        </MenuItem>
+        {/*<MenuItem onClick={onClick(null)}>*/}
+        {/*  <ListItemIcon>*/}
+        {/*    <FlagOutlinedIcon />*/}
+        {/*  </ListItemIcon>*/}
+        {/*  No Priority*/}
+        {/*</MenuItem>*/}
       </Menu>
     </>
   );

@@ -43,12 +43,12 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     }
     const dispatch = useDispatch();
     const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
-    const [setProtect] = bilderApi.endpoints.setProtect.useMutation();
+    const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     return <Layout>
         <Box sx={{mt: 2}}>
             <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                Add Bild
+               Füge Deine Bilder hinzu
             </Button>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
@@ -62,18 +62,16 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                             <TableRow key={bild.id}>
                                 <TableCell sx={{width: '2rem'}}>
                                     <Checkbox
-                                        checked={Boolean(bild.protect)}
+                                        checked={Boolean(bild.complete)}
                                         checkedIcon={<CheckCircleIcon fontSize='small'/>}
                                         icon={<RadioButtonUncheckedIcon fontSize='small'/>}
-                                        onChange={() => setProtect({bild, protect: !Boolean(bild.protect)})}
+                                        onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
                                     />
                                 </TableCell>
-
                                 <TableCell
                                     onClick={() => dispatch(setOpenBild(bild))}
                                     sx={{cursor: 'pointer'}}
                                 >
-
                                     <Box sx={{display: 'flex', alignItems: 'center'}}>
                                         <Box sx={{flex: 1}}>
                                             {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
@@ -84,10 +82,9 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                             />
                                             <Typography variant="body2">{bild.description}</Typography>
                                         </Box>
-
-                                        {/*<Box>*/}
-                                        {/*    {Boolean(bild.quality) && <Priority quality={bild.quality}/>}*/}
-                                        {/*</Box>*/}
+                                        <Box>
+                                            {Boolean(bild.priority) && <Priority priority={bild.priority}/>}
+                                        </Box>
                                     </Box>
                                 </TableCell>
                             </TableRow>

@@ -54,7 +54,7 @@ const Stories = ({drawerOpen, openNewStory, stories}) => (
             <Item
                 key={s.id} disableTooltip={drawerOpen}
                 Icon={CircleIcon} iconSize='small'
-                title={s.name} to={`/texte/story/${s.id}`}/>
+                title={s.name} to={`/bilder/story/${s.id}`}/>
         ))}
     </>
 );

@@ -44,12 +44,12 @@ export const api = createApi({
                     }),
                     invalidatesTags: ['Bild']
                 }),
-            setProtect:
+            setComplete:
                 builder.mutation({
-                    query: ({bild, protect}) => ({
-                        url: `/${bild.id}/protect`,
+                    query: ({bild, complete}) => ({
+                        url: `/${bild.id}/complete`,
                         method: 'PUT',
-                        body: JSON.stringify(protect)
+                        body: JSON.stringify(complete)
                     }),
                     invalidatesTags: ['Bild'],
                 })
