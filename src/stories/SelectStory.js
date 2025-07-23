@@ -25,12 +25,12 @@ export const SelectStory = ({disabled, onSelectStory = () => {}}) => {
         open={menuOpen}
         onClose={() => setAnchorEl(null)}
       >
-        {stories.map(p =>
-          <MenuItem key={p.id} onClick={onClick(p)}>
+        {stories.map(s =>
+          <MenuItem key={s.id} onClick={onClick(s)}>
             <ListItemIcon>
               <CircleIcon />
             </ListItemIcon>
-            {p.name}
+            {s.name}
           </MenuItem>
         )}
       </Menu>

@@ -47,7 +47,7 @@ const Stories = ({drawerOpen, openNewStory, stories}) => (
             <ListItemText
                 primaryTypographyProps={{fontWeight: 'medium'}}
             >
-                Stories
+                Geschichten
             </ListItemText>
         </ListItem>
         {Array.from(stories).map(s => (
