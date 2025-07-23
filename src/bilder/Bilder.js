@@ -48,7 +48,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     return <Layout>
         <Box sx={{mt: 2}}>
             <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-               Füge Deine Bilder hinzu
+                Füge Deine Bilder hinzu
             </Button>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
@@ -74,13 +74,20 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                 >
                                     <Box sx={{display: 'flex', alignItems: 'center'}}>
                                         <Box sx={{flex: 1}}>
-                                            {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
                                             <img
                                                 src={bild.pfad.replace(/^.*\/captures\//, '/captures/')}
                                                 alt={bild.description || ''}
-                                                style={{ maxWidth: 600 , maxHeight: 300, marginRight: 8, verticalAlign: 'middle' }}
+                                                style={{
+                                                    maxWidth: 600,
+                                                    maxHeight: 300,
+                                                    marginRight: 8,
+                                                    verticalAlign: 'middle'
+                                                }}
                                             />
                                             <Typography variant="body2">{bild.description}</Typography>
+                                        </Box>
+                                        <Box sx={{flex: 1}}>
+                                            {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
                                         </Box>
                                         <Box>
                                             {Boolean(bild.priority) && <Priority priority={bild.priority}/>}
