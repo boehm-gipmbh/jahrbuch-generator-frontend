@@ -35,10 +35,10 @@ export const NewStoryDialog = () => {
   };
   return (
     <Dialog open={newStoryOpen} onClose={close}>
-      <DialogTitle>New Story</DialogTitle>
+      <DialogTitle>Neue Geschichte</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Add a new story.
+          Füge eine neue Geschichte hinzu.
         </DialogContentText>
         {Boolean(error) && <Alert severity='error'>{error}</Alert>}
         <TextField
@@ -52,6 +52,18 @@ export const NewStoryDialog = () => {
           onKeyDown={e => e.key === 'Enter' && canSave && save()}
           error={Boolean(invalid.name)}
           required
+        />
+        <TextField
+            autoFocus
+            fullWidth
+            variant='standard'
+            label='Beschreibung'
+            name='description'
+            value={values.description}
+            onChange={onChange}
+            onKeyDown={e => e.key === 'Enter' && canSave && save()}
+            error={Boolean(invalid.name)}
+            required
         />
       </DialogContent>
       <DialogActions>
