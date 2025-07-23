@@ -6,6 +6,7 @@ import {Bilder} from './bilder';
 import {Texte} from './texte';
 
 import {Users} from './users';
+import {Story} from "./stories/Story";
 
 export const App = () => (
     <BrowserRouter>
@@ -22,7 +23,7 @@ export const App = () => (
             <Route exact path='/texte/completed'
                    element={<Texte title='Completed' filter={t => Boolean(t.complete)} />} />
             <Route exact path='/bilder' element={<Bilder />} />
-            <Route exact path='/bilder/story/:storyId' element={<Bilder />} />
+            <Route exact path='/bilder/story/:storyId' element={<Story />} />
             <Route exact path='/bilder/pending'
                    element={<Bilder title='Bilder' filter={b => !Boolean(b.complete)} />} />
             <Route exact path='/bilder/completed'
