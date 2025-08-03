@@ -75,7 +75,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     <Box sx={{display: 'flex', alignItems: 'center'}}>
                                         <Box sx={{flex: 1}}>
                                             <img
-                                                src={bild.pfad.replace(/^.*\/captures\//, '/captures/')}
+                                                src={bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                                                 alt={bild.description || ''}
                                                 style={{
                                                     maxWidth: 600,
