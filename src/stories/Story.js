@@ -1,6 +1,7 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
+import {Grid} from '@mui/material';
 import {
     Box,
     Button,
@@ -19,7 +20,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
 import {Priority} from '../texte/Priority';
-import {Layout, newText, setOpenText} from '../layout';
+import {Layout, newText, setOpenBild, setOpenText} from '../layout';
 import {api as storyApi} from './api.js';
 import {StoryChip} from '../texte/StoryChip';
 
@@ -56,48 +57,121 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const dataBilder = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     console.log(dataBilder);
     const [setComplete] = texteApi.endpoints.setComplete.useMutation();
+    const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     return <Layout>
-        <Box sx={{mt: 2}}>
-            <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
-                Füge Deine Erinnerungen hinzu
-            </Button>
-        </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
-            <Paper sx={{p: 2}}>
-                <Typography component="h2" variant="h6" color="primary" gutterBottom>
-                    {title}
-                </Typography>
-                <Table size='small'>
-                    <TableBody>
-                        {data && Array.from(data).filter(filterText).sort(textSort).map(text =>
-                            <TableRow key={text.id}>
-                                <TableCell sx={{width: '2rem'}}>
-                                    <Checkbox
-                                        checked={Boolean(text.complete)}
-                                        checkedIcon={<CheckCircleIcon fontSize='small' />}
-                                        icon={<RadioButtonUncheckedIcon fontSize='small' />}
-                                        onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
-                                    />
-                                </TableCell>
-                                <TableCell
-                                    onClick={() => dispatch(setOpenText(text))}
-                                    sx={{cursor: 'pointer'}}
-                                >
-                                    <Box sx={{display: 'flex', alignItems: 'center'}}>
-                                        <Box sx={{flex: 1}}>
-                                            {text.title} {!Boolean(story) && <StoryChip text={text} size='small' />}
-                                        </Box>
-                                        <Box>
-                                            {Boolean(text.priority) && <Priority priority={text.priority} />}
-                                        </Box>
-                                    </Box>
-                                </TableCell>
+            <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                {title}
+            </Typography>
+            <Grid container spacing={2}>
+                {/* Linke Spalte für Texte */}
+                <Grid item xs={12} md={6}>
+                    <Box sx={{mt: 2}}>
+                        <Button startIcon={<AddIcon/>} onClick={() => dispatch(newText({story: story}))}>
+                            Füge Deine Erinnerungen hinzu
+                        </Button>
+                    </Box>
+                    <Paper sx={{p: 2}}>
+                        <Table size='small'>
+                            <TableBody>
+                                {data ? Array.from(data).filter(filterText).sort(textSort).map(text =>
+                                    <TableRow key={text.id}>
+                                        <TableCell sx={{width: '2rem'}}>
+                                            <Checkbox
+                                                checked={Boolean(text.complete)}
+                                                checkedIcon={<CheckCircleIcon fontSize='small'/>}
+                                                icon={<RadioButtonUncheckedIcon fontSize='small'/>}
+                                                onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
+                                            />
+                                        </TableCell>
+                                        <TableCell
+                                            onClick={() => dispatch(setOpenText(text))}
+                                            sx={{cursor: 'pointer'}}
+                                        >
+                                            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                                <Box sx={{flex: 1}}>
+                                                    <Typography variant="subtitle1" component="span"  color="primary"
+                                                                sx={{fontWeight: 'bold'}}>
+                                                        {text.title}
+                                                    </Typography> {!Boolean(story) &&
+                                                    <StoryChip text={text} size='small'/>}
+                                                </Box>
+                                                <Box>
+                                                    {Boolean(text.priority) && <Priority priority={text.priority}/>}
+                                                </Box>
+                                            </Box>
+                                            <Box sx={{flex: 1}}>
+                                                {text.description} {!Boolean(story) &&
+                                                <StoryChip text={text} size='small'/>}
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ):null}
+                            </TableBody>
+                        </Table>
+                    </Paper>
+                </Grid>
 
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </Paper>
+                {/* Rechte Spalte für Bilder */}
+                <Grid item xs={12} md={6}>
+                    <Box sx={{mt: 2}}>
+                        <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
+                            Füge Deine Bilder hinzu
+                        </Button>
+                    </Box>
+                    <Paper sx={{p: 2}}>
+                        <Table size='small'>
+                            <TableBody>
+                                {dataBilder?.data ? Array.from(dataBilder.data).filter(filterBild).sort(bildSort).map(bild =>
+                                    <TableRow key={bild.id}>
+                                        <TableCell sx={{width: '2rem'}}>
+                                            <Checkbox
+                                                checked={Boolean(bild.complete)}
+                                                checkedIcon={<CheckCircleIcon fontSize='small'/>}
+                                                icon={<RadioButtonUncheckedIcon fontSize='small'/>}
+                                                onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
+                                            />
+                                        </TableCell>
+                                        <TableCell
+                                            onClick={() => dispatch(setOpenBild(bild))}
+                                            sx={{cursor: 'pointer'}}
+                                        >
+                                            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                                <Box sx={{flex: 1}}>
+                                                    <Box sx={{flex: 1}}>
+                                                        <Typography variant="subtitle1" component="span"  color="primary"
+                                                                    sx={{fontWeight: 'bold'}}>
+                                                            {bild.title}
+                                                        </Typography> {!Boolean(story) &&
+                                                        <StoryChip bild={bild} size='small'/>}
+                                                    </Box>
+                                                    <img
+                                                        src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
+                                                        alt={bild.description || ''}
+                                                        style={{
+                                                            maxWidth: 600,
+                                                            maxHeight: 300,
+                                                            marginRight: 8,
+                                                            verticalAlign: 'middle'
+                                                        }}
+                                                    />
+                                                    <Typography variant="body2">{bild.description}</Typography>
+                                                </Box>
+                                                <Box sx={{flex: 1}}>
+                                                    {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
+                                                </Box>
+                                                <Box>
+                                                    {Boolean(bild.priority) && <Priority priority={bild.priority}/>}
+                                                </Box>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : null}
+                            </TableBody>
+                        </Table>
+                    </Paper>
+                </Grid>
+            </Grid>
         </Container>
-    </Layout>;
+    </Layout>
 };
