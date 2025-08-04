@@ -1,16 +1,13 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
+import {Grid} from '@mui/material';
 import {
     Box,
     Button,
     Container,
     Checkbox,
     Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableRow,
     Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -56,48 +53,75 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                 <Typography component="h2" variant="h6" color="primary" gutterBottom>
                     {title}
                 </Typography>
-                <Table size='small'>
-                    <TableBody>
-                        {data && Array.from(data).filter(filter).sort(bildSort).map(bild =>
-                            <TableRow key={bild.id}>
-                                <TableCell sx={{width: '2rem'}}>
-                                    <Checkbox
-                                        checked={Boolean(bild.complete)}
-                                        checkedIcon={<CheckCircleIcon fontSize='small'/>}
-                                        icon={<RadioButtonUncheckedIcon fontSize='small'/>}
-                                        onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
-                                    />
-                                </TableCell>
-                                <TableCell
-                                    onClick={() => dispatch(setOpenBild(bild))}
-                                    sx={{cursor: 'pointer'}}
-                                >
-                                    <Box sx={{display: 'flex', alignItems: 'center'}}>
-                                        <Box sx={{flex: 1}}>
-                                            <img
-                                                src={bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
-                                                alt={bild.description || ''}
-                                                style={{
-                                                    maxWidth: 600,
-                                                    maxHeight: 300,
-                                                    marginRight: 8,
-                                                    verticalAlign: 'middle'
-                                                }}
-                                            />
-                                            <Typography variant="body2">{bild.description}</Typography>
-                                        </Box>
-                                        <Box sx={{flex: 1}}>
-                                            {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
-                                        </Box>
-                                        <Box>
-                                            {Boolean(bild.priority) && <Priority priority={bild.priority}/>}
-                                        </Box>
+
+                <Grid container spacing={2}>
+                    {data ? Array.from(data).filter(filter).sort(bildSort).map(bild => (
+                        <Grid item xs={12} sm={6} key={bild.id}>
+                            <Paper elevation={1} sx={{
+                                p: 2,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: '100%',
+                                position: 'relative'
+                            }}>
+                                {/* Priority oben links */}
+                                {Boolean(bild.priority) && (
+                                    <Box
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Verhindert Bubbling
+                                            dispatch(setOpenBild(bild));
+                                        }}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 4,
+                                            left: 4,
+                                            zIndex: 1,
+                                            cursor: 'pointer' // Zeigt an, dass es klickbar ist
+                                        }}
+                                    >
+                                        <Priority priority={bild.priority} />
                                     </Box>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                                )}
+
+                                {/* Checkbox oben rechts (bleibt unverändert) */}
+                                <Checkbox
+                                    checked={Boolean(bild.complete)}
+                                    checkedIcon={<CheckCircleIcon fontSize='small'/>}
+                                    icon={<RadioButtonUncheckedIcon fontSize='small'/>}
+                                    onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
+                                    sx={{position: 'absolute', top: 0, right: 0}}
+                                />
+
+                                <Box
+                                    onClick={() => dispatch(setOpenBild(bild))}
+                                    sx={{cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1}}
+                                >
+                                    <Typography variant="subtitle1" component="div"
+                                                sx={{mb: 1, fontWeight: 'medium', textAlign: 'center'}}>
+                                        {bild.title || 'Kein Titel'}
+                                    </Typography>
+                                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
+                                        <img
+                                            src={bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
+                                            alt={bild.description || ''}
+                                            style={{
+                                                maxWidth: '100%',
+                                                maxHeight: 200,
+                                                objectFit: 'contain'
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{mt: 'auto'}}>
+                                        <Typography variant="body2">{bild.description}</Typography>
+                                        {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
+
+                                    </Box>
+                                </Box>
+                            </Paper>
+                        </Grid>
+                    )) : null}
+                </Grid>
             </Paper>
         </Container>
     </Layout>;
