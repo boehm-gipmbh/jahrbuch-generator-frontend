@@ -19,6 +19,7 @@ import {Layout, newBild, setOpenBild} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import {TextFields} from "@mui/icons-material";
+import {BilderUploadDialog} from "./BilderUploadDialog";
 
 const bildSort = (t1, t2) => {
     const p1 = t1.id ?? Number.MAX_SAFE_INTEGER;
@@ -47,6 +48,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
             <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
                 Füge eine Fotoaufnahme hinzu
             </Button>
+            <BilderUploadDialog/>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>

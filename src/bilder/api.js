@@ -6,6 +6,15 @@ export const api = createApi({
         baseQuery: authBaseQuery({path: 'bilder'}),
         tagTypes: ['Bild'],
         endpoints: builder => ({
+            uploadBild: builder.mutation({
+                query: formData => ({
+                    url: '/upload',
+                    method: 'POST',
+                    body: formData,
+                    formData: true,
+                }),
+                invalidatesTags: ['Bild'],
+            }),
             getBilder: builder.query({
                 query: () => '/',
                 providesTags: ['Bild'],
