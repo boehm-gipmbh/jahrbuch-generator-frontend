@@ -68,7 +68,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 <Grid item xs={12} md={6}>
                     <Box sx={{mt: 2}}>
                         <Button startIcon={<AddIcon/>} onClick={() => dispatch(newText({story: story}))}>
-                            Füge Deine Erinnerungen hinzu
+                            Füge Deine Erinnerung hinzu
                         </Button>
                     </Box>
                     <Paper sx={{p: 2}}>
@@ -116,7 +116,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 <Grid item xs={12} md={6}>
                     <Box sx={{mt: 2}}>
                         <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                            Füge Deine Bilder hinzu
+                            Füge eine Fotoaufnahme hinzu
                         </Button>
                     </Box>
                     <Paper sx={{p: 2}}>

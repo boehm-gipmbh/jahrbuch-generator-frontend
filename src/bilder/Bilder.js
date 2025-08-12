@@ -45,7 +45,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     return <Layout>
         <Box sx={{mt: 2}}>
             <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                Füge Deine Bilder hinzu
+                Füge eine Fotoaufnahme hinzu
             </Button>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>

@@ -46,7 +46,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   return <Layout>
     <Box sx={{mt: 2}}>
       <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
-        Füge Deine Erinnerungen hinzu
+        Füge Deine Erinnerung hinzu
       </Button>
     </Box>
     <Container sx={{mt: theme => theme.spacing(2)}}>
