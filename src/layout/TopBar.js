@@ -31,7 +31,7 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => (
         </IconButton>
       </Tooltip>
       <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
-      OHG Jahrbuch-Generator
+      Jahrbuch-Generator - OHG Jahrgang 1985 - 40 Jahre ABI - Feier
       </Typography>
       <Tooltip title='Quick Add'>
         <IconButton
