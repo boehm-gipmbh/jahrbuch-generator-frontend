@@ -47,7 +47,7 @@ const Stories = ({drawerOpen, openNewStory, stories}) => (
             <ListItemText
                 primaryTypographyProps={{fontWeight: 'medium'}}
             >
-                Geschichten
+                Deine Stories
             </ListItemText>
         </ListItem>
         {Array.from(stories).map(s => (
@@ -76,12 +76,12 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
         <Toolbar/>
         <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden'}}>
             <List>
-                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Erinnerungen' to='/texte/pending'/>
+                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Erinnerungen ohne Story' to='/texte/pending'/>
                 {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/texte/completed'/>*/}
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Erinnerungen' to='/texte'/>
 
                 <Divider/>
-                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder' to='/bilder/pending'/>
+                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder ohne Story' to='/bilder/pending'/>
                 {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/bilder/completed'/>*/}
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Bilder' to='/bilder'/>
                 <Stories

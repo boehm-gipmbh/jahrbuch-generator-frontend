@@ -18,14 +18,18 @@ export const App = () => (
 
             <Route exact path='/texte' element={<Texte />} />
             <Route exact path='/texte/story/:storyId' element={<Texte />} />
+            {/*<Route exact path='/texte/pending'*/}
+            {/*       element={<Texte title='Erinnerungen' filter={t => !Boolean(t.complete)} />} />*/}
             <Route exact path='/texte/pending'
-                   element={<Texte title='Erinnerungen' filter={t => !Boolean(t.complete)} />} />
+                   element={<Texte title='Erinnerungen' filter={t => !Boolean(t.story)} />} />
             <Route exact path='/texte/completed'
                    element={<Texte title='Completed' filter={t => Boolean(t.complete)} />} />
             <Route exact path='/bilder' element={<Bilder />} />
             <Route exact path='/bilder/story/:storyId' element={<Story />} />
+            {/*<Route exact path='/bilder/pending'*/}
+            {/*       element={<Bilder title='Bilder' filter={b => !Boolean(b.complete)} />} />*/}
             <Route exact path='/bilder/pending'
-                   element={<Bilder title='Bilder' filter={b => !Boolean(b.complete)} />} />
+                   element={<Bilder title='Bilder' filter={b => !Boolean(b.story)} />} />
             <Route exact path='/bilder/completed'
                    element={<Bilder title='Completed' filter={b => Boolean(b.complete)} />} />
 
