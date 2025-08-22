@@ -1,7 +1,7 @@
 import React from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
-import {Grid} from '@mui/material';
+import {Grid, Tooltip} from '@mui/material';
 import {
     Box,
     Button,
@@ -23,6 +23,9 @@ import {Priority} from '../texte/Priority';
 import {Layout, newText, setOpenBild, setOpenText} from '../layout';
 import {api as storyApi} from './api.js';
 import {StoryChip} from '../texte/StoryChip';
+import {BilderUploadDialog} from "../bilder/BilderUploadDialog";
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
 
 const textSort = (t1, t2) => {
     const p1 = t1.priority ?? Number.MAX_SAFE_INTEGER;
@@ -76,13 +79,32 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             <TableBody>
                                 {data ? Array.from(data).filter(filterText).sort(textSort).map(text =>
                                     <TableRow key={text.id}>
-                                        <TableCell sx={{width: '2rem'}}>
-                                            <Checkbox
-                                                checked={Boolean(text.complete)}
-                                                checkedIcon={<CheckCircleIcon fontSize='small'/>}
-                                                icon={<RadioButtonUncheckedIcon fontSize='small'/>}
-                                                onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
-                                            />
+                                        <TableCell
+                                            sx={{
+                                                width: '2rem',
+                                                position: 'relative',
+                                                verticalAlign: 'top',
+                                                paddingTop: '8px'
+                                            }}
+                                        >
+                                            <Tooltip
+                                                title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
+                                                <Checkbox
+                                                    checked={Boolean(text.complete)}
+                                                    checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                                                    icon={<LockOpenIcon color="action" fontSize='small'/>}
+                                                    onChange={() => setComplete({
+                                                        text,
+                                                        complete: !Boolean(text.complete)
+                                                    })}
+                                                    sx={{
+                                                        padding: '0',
+                                                        '&.Mui-checked': {
+                                                            color: theme => theme.palette.success.main
+                                                        }
+                                                    }}
+                                                />
+                                            </Tooltip>
                                         </TableCell>
                                         <TableCell
                                             onClick={() => dispatch(setOpenText(text))}
@@ -90,7 +112,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                         >
                                             <Box sx={{display: 'flex', alignItems: 'center'}}>
                                                 <Box sx={{flex: 1}}>
-                                                    <Typography variant="subtitle1" component="span"  color="primary"
+                                                    <Typography variant="subtitle1" component="span" color="primary"
                                                                 sx={{fontWeight: 'bold'}}>
                                                         {text.title}
                                                     </Typography> {!Boolean(story) &&
@@ -106,7 +128,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             </Box>
                                         </TableCell>
                                     </TableRow>
-                                ):null}
+                                ) : null}
                             </TableBody>
                         </Table>
                     </Paper>
@@ -118,6 +140,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
                             Füge eine Fotoaufnahme hinzu
                         </Button>
+                        <BilderUploadDialog/>
                     </Box>
                     <Paper sx={{p: 2}}>
                         <Grid container spacing={2}>
@@ -145,22 +168,38 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                     cursor: 'pointer' // Zeigt an, dass es klickbar ist
                                                 }}
                                             >
-                                                <Priority priority={bild.priority} />
+                                                <Priority priority={bild.priority}/>
                                             </Box>
                                         )}
 
-                                        {/* Checkbox oben rechts */}
-                                        <Checkbox
-                                            checked={Boolean(bild.complete)}
-                                            checkedIcon={<CheckCircleIcon fontSize='small'/>}
-                                            icon={<RadioButtonUncheckedIcon fontSize='small'/>}
-                                            onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
-                                            sx={{position: 'absolute', top: 0, right: 0}}
-                                        />
+                                        {/* Löschschutz oben rechts */}
+                                        <Tooltip
+                                            title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
+                                            <Checkbox
+                                                checked={Boolean(bild.complete)}
+                                                checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                                                icon={<LockOpenIcon color="action" fontSize='small'/>}
+                                                onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    right: 0,
+                                                    '&.Mui-checked': {
+                                                        color: theme => theme.palette.success.main
+                                                    }
+                                                }}
+                                            />
+                                        </Tooltip>
 
                                         <Box
                                             onClick={() => dispatch(setOpenBild(bild))}
-                                            sx={{cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1, pt: 3}}
+                                            sx={{
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                flex: 1,
+                                                pt: 3
+                                            }}
                                         >
                                             <Typography variant="subtitle1" component="div" color="primary"
                                                         sx={{mb: 1, fontWeight: 'bold', textAlign: 'center'}}>

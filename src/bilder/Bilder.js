@@ -1,7 +1,12 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {Grid} from '@mui/material';
+// Importiere die benötigten Icons
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
+import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
 import {
     Box,
     Button,
@@ -11,14 +16,13 @@ import {
     Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import {api as bilderApi} from './api';
 import {Priority} from './Priority';
 import {Layout, newBild, setOpenBild} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
-import {TextFields} from "@mui/icons-material";
 import {BilderUploadDialog} from "./BilderUploadDialog";
 
 const bildSort = (t1, t2) => {
@@ -39,15 +43,23 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
         title = story?.name;
         filter = bild => bild.story?.id === story.id;
     }
+    const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
     const dispatch = useDispatch();
     const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
+    const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
+    // Um das Bild nach der Rotation zum Neuladen zu zwingen,
+    // musst du einen dynamischen Parameter zur Bild-URL hinzufügen.
+    // Implementiere einen State für die Bildversion:
+    const [imageVersion, setImageVersion] = useState(0);
     return <Layout>
         <Box sx={{mt: 2}}>
-            <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                Füge eine Fotoaufnahme hinzu
-            </Button>
+            {capturesConfig?.enabled && (
+                <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
+                    Füge eine Fotoaufnahme hinzu
+                </Button>
+            )}
             <BilderUploadDialog/>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
@@ -81,18 +93,26 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                             cursor: 'pointer' // Zeigt an, dass es klickbar ist
                                         }}
                                     >
-                                        <Priority priority={bild.priority} />
+                                        <Priority priority={bild.priority}/>
                                     </Box>
                                 )}
-
-                                {/* Checkbox oben rechts (bleibt unverändert) */}
-                                <Checkbox
-                                    checked={Boolean(bild.complete)}
-                                    checkedIcon={<CheckCircleIcon fontSize='small'/>}
-                                    icon={<RadioButtonUncheckedIcon fontSize='small'/>}
-                                    onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
-                                    sx={{position: 'absolute', top: 0, right: 0}}
-                                />
+                                {/* Löschschutz oben rechts */}
+                                <Tooltip title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
+                                    <Checkbox
+                                        checked={Boolean(bild.complete)}
+                                        checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                                        icon={<LockOpenIcon color="action" fontSize='small'/>}
+                                        onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            right: 0,
+                                            '&.Mui-checked': {
+                                                color: theme => theme.palette.success.main
+                                            }
+                                        }}
+                                    />
+                                </Tooltip>
 
                                 <Box
                                     onClick={() => dispatch(setOpenBild(bild))}
@@ -104,7 +124,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     </Typography>
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                                         <img
-                                            src={bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
+                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersion}`}
                                             alt={bild.description || ''}
                                             style={{
                                                 maxWidth: '100%',
@@ -119,6 +139,66 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                         {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
 
                                     </Box>
+                                </Box>
+                                {/* Rotationsbuttons unten rechts */}
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: 4,
+                                        right: 4,
+                                        backgroundColor: 'rgba(255,255,255,0.7)',
+                                        borderRadius: 1,
+                                        padding: '2px',
+                                        zIndex: 1
+                                    }}
+                                >
+                                    <ButtonGroup size="small">
+                                        <Tooltip title="90° links drehen">
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    rotateBild({bildId: bild.id, degrees: -90}).unwrap()
+                                                        .then(() => {
+                                                            dispatch(bilderApi.util.invalidateTags(['Bild']));
+                                                            setImageVersion(prev => prev + 1);
+                                                        });
+                                                }}
+                                                size="small"
+                                            >
+                                                <RotateLeftIcon fontSize="small"/>
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="90° rechts drehen">
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    rotateBild({bildId: bild.id, degrees: 90}).unwrap()
+                                                        .then(() => {
+                                                            dispatch(bilderApi.util.invalidateTags(['Bild']));
+                                                            setImageVersion(prev => prev + 1);
+                                                        });
+                                                }}
+                                                size="small"
+                                            >
+                                                <RotateRightIcon fontSize="small"/>
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="180° drehen">
+                                            <IconButton
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    rotateBild({bildId: bild.id, degrees: 180}).unwrap()
+                                                        .then(() => {
+                                                            //     dispatch(bilderApi.util.invalidateTags(['Bild']));
+                                                            setImageVersion(prev => prev + 1);
+                                                        });
+                                                }}
+                                                size="small"
+                                            >
+                                                <SettingsBackupRestoreIcon fontSize="small"/>
+                                            </IconButton>
+                                        </Tooltip>
+                                    </ButtonGroup>
                                 </Box>
                             </Paper>
                         </Grid>

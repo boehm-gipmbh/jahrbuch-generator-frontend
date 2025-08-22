@@ -19,6 +19,13 @@ export const api = createApi({
                 query: () => '/',
                 providesTags: ['Bild'],
             }),
+
+            // Neuer Endpunkt für einzelnes Bild
+            getBildById: builder.query({
+                query: (bildId) => `bilder/${bildId}`,
+                providesTags: (result, error, bildId) =>
+                    result ? [{ type: 'Bild', id: bildId }] : []
+            }),
             triggerCapture: builder.mutation({
                 query: () => ({
                     url: '/capture',
@@ -61,7 +68,27 @@ export const api = createApi({
                         body: JSON.stringify(complete)
                     }),
                     invalidatesTags: ['Bild'],
-                })
+                }),
+            getUploadConfig:
+                builder.query({
+                    query: () => '/uploadconfig',
+                    providesTags: ['Bild'],
+                }),
+            getCapturesConfig:
+                builder.query({
+                    query: () => '/capture/config',
+                    providesTags: ['Bild'],
+                }),
+            rotateBild: builder.mutation({
+                query: ({bildId, degrees}) => ({
+                    url: `/${bildId}/rotate`,
+                    method: 'POST',
+                    body: {degrees},
+                }),
+                invalidatesTags: ['Bild'],
+            }),
         })
     })
+    // Exportiere die generierte Hook
+export const { useGetBilderQuery, useGetBildByIdQuery, /* andere Hooks */ } = api;
 ;

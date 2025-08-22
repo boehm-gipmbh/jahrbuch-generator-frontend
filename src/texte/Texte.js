@@ -2,16 +2,16 @@ import React from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-  Box,
-  Button,
-  Container,
-  Checkbox,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-  Typography
+    Box,
+    Button,
+    Container,
+    Checkbox,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableRow,
+    Typography, Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -21,6 +21,8 @@ import {Priority} from './Priority';
 import {Layout, newText, setOpenText} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
+import LockIcon from "@mui/icons-material/Lock";
+import LockOpenIcon from "@mui/icons-material/LockOpen";
 
 const textSort = (t1, t2) => {
   const p1 = t1.priority ?? Number.MAX_SAFE_INTEGER;
@@ -58,14 +60,21 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
           <TableBody>
               {data && Array.from(data).filter(filter).sort(textSort).map(text =>
               <TableRow key={text.id}>
-                <TableCell sx={{width: '2rem'}}>
-                  <Checkbox
-                    checked={Boolean(text.complete)}
-                    checkedIcon={<CheckCircleIcon fontSize='small' />}
-                    icon={<RadioButtonUncheckedIcon fontSize='small' />}
-                    onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
-                  />
-                </TableCell>
+                  <TableCell sx={{width: '2rem'}}>
+                      <Tooltip title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
+                          <Checkbox
+                              checked={Boolean(text.complete)}
+                              checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                              icon={<LockOpenIcon color="action" fontSize='small'/>}
+                              onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
+                              sx={{
+                                  '&.Mui-checked': {
+                                      color: theme => theme.palette.success.main
+                                  }
+                              }}
+                          />
+                      </Tooltip>
+                  </TableCell>
                 <TableCell
                   onClick={() => dispatch(setOpenText(text))}
                   sx={{cursor: 'pointer'}}
