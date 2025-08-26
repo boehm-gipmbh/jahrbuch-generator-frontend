@@ -53,6 +53,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     // musst du einen dynamischen Parameter zur Bild-URL hinzufügen.
     // Implementiere einen State für die Bildversion:
     const [imageVersion, setImageVersion] = useState(0);
+    const [getBildById] = bilderApi.endpoints.getBildById.useLazyQuery();
     const SHOW_ROTATION_BUTTONS = false; // auf true setzen, um Buttons wieder anzuzeigen
     return <Layout>
         <Box sx={{mt: 2}}>
