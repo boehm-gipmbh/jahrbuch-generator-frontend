@@ -53,6 +53,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     // musst du einen dynamischen Parameter zur Bild-URL hinzufügen.
     // Implementiere einen State für die Bildversion:
     const [imageVersion, setImageVersion] = useState(0);
+    const SHOW_ROTATION_BUTTONS = false; // auf true setzen, um Buttons wieder anzuzeigen
     return <Layout>
         <Box sx={{mt: 2}}>
             {capturesConfig?.enabled && (
@@ -124,6 +125,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     </Typography>
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                                         <img
+                                            id={`bild-${bild.id}`}
                                             src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersion}`}
                                             alt={bild.description || ''}
                                             style={{
@@ -140,66 +142,122 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
 
                                     </Box>
                                 </Box>
-                                {/* Rotationsbuttons unten rechts */}
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: 4,
-                                        right: 4,
-                                        backgroundColor: 'rgba(255,255,255,0.7)',
-                                        borderRadius: 1,
-                                        padding: '2px',
-                                        zIndex: 1
-                                    }}
-                                >
-                                    <ButtonGroup size="small">
-                                        <Tooltip title="90° links drehen">
-                                            <IconButton
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    rotateBild({bildId: bild.id, degrees: -90}).unwrap()
-                                                        .then(() => {
-                                                            dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            setImageVersion(prev => prev + 1);
-                                                        });
-                                                }}
-                                                size="small"
-                                            >
-                                                <RotateLeftIcon fontSize="small"/>
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="90° rechts drehen">
-                                            <IconButton
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    rotateBild({bildId: bild.id, degrees: 90}).unwrap()
-                                                        .then(() => {
-                                                            dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            setImageVersion(prev => prev + 1);
-                                                        });
-                                                }}
-                                                size="small"
-                                            >
-                                                <RotateRightIcon fontSize="small"/>
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="180° drehen">
-                                            <IconButton
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    rotateBild({bildId: bild.id, degrees: 180}).unwrap()
-                                                        .then(() => {
-                                                            //     dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            setImageVersion(prev => prev + 1);
-                                                        });
-                                                }}
-                                                size="small"
-                                            >
-                                                <SettingsBackupRestoreIcon fontSize="small"/>
-                                            </IconButton>
-                                        </Tooltip>
-                                    </ButtonGroup>
-                                </Box>
+                                {/* Rotationsbuttons nur anzeigen, wenn SHOW_ROTATION_BUTTONS true ist */}
+                                {SHOW_ROTATION_BUTTONS && (
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: 4,
+                                            right: 4,
+                                            backgroundColor: 'rgba(255,255,255,0.7)',
+                                            borderRadius: 1,
+                                            padding: '2px',
+                                            zIndex: 1
+                                        }}
+                                    >
+                                        <ButtonGroup size="small">
+                                            <Tooltip title="90° links drehen">
+                                                <IconButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        rotateBild({bildId: bild.id, degrees: -90}).unwrap()
+                                                            .then(() => {
+                                                                // Cache invalidieren
+                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
+
+                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
+                                                                setImageVersion(prev => prev + 1);
+
+                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
+                                                                return getBildById(bild.id).unwrap()
+                                                                    .then(updatedBild => {
+                                                                        dispatch(setOpenBild(updatedBild));
+                                                                    })
+                                                                    .catch(error => {
+                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
+                                                                        // Trotz Fehler beim Laden fortfahren
+                                                                    });
+                                                            })
+                                                            .catch(error => {
+                                                                console.error("Fehler bei der Bildrotation:", error);
+                                                                // Optional: Benutzer über Fehler informieren
+                                                                // toast.error("Bild konnte nicht rotiert werden");
+                                                            });
+                                                    }}
+                                                    size="small"
+                                                >
+                                                    <RotateLeftIcon fontSize="small"/>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="90° rechts drehen">
+                                                <IconButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        rotateBild({bildId: bild.id, degrees: 90}).unwrap()
+                                                            .then(() => {
+                                                                // Cache invalidieren
+                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
+
+                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
+                                                                setImageVersion(prev => prev + 1);
+
+                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
+                                                                return getBildById(bild.id).unwrap()
+                                                                    .then(updatedBild => {
+                                                                        dispatch(setOpenBild(updatedBild));
+                                                                    })
+                                                                    .catch(error => {
+                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
+                                                                        // Trotz Fehler beim Laden fortfahren
+                                                                    });
+                                                            })
+                                                            .catch(error => {
+                                                                console.error("Fehler bei der Bildrotation:", error);
+                                                                // Optional: Benutzer über Fehler informieren
+                                                                //toast.error("Bild konnte nicht rotiert werden");
+                                                            });
+                                                    }}
+                                                    size="small"
+                                                >
+                                                    <RotateRightIcon fontSize="small"/>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="180° drehen">
+                                                <IconButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        rotateBild({bildId: bild.id, degrees: 180}).unwrap()
+                                                            .then(() => {
+                                                                // Cache invalidieren
+                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
+
+                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
+                                                                setImageVersion(prev => prev + 1);
+
+                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
+                                                                return getBildById(bild.id).unwrap()
+                                                                    .then(updatedBild => {
+                                                                        dispatch(setOpenBild(updatedBild));
+                                                                    })
+                                                                    .catch(error => {
+                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
+                                                                        // Trotz Fehler beim Laden fortfahren
+                                                                    });
+                                                            })
+                                                            .catch(error => {
+                                                                console.error("Fehler bei der Bildrotation:", error);
+                                                                // Optional: Benutzer über Fehler informieren
+                                                                // toast.error("Bild konnte nicht rotiert werden");
+                                                            });
+                                                    }}
+                                                    size="small"
+                                                >
+                                                    <SettingsBackupRestoreIcon fontSize="small"/>
+                                                </IconButton>
+                                            </Tooltip>
+                                        </ButtonGroup>
+                                    </Box>
+                                )}
                             </Paper>
                         </Grid>
                     )) : null}
