@@ -62,6 +62,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
+    const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
     return <Layout>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Typography component="h2" variant="h6" color="primary" gutterBottom>
@@ -138,9 +139,11 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 {/* Rechte Spalte für Bilder */}
                 <Grid item xs={12} md={6}>
                     <Box sx={{mt: 2}}>
-                        <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                            Füge eine Fotoaufnahme hinzu
-                        </Button>
+                        {capturesConfig?.enabled && (
+                            <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
+                                Füge eine Fotoaufnahme hinzu
+                            </Button>
+                        )}
                         <BilderUploadDialog/>
                     </Box>
                     <Paper sx={{p: 2}}>
