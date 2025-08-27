@@ -46,7 +46,7 @@ export const Layout = ({children}) => {
             <EditBild />
             <EditText />
             <NewStoryDialog />
-            {/*<ChangePasswordDialog />*/}
+            <ChangePasswordDialog />
         </Box>
     );
 };
