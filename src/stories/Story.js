@@ -59,7 +59,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     console.log(data);
     const dataBilder = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     console.log(dataBilder);
-    const [setComplete] = texteApi.endpoints.setComplete.useMutation();
+    const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
+    const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     return <Layout>
         <Container sx={{mt: theme => theme.spacing(2)}}>
@@ -93,7 +94,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                     checked={Boolean(text.complete)}
                                                     checkedIcon={<LockIcon color="success" fontSize='small'/>}
                                                     icon={<LockOpenIcon color="action" fontSize='small'/>}
-                                                    onChange={() => setComplete({
+                                                    onChange={() => setTextComplete({
                                                         text,
                                                         complete: !Boolean(text.complete)
                                                     })}
@@ -179,7 +180,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 checked={Boolean(bild.complete)}
                                                 checkedIcon={<LockIcon color="success" fontSize='small'/>}
                                                 icon={<LockOpenIcon color="action" fontSize='small'/>}
-                                                onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
+                                                onChange={() => setBildComplete({bild, complete: !Boolean(bild.complete)})}
                                                 sx={{
                                                     position: 'absolute',
                                                     top: 0,
