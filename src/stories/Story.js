@@ -144,7 +144,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                 Füge eine Fotoaufnahme hinzu
                             </Button>
                         )}
-                        <BilderUploadDialog/>
+                     <BilderUploadDialog story={story}/>
                     </Box>
                     <Paper sx={{p: 2}}>
                         <Grid container spacing={2}>

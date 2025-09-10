@@ -13,7 +13,7 @@ import {
 import UploadIcon from '@mui/icons-material/Upload';
 import {api as bilderApi} from './api';
 
-export const BilderUploadDialog = () => {
+export const BilderUploadDialog = ({ story }) => {
     const [open, setOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [title, setTitle] = useState('');
@@ -76,6 +76,11 @@ export const BilderUploadDialog = () => {
         formData.append('file', selectedFile);
         formData.append('title', title);
         formData.append('description', description);
+
+        // Story-ID hinzufügen, wenn eine Story vorhanden ist
+        if (story?.id) {
+            formData.append('storyId', story.id);
+        }
 
         try {
             await uploadBild(formData).unwrap();
