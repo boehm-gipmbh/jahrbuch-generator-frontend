@@ -28,7 +28,7 @@ export const api = createApi({
             }),
             triggerCapture: builder.mutation({
                 query: () => ({
-                    url: '/capture',
+                    url: 'https://elsie-preperusal-overpresumptuously.ngrok-free.dev/api/v1/bilder/capture',
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({"mainImgsettingsImageformat": "Small Fine JPEG"})
