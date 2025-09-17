@@ -8,12 +8,7 @@ import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
 import {
-    Box,
-    Button,
-    Container,
-    Checkbox,
-    Paper,
-    Typography
+    Box, Button, Container, Checkbox, Paper, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LockIcon from '@mui/icons-material/Lock';
@@ -57,11 +52,19 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const SHOW_ROTATION_BUTTONS = false; // auf true setzen, um Buttons wieder anzuzeigen
     return <Layout>
         <Box sx={{mt: 2}}>
-            {capturesConfig?.enabled && (
-                <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                    Füge eine Fotoaufnahme hinzu
-                </Button>
-            )}
+            {capturesConfig?.enabled && (<Button
+                    autoFocus
+                    startIcon={<AddIcon/>}
+                    onClick={() => triggerCapture()}
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    sx={{
+                        fontWeight: 'bold', fontSize: '1.2rem', py: 2, px: 4, boxShadow: 3, mb: 2
+                    }}
+                >
+                    Foto shot&nbsp;!
+                </Button>)}
             <BilderUploadDialog/>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
@@ -74,30 +77,20 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     {data ? Array.from(data).filter(filter).sort(bildSort).map(bild => (
                         <Grid item xs={12} sm={6} key={bild.id}>
                             <Paper elevation={1} sx={{
-                                p: 2,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                height: '100%',
-                                position: 'relative'
+                                p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'
                             }}>
                                 {/* Priority oben links */}
-                                {Boolean(bild.priority) && (
-                                    <Box
+                                {Boolean(bild.priority) && (<Box
                                         onClick={(e) => {
                                             e.stopPropagation(); // Verhindert Bubbling
                                             dispatch(setOpenBild(bild));
                                         }}
                                         sx={{
-                                            position: 'absolute',
-                                            top: 4,
-                                            left: 4,
-                                            zIndex: 1,
-                                            cursor: 'pointer' // Zeigt an, dass es klickbar ist
+                                            position: 'absolute', top: 4, left: 4, zIndex: 1, cursor: 'pointer' // Zeigt an, dass es klickbar ist
                                         }}
                                     >
                                         <Priority priority={bild.priority}/>
-                                    </Box>
-                                )}
+                                    </Box>)}
                                 {/* Löschschutz oben rechts */}
                                 <Tooltip title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
                                     <Checkbox
@@ -106,10 +99,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                         icon={<LockOpenIcon color="action" fontSize='small'/>}
                                         onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
                                         sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            right: 0,
-                                            '&.Mui-checked': {
+                                            position: 'absolute', top: 0, right: 0, '&.Mui-checked': {
                                                 color: theme => theme.palette.success.main
                                             }
                                         }}
@@ -130,9 +120,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                             src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersion}`}
                                             alt={bild.description || ''}
                                             style={{
-                                                maxWidth: '100%',
-                                                maxHeight: 200,
-                                                objectFit: 'contain'
+                                                maxWidth: '100%', maxHeight: 200, objectFit: 'contain'
                                             }}
                                         />
                                     </Box>
@@ -144,8 +132,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     </Box>
                                 </Box>
                                 {/* Rotationsbuttons nur anzeigen, wenn SHOW_ROTATION_BUTTONS true ist */}
-                                {SHOW_ROTATION_BUTTONS && (
-                                    <Box
+                                {SHOW_ROTATION_BUTTONS && (<Box
                                         sx={{
                                             position: 'absolute',
                                             bottom: 4,
@@ -257,11 +244,9 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                 </IconButton>
                                             </Tooltip>
                                         </ButtonGroup>
-                                    </Box>
-                                )}
+                                    </Box>)}
                             </Paper>
-                        </Grid>
-                    )) : null}
+                        </Grid>)) : null}
                 </Grid>
             </Paper>
         </Container>
