@@ -123,8 +123,7 @@ export const EditBild = () => {
                                 multiline
                                 rows={4}
                                 inputProps={{
-                                    readOnly: isComplete,
-                                    maxLength: 1000
+                                    readOnly: isComplete
                                 }}
                             />
                         </Grid>
