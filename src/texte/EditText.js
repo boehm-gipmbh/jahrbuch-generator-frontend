@@ -120,7 +120,7 @@ export const EditText = () => {
                 onChange={onChange}
                 error={Boolean(invalid.description)}
                 multiline
-                rows={4}
+                rows={24}
                 inputProps={{
                   readOnly: isComplete
               }}
