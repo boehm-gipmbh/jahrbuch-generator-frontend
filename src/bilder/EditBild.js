@@ -125,6 +125,12 @@ export const EditBild = () => {
                                 inputProps={{
                                     readOnly: isComplete
                                 }}
+                                  sx={{
+                                    '& .MuiInputBase-input': {
+                                      fontFamily: "'Brush Script MT', cursive",
+                                      fontSize: '0.95rem',
+                                    }
+                                  }}
                             />
                         </Grid>
                         <Grid container>

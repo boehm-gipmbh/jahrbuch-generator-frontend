@@ -124,7 +124,13 @@ export const EditText = () => {
                 inputProps={{
                   readOnly: isComplete
               }}
-              />
+            sx={{
+              '& .MuiInputBase-input': {
+                fontFamily: "'Brush Script MT', cursive",
+                fontSize: '0.95rem',
+              }
+            }}
+            />
             </Grid>
             <Grid container>
               <Grid item xs={6}>
