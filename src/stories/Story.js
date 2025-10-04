@@ -14,6 +14,7 @@ import {
     TableRow,
     Typography
 } from '@mui/material';
+import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -125,8 +126,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 </Box>
                                             </Box>
                                             <Box sx={{flex: 1}}>
+                                              <pre className="wrap-pre">
                                                 {text.description} {!Boolean(story) &&
                                                 <StoryChip text={text} size='small'/>}
+                                                </pre>
                                             </Box>
                                         </TableCell>
                                     </TableRow>
@@ -223,8 +226,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             </Box>
 
                                             <Box sx={{mt: 'auto'}}>
-                                                <Typography variant="body2">{bild.description}</Typography>
+                                              <pre className="wrap-pre">
+                                                {bild.description}
                                                 {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
+                                                </pre>
                                             </Box>
                                         </Box>
                                     </Paper>

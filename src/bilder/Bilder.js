@@ -126,10 +126,20 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     </Box>
 
                                     <Box sx={{mt: 'auto'}}>
-                                        <Typography variant="body2">{bild.description}</Typography>
-                                        {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
-
+                                      <pre className="wrap-pre">
+                                        {bild.description}
+                                      </pre>
                                     </Box>
+                                    {!Boolean(story) && (
+                                      <Box sx={{
+                                        position: 'absolute',
+                                        right: 8,
+                                        bottom: 8,
+                                        zIndex: 2
+                                      }}>
+                                        <StoryChip bild={bild} size='small'/>
+                                      </Box>
+                                    )}
                                 </Box>
                                 {/* Rotationsbuttons nur anzeigen, wenn SHOW_ROTATION_BUTTONS true ist */}
                                 {SHOW_ROTATION_BUTTONS && (<Box

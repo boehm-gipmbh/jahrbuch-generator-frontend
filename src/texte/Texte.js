@@ -13,6 +13,7 @@ import {
     TableRow,
     Typography, Tooltip
 } from '@mui/material';
+import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -86,6 +87,11 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                     <Box>
                       {Boolean(text.priority) && <Priority priority={text.priority} />}
                     </Box>
+                  </Box>
+                  <Box sx={{flex: 1}}>
+                    <pre className="wrap-pre">
+                      {text.description} {!Boolean(story) }
+                    </pre>
                   </Box>
                 </TableCell>
               </TableRow>
