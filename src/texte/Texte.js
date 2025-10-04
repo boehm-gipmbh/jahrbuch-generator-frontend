@@ -82,7 +82,10 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                 >
                   <Box sx={{display: 'flex', alignItems: 'center'}}>
                     <Box sx={{flex: 1}}>
-                      {text.title} {!Boolean(story) && <StoryChip text={text} size='small' />}
+                    <Typography variant="subtitle1" component="span" color="primary" sx={{fontWeight: 'bold'}}>
+                      {text.title}
+                      </Typography>
+                      {!Boolean(story) && <StoryChip text={text} size='small' />}
                     </Box>
                     <Box>
                       {Boolean(text.priority) && <Priority priority={text.priority} />}
