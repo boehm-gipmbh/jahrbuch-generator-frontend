@@ -14,7 +14,7 @@ export const UserIcon = () => {
     const closeMenu = () => setAnchorEl(null);
     const dispatch = useDispatch();
     const {data} = api.endpoints.getSelf.useQuery();
-    const SHOW_CHANGE_PASSWORD_BUTTON = false; // auf true setzen, um Buttons wieder anzuzeigen
+    const SHOW_CHANGE_PASSWORD_BUTTON = true; // auf false setzen, um Buttons wieder zu verstecken
     return (
         <>
             <Tooltip title='Profile'>
