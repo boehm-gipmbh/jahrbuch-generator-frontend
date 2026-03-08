@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import AuthImage from './AuthImage';
 import {useDispatch, useSelector} from 'react-redux';
 import {
     AppBar,
@@ -151,7 +152,7 @@ export const EditBild = () => {
                             </Grid>
                         </Grid>
                         <Grid item xs={12} sx={{mt: 2, display: 'flex', justifyContent: 'center'}}>
-                            <img
+                            <AuthImage
                                 src={openBild.pfad.startsWith('/') ? `/api/bilder/extern${openBild.pfad}` : openBild.pfad}
                                 alt={openBild.description || ''}
                                 style={{

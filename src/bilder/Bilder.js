@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {Grid} from '@mui/material';
@@ -115,7 +116,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                         {bild.title || 'Kein Titel'}
                                     </Typography>
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
-                                        <img
+                                        <AuthImage
                                             id={`bild-${bild.id}`}
                                             src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersion}`}
                                             alt={bild.description || ''}

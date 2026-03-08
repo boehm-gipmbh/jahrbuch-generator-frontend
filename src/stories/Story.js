@@ -1,4 +1,5 @@
 import React from 'react';
+import AuthImage from '../bilder/AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {Grid, Tooltip} from '@mui/material';
@@ -214,7 +215,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             </Typography>
 
                                             <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
-                                                <img
+                                                <AuthImage
                                                     src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                                                     alt={bild.description || ''}
                                                     style={{
