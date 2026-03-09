@@ -45,10 +45,8 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
-    // Um das Bild nach der Rotation zum Neuladen zu zwingen,
-    // musst du einen dynamischen Parameter zur Bild-URL hinzufügen.
-    // Implementiere einen State für die Bildversion:
-    const [imageVersion, setImageVersion] = useState(0);
+    // Pro-Bild-Versionszähler, um nach Rotation nur das betroffene Bild neu zu laden
+    const [imageVersions, setImageVersions] = useState({});
     const [getBildById] = bilderApi.endpoints.getBildById.useLazyQuery();
     const SHOW_ROTATION_BUTTONS = false; // auf true setzen, um Buttons wieder anzuzeigen
     return <Layout>
@@ -118,7 +116,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                                         <AuthImage
                                             id={`bild-${bild.id}`}
-                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersion}`}
+                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersions[bild.id] ?? 0}`}
                                             alt={bild.description || ''}
                                             style={{
                                                 maxWidth: '100%', maxHeight: 200, objectFit: 'contain'
@@ -165,7 +163,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
 
                                                                 // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
-                                                                setImageVersion(prev => prev + 1);
+                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
 
                                                                 // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
                                                                 return getBildById(bild.id).unwrap()
@@ -198,7 +196,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
 
                                                                 // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
-                                                                setImageVersion(prev => prev + 1);
+                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
 
                                                                 // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
                                                                 return getBildById(bild.id).unwrap()
@@ -231,7 +229,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
 
                                                                 // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
-                                                                setImageVersion(prev => prev + 1);
+                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
 
                                                                 // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
                                                                 return getBildById(bild.id).unwrap()
