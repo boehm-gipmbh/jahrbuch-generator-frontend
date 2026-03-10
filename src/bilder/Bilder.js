@@ -125,7 +125,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     {!Boolean(story) && (
                                       <Box sx={{
                                         position: 'absolute',
-                                        right: 8,
+                                        left: 8,
                                         bottom: 8,
                                         zIndex: 2
                                       }}>
