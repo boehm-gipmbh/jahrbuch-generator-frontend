@@ -45,9 +45,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     }
     const dispatch = useDispatch();
     const {data} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
-    console.log(data);
     const dataBilder = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
-    console.log(dataBilder);
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
