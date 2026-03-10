@@ -20,15 +20,9 @@ import {Layout, newBild, setOpenBild} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
+import {sortBy, byPriorityDesc, byIdDesc} from '../sortUtils';
 
-const bildSort = (t1, t2) => {
-    const p1 = t1.id ?? Number.MAX_SAFE_INTEGER;
-    const p2 = t2.id ?? Number.MAX_SAFE_INTEGER;
-    if (p1 !== p2) {
-        return p2 - p1
-    }
-    return t2.id - t1.id;
-};
+const bildSort = sortBy(byPriorityDesc, byIdDesc);
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {storyId} = useParams();

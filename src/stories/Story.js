@@ -28,23 +28,10 @@ import {StoryChip} from '../texte/StoryChip';
 import {BilderUploadDialog} from "../bilder/BilderUploadDialog";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
+import {sortBy, byPriorityDesc, byPriorityAsc, byIdDesc, byIdAsc} from '../sortUtils';
 
-const textSort = (t1, t2) => {
-    const p1 = t1.priority ?? Number.MAX_SAFE_INTEGER;
-    const p2 = t2.priority ?? Number.MAX_SAFE_INTEGER;
-    if (p1 !== p2) {
-        return p1 - p2
-    }
-    return t1.id - t2.id;
-};
-const bildSort = (t1, t2) => {
-    const p1 = t1.id ?? Number.MAX_SAFE_INTEGER;
-    const p2 = t2.id ?? Number.MAX_SAFE_INTEGER;
-    if (p1 !== p2) {
-        return p2 - p1
-    }
-    return t2.id - t1.id;
-};
+const textSort = sortBy(byPriorityAsc, byIdAsc);
+const bildSort = sortBy(byPriorityDesc, byIdDesc);
 
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
