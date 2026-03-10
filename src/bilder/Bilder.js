@@ -42,7 +42,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     // Pro-Bild-Versionszähler, um nach Rotation nur das betroffene Bild neu zu laden
     const [imageVersions, setImageVersions] = useState({});
     const [getBildById] = bilderApi.endpoints.getBildById.useLazyQuery();
-    const SHOW_ROTATION_BUTTONS = true; // auf true setzen, um Buttons wieder anzuzeigen
     return <Layout>
         <Box sx={{mt: 2}}>
             {capturesConfig?.enabled && (<Button
@@ -134,8 +133,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                       </Box>
                                     )}
                                 </Box>
-                                {/* Rotationsbuttons nur anzeigen, wenn SHOW_ROTATION_BUTTONS true ist */}
-                                {SHOW_ROTATION_BUTTONS && (<Box
+                                <Box
                                         sx={{
                                             position: 'absolute',
                                             bottom: 4,
@@ -247,7 +245,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                 </IconButton>
                                             </Tooltip>
                                         </ButtonGroup>
-                                    </Box>)}
+                                    </Box>
                             </Paper>
                         </Grid>)) : null}
                 </Grid>
