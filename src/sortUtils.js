@@ -18,5 +18,6 @@ const FALLBACK = Number.MAX_SAFE_INTEGER;
 
 export const byPriorityDesc = (a, b) => (b.priority ?? FALLBACK) - (a.priority ?? FALLBACK);
 export const byPriorityAsc  = (a, b) => (a.priority ?? FALLBACK) - (b.priority ?? FALLBACK);
+export const byPositionAsc  = (a, b) => (a.position ?? FALLBACK) - (b.position ?? FALLBACK);
 export const byIdDesc       = (a, b) => b.id - a.id;
 export const byIdAsc        = (a, b) => a.id - b.id;

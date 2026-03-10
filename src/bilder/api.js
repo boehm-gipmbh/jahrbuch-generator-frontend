@@ -87,6 +87,14 @@ export const api = createApi({
                 }),
                 invalidatesTags: ['Bild'],
             }),
+            reorderBilder: builder.mutation({
+                query: ({storyId, bildIds}) => ({
+                    url: `/reorder/${storyId}`,
+                    method: 'PUT',
+                    body: bildIds,
+                }),
+                invalidatesTags: ['Bild'],
+            }),
         })
     })
     // Exportiere die generierte Hook

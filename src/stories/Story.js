@@ -28,10 +28,14 @@ import {StoryChip} from '../texte/StoryChip';
 import {BilderUploadDialog} from "../bilder/BilderUploadDialog";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import {sortBy, byPriorityDesc, byPriorityAsc, byIdDesc, byIdAsc} from '../sortUtils';
+import {sortBy, byPositionAsc, byPriorityDesc, byPriorityAsc, byIdDesc, byIdAsc} from '../sortUtils';
+import {DndContext, closestCenter, PointerSensor, useSensor, useSensors} from '@dnd-kit/core';
+import {SortableContext, arrayMove, verticalListSortingStrategy} from '@dnd-kit/sortable';
+import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
+import {SortableBildCard} from '../bilder/SortableBildCard';
 
 const textSort = sortBy(byPriorityAsc, byIdAsc);
-const bildSort = sortBy(byPriorityDesc, byIdDesc);
+const bildSort = sortBy(byPositionAsc, byPriorityDesc, byIdDesc);
 
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
@@ -48,8 +52,21 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const dataBilder = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
+    const [reorderBilder] = bilderApi.endpoints.reorderBilder.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
+    const sensors = useSensors(useSensor(PointerSensor, {activationConstraint: {distance: 8}}));
+    const sortedBilder = dataBilder?.data ? Array.from(dataBilder.data).filter(filterBild).sort(bildSort) : [];
+    const handleDragEnd = (event) => {
+        const {active, over} = event;
+        if (!over || active.id === over.id) return;
+        const oldIndex = sortedBilder.findIndex(b => b.id === active.id);
+        const newIndex = sortedBilder.findIndex(b => b.id === over.id);
+        const reordered = arrayMove(sortedBilder, oldIndex, newIndex);
+        if (story) {
+            reorderBilder({storyId: story.id, bildIds: reordered.map(b => b.id)});
+        }
+    };
     return <Layout>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Typography component="h2" variant="h6" color="primary" gutterBottom>
@@ -136,92 +153,26 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                      <BilderUploadDialog story={story}/>
                     </Box>
                     <Paper sx={{p: 2}}>
-                        <Grid container spacing={2}>
-                            {dataBilder?.data ? Array.from(dataBilder.data).filter(filterBild).sort(bildSort).map(bild => (
-                                <Grid item xs={12} key={bild.id}>
-                                    <Paper elevation={1} sx={{
-                                        p: 2,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        height: '100%',
-                                        position: 'relative'
-                                    }}>
-                                        {/* Priority oben links */}
-                                        {Boolean(bild.priority) && (
-                                            <Box
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Verhindert Bubbling
-                                                    dispatch(setOpenBild(bild));
-                                                }}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 4,
-                                                    left: 4,
-                                                    zIndex: 1,
-                                                    cursor: 'pointer' // Zeigt an, dass es klickbar ist
-                                                }}
-                                            >
-                                                <Priority priority={bild.priority}/>
-                                            </Box>
-                                        )}
-
-                                        {/* Löschschutz oben rechts */}
-                                        <Tooltip
-                                            title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
-                                            <Checkbox
-                                                checked={Boolean(bild.complete)}
-                                                checkedIcon={<LockIcon color="success" fontSize='small'/>}
-                                                icon={<LockOpenIcon color="action" fontSize='small'/>}
-                                                onChange={() => setBildComplete({bild, complete: !Boolean(bild.complete)})}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    right: 0,
-                                                    '&.Mui-checked': {
-                                                        color: theme => theme.palette.success.main
-                                                    }
-                                                }}
-                                            />
-                                        </Tooltip>
-
-                                        <Box
-                                            onClick={() => dispatch(setOpenBild(bild))}
-                                            sx={{
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                flex: 1,
-                                                pt: 3
-                                            }}
-                                        >
-                                            <Typography variant="subtitle1" component="div" color="primary"
-                                                        sx={{mb: 1, fontWeight: 'bold', textAlign: 'center'}}>
-                                                {bild.title || 'Kein Titel'}
-                                            </Typography>
-
-                                            <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
-                                                <AuthImage
-                                                    src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
-                                                    alt={bild.description || ''}
-                                                    style={{
-                                                        maxWidth: '100%',
-                                                        maxHeight: 300,
-                                                        objectFit: 'contain'
-                                                    }}
-                                                />
-                                            </Box>
-
-                                            <Box sx={{mt: 'auto'}}>
-                                              <pre className="wrap-pre">
-                                                {bild.description}
-                                                {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
-                                                </pre>
-                                            </Box>
-                                        </Box>
-                                    </Paper>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            modifiers={[restrictToVerticalAxis]}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext items={sortedBilder.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                                <Grid container spacing={2}>
+                                    {sortedBilder.map(bild => (
+                                        <SortableBildCard
+                                            key={bild.id}
+                                            bild={bild}
+                                            story={story}
+                                            onClickBild={(b) => dispatch(setOpenBild(b))}
+                                            onSetComplete={(args) => setBildComplete(args)}
+                                        />
+                                    ))}
                                 </Grid>
-                            )) : null}
-                        </Grid>
+                            </SortableContext>
+                        </DndContext>
                     </Paper>
                 </Grid>
             </Grid>
