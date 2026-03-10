@@ -11,7 +11,7 @@ import {api, NewStoryDialog} from '../stories';
 import {EditBild} from '../bilder';
 import {EditText} from '../texte';
 import {ChangePasswordDialog} from "../users/ChangePasswordDialog";
-
+import {DndContext} from '@dnd-kit/core';
 export const Layout = ({children}) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -26,6 +26,7 @@ export const Layout = ({children}) => {
     const {data: stories} = api.endpoints.getStories.useQuery(undefined, {pollingInterval: 10000});
     const doOpenNewStory = () => dispatch(openNewStory());
     return (
+    <DndContext>
         <Box sx={{display: 'flex'}}>
             <TopBar
                 goHome={() => navigate('/')}
@@ -48,5 +49,6 @@ export const Layout = ({children}) => {
             <NewStoryDialog />
             <ChangePasswordDialog />
         </Box>
+    </DndContext>
     );
 };
