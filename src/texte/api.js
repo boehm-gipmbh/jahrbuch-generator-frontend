@@ -40,6 +40,28 @@ export const api = createApi({
         body: JSON.stringify(complete)
       }),
       invalidatesTags: ['Text'],
-    })
+    }),
+    reorderTexte: builder.mutation({
+      query: ({storyId, textIds}) => ({
+        url: `/reorder/${storyId}`,
+        method: 'PUT',
+        body: textIds,
+      }),
+      async onQueryStarted({textIds}, {dispatch, queryFulfilled}) {
+        const patch = dispatch(
+          api.util.updateQueryData('getTexte', undefined, (draft) => {
+            textIds.forEach((id, index) => {
+              const text = draft.find(t => t.id === id);
+              if (text) text.position = index;
+            });
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
+    }),
   })
 });

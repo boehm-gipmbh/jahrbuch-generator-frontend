@@ -33,8 +33,9 @@ import {DndContext, closestCenter, PointerSensor, useSensor, useSensors} from '@
 import {SortableContext, arrayMove, verticalListSortingStrategy} from '@dnd-kit/sortable';
 import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
 import {SortableBildCard} from '../bilder/SortableBildCard';
+import {SortableTextRow} from '../texte/SortableTextRow';
 
-const textSort = sortBy(byPriorityAsc, byIdAsc);
+const textSort = sortBy(byPositionAsc, byPriorityAsc, byIdAsc);
 const bildSort = sortBy(byPositionAsc, byPriorityDesc, byIdDesc);
 
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
@@ -53,11 +54,13 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [reorderBilder] = bilderApi.endpoints.reorderBilder.useMutation();
+    const [reorderTexte] = texteApi.endpoints.reorderTexte.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
     const sensors = useSensors(useSensor(PointerSensor, {activationConstraint: {distance: 8}}));
     const sortedBilder = dataBilder?.data ? Array.from(dataBilder.data).filter(filterBild).sort(bildSort) : [];
-    const handleDragEnd = (event) => {
+    const sortedTexte = data ? Array.from(data).filter(filterText).sort(textSort) : [];
+    const handleBilderDragEnd = (event) => {
         const {active, over} = event;
         if (!over || active.id === over.id) return;
         const oldIndex = sortedBilder.findIndex(b => b.id === active.id);
@@ -65,6 +68,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         const reordered = arrayMove(sortedBilder, oldIndex, newIndex);
         if (story) {
             reorderBilder({storyId: story.id, bildIds: reordered.map(b => b.id)});
+        }
+    };
+    const handleTexteDragEnd = (event) => {
+        const {active, over} = event;
+        if (!over || active.id === over.id) return;
+        const oldIndex = sortedTexte.findIndex(t => t.id === active.id);
+        const newIndex = sortedTexte.findIndex(t => t.id === over.id);
+        const reordered = arrayMove(sortedTexte, oldIndex, newIndex);
+        if (story) {
+            reorderTexte({storyId: story.id, textIds: reordered.map(t => t.id)});
         }
     };
     return <Layout>
@@ -81,64 +94,28 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         </Button>
                     </Box>
                     <Paper sx={{p: 2}}>
-                        <Table size='small'>
-                            <TableBody>
-                                {data ? Array.from(data).filter(filterText).sort(textSort).map(text =>
-                                    <TableRow key={text.id}>
-                                        <TableCell
-                                            sx={{
-                                                width: '2rem',
-                                                position: 'relative',
-                                                verticalAlign: 'top',
-                                                paddingTop: '8px'
-                                            }}
-                                        >
-                                            <Tooltip
-                                                title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
-                                                <Checkbox
-                                                    checked={Boolean(text.complete)}
-                                                    checkedIcon={<LockIcon color="success" fontSize='small'/>}
-                                                    icon={<LockOpenIcon color="action" fontSize='small'/>}
-                                                    onChange={() => setTextComplete({
-                                                        text,
-                                                        complete: !Boolean(text.complete)
-                                                    })}
-                                                    sx={{
-                                                        padding: '0',
-                                                        '&.Mui-checked': {
-                                                            color: theme => theme.palette.success.main
-                                                        }
-                                                    }}
-                                                />
-                                            </Tooltip>
-                                        </TableCell>
-                                        <TableCell
-                                            onClick={() => dispatch(setOpenText(text))}
-                                            sx={{cursor: 'pointer'}}
-                                        >
-                                            <Box sx={{display: 'flex', alignItems: 'center'}}>
-                                                <Box sx={{flex: 1}}>
-                                                    <Typography variant="subtitle1" component="span" color="primary"
-                                                                sx={{fontWeight: 'bold'}}>
-                                                        {text.title}
-                                                    </Typography> {!Boolean(story) &&
-                                                    <StoryChip text={text} size='small'/>}
-                                                </Box>
-                                                <Box>
-                                                    {Boolean(text.priority) && <Priority priority={text.priority}/>}
-                                                </Box>
-                                            </Box>
-                                            <Box sx={{flex: 1}}>
-                                              <pre className="wrap-pre">
-                                                {text.description} {!Boolean(story) &&
-                                                <StoryChip text={text} size='small'/>}
-                                                </pre>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : null}
-                            </TableBody>
-                        </Table>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            modifiers={[restrictToVerticalAxis]}
+                            onDragEnd={handleTexteDragEnd}
+                        >
+                            <SortableContext items={sortedTexte.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                                <Table size='small'>
+                                    <TableBody>
+                                        {sortedTexte.map(text =>
+                                            <SortableTextRow
+                                                key={text.id}
+                                                text={text}
+                                                story={story}
+                                                onClickText={(t) => dispatch(setOpenText(t))}
+                                                onSetComplete={(args) => setTextComplete(args)}
+                                            />
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </SortableContext>
+                        </DndContext>
                     </Paper>
                 </Grid>
 
@@ -157,7 +134,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             sensors={sensors}
                             collisionDetection={closestCenter}
                             modifiers={[restrictToVerticalAxis]}
-                            onDragEnd={handleDragEnd}
+                            onDragEnd={handleBilderDragEnd}
                         >
                             <SortableContext items={sortedBilder.map(b => b.id)} strategy={verticalListSortingStrategy}>
                                 <Grid container spacing={2}>
