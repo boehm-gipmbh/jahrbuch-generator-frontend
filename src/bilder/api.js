@@ -109,6 +109,12 @@ export const api = createApi({
                     }
                 },
             }),
+            generateThumbs: builder.mutation({
+                query: () => ({
+                    url: '/generate-thumbs',
+                    method: 'POST',
+                }),
+            }),
         })
     })
     // Exportiere die generierte Hook

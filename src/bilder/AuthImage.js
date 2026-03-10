@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 
-export default function AuthImage({src, alt, style, id}) {
+export default function AuthImage({src, alt, style, id, thumb}) {
     const [blobUrl, setBlobUrl] = useState(null);
     const blobRef = useRef(null);
 
@@ -8,7 +8,8 @@ export default function AuthImage({src, alt, style, id}) {
         if (!src) return;
         let cancelled = false;
         const jwt = sessionStorage.getItem('jwt');
-        fetch(src, {headers: {Authorization: `Bearer ${jwt}`}})
+        const url = thumb ? `${src}${src.includes('?') ? '&' : '?'}thumb=true` : src;
+        fetch(url, {headers: {Authorization: `Bearer ${jwt}`}})
             .then(r => r.blob())
             .then(blob => {
                 if (!cancelled) {
@@ -24,7 +25,7 @@ export default function AuthImage({src, alt, style, id}) {
                 blobRef.current = null;
             }
         };
-    }, [src]);
+    }, [src, thumb]);
 
     return <img id={id} src={blobUrl || ''} alt={alt} style={style}/>;
 }

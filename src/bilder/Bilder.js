@@ -111,6 +111,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                             id={`bild-${bild.id}`}
                                             src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersions[bild.id] ?? 0}`}
                                             alt={bild.description || ''}
+                                            thumb
                                             style={{
                                                 maxWidth: '100%', maxHeight: 200, objectFit: 'contain'
                                             }}

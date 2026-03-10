@@ -101,6 +101,7 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete}) => {
                         <AuthImage
                             src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                             alt={bild.description || ''}
+                            thumb
                             style={{
                                 maxWidth: '100%',
                                 maxHeight: 300,
