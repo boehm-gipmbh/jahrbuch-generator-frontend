@@ -93,7 +93,21 @@ export const api = createApi({
                     method: 'PUT',
                     body: bildIds,
                 }),
-                invalidatesTags: ['Bild'],
+                async onQueryStarted({bildIds}, {dispatch, queryFulfilled}) {
+                    const patch = dispatch(
+                        api.util.updateQueryData('getBilder', undefined, (draft) => {
+                            bildIds.forEach((id, index) => {
+                                const bild = draft.find(b => b.id === id);
+                                if (bild) bild.position = index;
+                            });
+                        })
+                    );
+                    try {
+                        await queryFulfilled;
+                    } catch {
+                        patch.undo();
+                    }
+                },
             }),
         })
     })
