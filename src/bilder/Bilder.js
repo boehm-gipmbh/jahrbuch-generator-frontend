@@ -16,7 +16,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import {api as bilderApi} from './api';
 import {Priority} from './Priority';
-import {Layout, newBild} from '../layout';
+import {Layout, newBild, setOpenBild} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
