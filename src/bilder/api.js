@@ -20,12 +20,6 @@ export const api = createApi({
                 providesTags: ['Bild'],
             }),
 
-            // Neuer Endpunkt für einzelnes Bild
-            getBildById: builder.query({
-                query: (bildId) => `bilder/${bildId}`,
-                providesTags: (result, error, bildId) =>
-                    result ? [{ type: 'Bild', id: bildId }] : []
-            }),
             triggerCapture: builder.mutation({
                 query: () => ({
                     url: 'https://elsie-preperusal-overpresumptuously.ngrok-free.dev/api/v1/bilder/capture',
@@ -118,5 +112,5 @@ export const api = createApi({
         })
     })
     // Exportiere die generierte Hook
-export const { useGetBilderQuery, useGetBildByIdQuery, /* andere Hooks */ } = api;
+export const { useGetBilderQuery } = api;
 ;
