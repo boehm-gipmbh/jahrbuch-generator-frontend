@@ -16,7 +16,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import {api as bilderApi} from './api';
 import {Priority} from './Priority';
-import {Layout, newBild, setOpenBild} from '../layout';
+import {Layout, newBild} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
@@ -41,7 +41,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
     // Pro-Bild-Versionszähler, um nach Rotation nur das betroffene Bild neu zu laden
     const [imageVersions, setImageVersions] = useState({});
-    const [getBildById] = bilderApi.endpoints.getBildById.useLazyQuery();
+
     return <Layout>
         <Box sx={{mt: 2}}>
             {capturesConfig?.enabled && (<Button
@@ -152,26 +152,11 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         e.stopPropagation();
                                                         rotateBild({bildId: bild.id, degrees: -90}).unwrap()
                                                             .then(() => {
-                                                                // Cache invalidieren
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-
-                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
                                                                 setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
-
-                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
-                                                                return getBildById(bild.id).unwrap()
-                                                                    .then(updatedBild => {
-                                                                        dispatch(setOpenBild(updatedBild));
-                                                                    })
-                                                                    .catch(error => {
-                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
-                                                                        // Trotz Fehler beim Laden fortfahren
-                                                                    });
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);
-                                                                // Optional: Benutzer über Fehler informieren
-                                                                // toast.error("Bild konnte nicht rotiert werden");
                                                             });
                                                     }}
                                                     size="small"
@@ -185,26 +170,11 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         e.stopPropagation();
                                                         rotateBild({bildId: bild.id, degrees: 90}).unwrap()
                                                             .then(() => {
-                                                                // Cache invalidieren
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-
-                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
                                                                 setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
-
-                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
-                                                                return getBildById(bild.id).unwrap()
-                                                                    .then(updatedBild => {
-                                                                        dispatch(setOpenBild(updatedBild));
-                                                                    })
-                                                                    .catch(error => {
-                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
-                                                                        // Trotz Fehler beim Laden fortfahren
-                                                                    });
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);
-                                                                // Optional: Benutzer über Fehler informieren
-                                                                //toast.error("Bild konnte nicht rotiert werden");
                                                             });
                                                     }}
                                                     size="small"
@@ -218,26 +188,11 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         e.stopPropagation();
                                                         rotateBild({bildId: bild.id, degrees: 180}).unwrap()
                                                             .then(() => {
-                                                                // Cache invalidieren
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-
-                                                                // Browser-Cache umgehen (sofortige visuelle Aktualisierung)
                                                                 setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
-
-                                                                // Optional: Redux-State aktualisieren, wenn getBildById funktioniert
-                                                                return getBildById(bild.id).unwrap()
-                                                                    .then(updatedBild => {
-                                                                        dispatch(setOpenBild(updatedBild));
-                                                                    })
-                                                                    .catch(error => {
-                                                                        console.error("Fehler beim Laden des aktualisierten Bildes:", error);
-                                                                        // Trotz Fehler beim Laden fortfahren
-                                                                    });
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);
-                                                                // Optional: Benutzer über Fehler informieren
-                                                                // toast.error("Bild konnte nicht rotiert werden");
                                                             });
                                                     }}
                                                     size="small"
