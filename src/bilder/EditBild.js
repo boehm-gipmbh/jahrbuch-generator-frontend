@@ -28,10 +28,10 @@ export const EditBild = () => {
     // Frische version aus RTK Query Cache, damit ?v= nach Rotation aktuell ist
     const {cachedVersion} = api.endpoints.getBilder.useQuery(undefined, {
         selectFromResult: ({data}) => ({
-            cachedVersion: openBild?.id ? data?.find(b => b.id === openBild.id)?.version : undefined
+            cachedVersion: openBild?.id ? data?.find(b => b.id === openBild.id)?.lastRotated : undefined
         })
     });
-    const imageVersion = cachedVersion ?? openBild?.version ?? 0;
+    const imageVersion = cachedVersion ?? openBild?.lastRotated ?? 0;
     const isNew = openBild && (openBild.id === undefined || openBild.id === null);
     const isComplete = openBild && Boolean(openBild.complete);
     const dialogOpen = Boolean(openBild);

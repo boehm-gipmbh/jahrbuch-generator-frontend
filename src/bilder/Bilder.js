@@ -107,7 +107,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                                         <AuthImage
                                             id={`bild-${bild.id}`}
-                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${bild.version ?? 0}`}
+                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${bild.lastRotated ?? 0}`}
                                             alt={bild.description || ''}
                                             thumb
                                             style={{
