@@ -25,6 +25,13 @@ import {StoryChip} from './StoryChip';
 export const EditBild = () => {
     const dispatch = useDispatch();
     const openBild = useSelector(state => state.layout.openBild);
+    // Frische version aus RTK Query Cache, damit ?v= nach Rotation aktuell ist
+    const {cachedVersion} = api.endpoints.getBilder.useQuery(undefined, {
+        selectFromResult: ({data}) => ({
+            cachedVersion: openBild?.id ? data?.find(b => b.id === openBild.id)?.version : undefined
+        })
+    });
+    const imageVersion = cachedVersion ?? openBild?.version ?? 0;
     const isNew = openBild && (openBild.id === undefined || openBild.id === null);
     const isComplete = openBild && Boolean(openBild.complete);
     const dialogOpen = Boolean(openBild);
@@ -153,7 +160,7 @@ export const EditBild = () => {
                         </Grid>
                         <Grid item xs={12} sx={{mt: 2, display: 'flex', justifyContent: 'center'}}>
                             <AuthImage
-                                src={openBild.pfad.startsWith('/') ? `/api/bilder/extern${openBild.pfad}` : openBild.pfad}
+                                src={`${openBild.pfad.startsWith('/') ? `/api/bilder/extern${openBild.pfad}` : openBild.pfad}?v=${imageVersion}`}
                                 alt={openBild.description || ''}
                                 style={{
                                     maxWidth: 600,

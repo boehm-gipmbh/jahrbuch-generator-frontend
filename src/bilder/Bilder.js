@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
@@ -39,8 +39,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
-    // Pro-Bild-Versionszähler, um nach Rotation nur das betroffene Bild neu zu laden
-    const [imageVersions, setImageVersions] = useState({});
 
     return <Layout>
         <Box sx={{mt: 2}}>
@@ -109,7 +107,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                                         <AuthImage
                                             id={`bild-${bild.id}`}
-                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${imageVersions[bild.id] ?? 0}`}
+                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${bild.version ?? 0}`}
                                             alt={bild.description || ''}
                                             thumb
                                             style={{
@@ -153,7 +151,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         rotateBild({bildId: bild.id, degrees: -90}).unwrap()
                                                             .then(() => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);
@@ -171,7 +168,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         rotateBild({bildId: bild.id, degrees: 90}).unwrap()
                                                             .then(() => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);
@@ -189,7 +185,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         rotateBild({bildId: bild.id, degrees: 180}).unwrap()
                                                             .then(() => {
                                                                 dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                                setImageVersions(prev => ({...prev, [bild.id]: (prev[bild.id] ?? 0) + 1}));
                                                             })
                                                             .catch(error => {
                                                                 console.error("Fehler bei der Bildrotation:", error);

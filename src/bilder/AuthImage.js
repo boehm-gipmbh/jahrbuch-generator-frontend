@@ -9,7 +9,7 @@ export default function AuthImage({src, alt, style, id, thumb}) {
         let cancelled = false;
         const jwt = sessionStorage.getItem('jwt');
         const url = thumb ? `${src}${src.includes('?') ? '&' : '?'}thumb=true` : src;
-        fetch(url, {headers: {Authorization: `Bearer ${jwt}`}})
+        fetch(url, {headers: {Authorization: `Bearer ${jwt}`}, cache: 'no-store'})
             .then(r => r.blob())
             .then(blob => {
                 if (!cancelled) {
