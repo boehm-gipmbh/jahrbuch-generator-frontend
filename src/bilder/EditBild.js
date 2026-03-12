@@ -14,6 +14,10 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
+import RotateRightIcon from '@mui/icons-material/RotateRight';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
+import {ButtonGroup, Tooltip} from '@mui/material';
 import {api} from './api';
 import {CompleteChip} from './CompleteChip';
 import {EditBildPriority} from './Priority';
@@ -36,6 +40,7 @@ export const EditBild = () => {
     const isComplete = openBild && Boolean(openBild.complete);
     const dialogOpen = Boolean(openBild);
     const close = () => dispatch(clearOpenBild());
+    const [rotateBild] = api.endpoints.rotateBild.useMutation();
     const [addBild] = api.endpoints.addBild.useMutation();
     const [updateBild] = api.endpoints.updateBild.useMutation();
     const save = event => {
@@ -158,7 +163,7 @@ export const EditBild = () => {
                                 />
                             </Grid>
                         </Grid>
-                        <Grid item xs={12} sx={{mt: 2, display: 'flex', justifyContent: 'center'}}>
+                        <Grid item xs={12} sx={{mt: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1}}>
                             <AuthImage
                                 src={`${openBild.pfad.startsWith('/') ? `/api/bilder/extern${openBild.pfad}` : openBild.pfad}?v=${imageVersion}`}
                                 alt={openBild.description || ''}
@@ -168,6 +173,23 @@ export const EditBild = () => {
                                     verticalAlign: 'middle'
                                 }}
                             />
+                            <ButtonGroup size="small">
+                                <Tooltip title="90° links drehen">
+                                    <IconButton onClick={() => rotateBild({bildId: openBild.id, degrees: -90}).catch(e => console.error(e))}>
+                                        <RotateLeftIcon/>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="90° rechts drehen">
+                                    <IconButton onClick={() => rotateBild({bildId: openBild.id, degrees: 90}).catch(e => console.error(e))}>
+                                        <RotateRightIcon/>
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="180° drehen">
+                                    <IconButton onClick={() => rotateBild({bildId: openBild.id, degrees: 180}).catch(e => console.error(e))}>
+                                        <SettingsBackupRestoreIcon/>
+                                    </IconButton>
+                                </Tooltip>
+                            </ButtonGroup>
                         </Grid>
                     </Grid>
 
