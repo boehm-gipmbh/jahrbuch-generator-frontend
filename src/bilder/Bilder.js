@@ -203,9 +203,13 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                         disabled={Boolean(bild.complete)}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            deleteBild(bild).catch(error => {
-                                                                console.error("Fehler beim Löschen:", error);
-                                                            });
+                                                            deleteBild(bild).unwrap()
+                                                                .then(() => {
+                                                                    dispatch(bilderApi.util.invalidateTags(['Bild']));
+                                                                })
+                                                                .catch(error => {
+                                                                    console.error("Fehler beim Löschen:", error);
+                                                                });
                                                         }}
                                                         size="small"
                                                     >

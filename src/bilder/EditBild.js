@@ -58,11 +58,12 @@ export const EditBild = () => {
     };
     const [deleteBild] = api.endpoints.deleteBild.useMutation();
     const doDeleteBild = () => {
-        deleteBild(openBild).then(({error}) => {
-            if (!Boolean(error)) {
+        deleteBild(openBild).unwrap()
+            .then(() => {
+                dispatch(api.util.invalidateTags(['Bild']));
                 close();
-            }
-        })
+            })
+            .catch(e => console.error(e));
     };
     const [invalid, setInvalid] = useState({});
     const onChange = event => {
@@ -94,14 +95,6 @@ export const EditBild = () => {
                             <Typography sx={{ml: 2, flex: 1}} variant='h6' component='div'>
                                 {isNew ? 'Neues Bild' : 'Ändere Bild'}
                             </Typography>
-                            <IconButton
-                                color='inherit'
-                                aria-label='delete'
-                                disabled={isComplete}
-                                onClick={doDeleteBild}
-                            >
-                                <DeleteIcon/>
-                            </IconButton>
                             <Button type='submit' color='inherit' disabled={isComplete}>
                                 save
                             </Button>
@@ -188,6 +181,13 @@ export const EditBild = () => {
                                     <IconButton onClick={() => rotateBild({bildId: openBild.id, degrees: 180}).catch(e => console.error(e))}>
                                         <SettingsBackupRestoreIcon/>
                                     </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Bild löschen">
+                                    <span>
+                                        <IconButton disabled={isComplete} onClick={doDeleteBild}>
+                                            <DeleteIcon/>
+                                        </IconButton>
+                                    </span>
                                 </Tooltip>
                             </ButtonGroup>
                         </Grid>

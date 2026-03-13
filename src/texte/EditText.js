@@ -4,11 +4,13 @@ import {
   AppBar,
   Box,
   Button,
+  ButtonGroup,
   Dialog,
   Grid,
   IconButton,
   TextField,
   Toolbar,
+  Tooltip,
   Typography
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -45,11 +47,12 @@ export const EditText = () => {
   };
   const [deleteText] = api.endpoints.deleteText.useMutation();
   const doDeleteText = () => {
-    deleteText(openText).then(({error}) => {
-      if (!Boolean(error)) {
+    deleteText(openText).unwrap()
+      .then(() => {
+        dispatch(api.util.invalidateTags(['Text']));
         close();
-      }
-    })
+      })
+      .catch(e => console.error(e));
   };
   const [invalid, setInvalid] = useState( {});
   const onChange = event => {
@@ -80,14 +83,6 @@ export const EditText = () => {
               <Typography sx={{ ml: 2, flex: 1 }} variant='h6' component='div'>
                 {isNew ? 'Neue Erinnerung' : 'Ändere Erinnerung'}
               </Typography>
-              <IconButton
-                color='inherit'
-                aria-label='delete'
-                disabled={isComplete}
-                onClick={doDeleteText}
-              >
-                <DeleteIcon />
-              </IconButton>
               <Button type='submit' color='inherit' disabled={isComplete}>
                 save
               </Button>
@@ -148,6 +143,17 @@ export const EditText = () => {
                 />
               </Grid>
             </Grid>
+          <Grid item xs={12} sx={{mt: 2, display: 'flex', justifyContent: 'center'}}>
+            <ButtonGroup size="small">
+              <Tooltip title="Erinnerung löschen">
+                <span>
+                  <IconButton disabled={isComplete} onClick={doDeleteText}>
+                    <DeleteIcon/>
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </ButtonGroup>
+          </Grid>
           </Grid>
         </Box>
       )}

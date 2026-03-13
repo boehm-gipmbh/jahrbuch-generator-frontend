@@ -17,6 +17,8 @@ import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import DeleteIcon from '@mui/icons-material/Delete';
+import {IconButton} from '@mui/material';
 import {api as texteApi} from './api';
 import {Priority} from './Priority';
 import {Layout, newText, setOpenText} from '../layout';
@@ -46,6 +48,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const dispatch = useDispatch();
   const {data} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
   const [setComplete] = texteApi.endpoints.setComplete.useMutation();
+  const [deleteText] = texteApi.endpoints.deleteText.useMutation();
   return <Layout>
     <Box sx={{mt: 2}}>
       <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
@@ -96,6 +99,24 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                       {text.description} {!Boolean(story) }
                     </pre>
                   </Box>
+                </TableCell>
+                <TableCell sx={{width: '2rem'}}>
+                  <Tooltip title="Erinnerung löschen">
+                    <span>
+                      <IconButton
+                        disabled={Boolean(text.complete)}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteText(text).unwrap()
+                            .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
+                            .catch(error => console.error("Fehler beim Löschen:", error));
+                        }}
+                      >
+                        <DeleteIcon fontSize="small"/>
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             )}
