@@ -1,13 +1,14 @@
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {TableRow, TableCell, Box, Typography, Tooltip, Checkbox} from '@mui/material';
+import {TableRow, TableCell, Box, Typography, Tooltip, Checkbox, IconButton} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {Priority} from './Priority';
 import {StoryChip} from './StoryChip';
 
-export const SortableTextRow = ({text, story, onClickText, onSetComplete}) => {
+export const SortableTextRow = ({text, story, onClickText, onSetComplete, onDeleteText}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: text.id
     });
@@ -39,7 +40,7 @@ export const SortableTextRow = ({text, story, onClickText, onSetComplete}) => {
             </TableCell>
             <TableCell
                 onClick={() => onClickText(text)}
-                sx={{cursor: 'pointer'}}
+                sx={{cursor: 'pointer', position: 'relative'}}
             >
                 <Box
                     sx={{display: 'flex', justifyContent: 'center', cursor: 'grab', mb: 0.5}}
@@ -68,6 +69,29 @@ export const SortableTextRow = ({text, story, onClickText, onSetComplete}) => {
                         {text.description} {!Boolean(story) &&
                         <StoryChip text={text} size='small'/>}
                     </pre>
+                </Box>
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: 4,
+                    backgroundColor: 'rgba(255,255,255,0.7)',
+                    borderRadius: 1,
+                    padding: '2px',
+                }}>
+                    <Tooltip title="Erinnerung löschen">
+                        <span>
+                            <IconButton
+                                disabled={Boolean(text.complete)}
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteText(text);
+                                }}
+                            >
+                                <DeleteIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </Box>
             </TableCell>
         </TableRow>

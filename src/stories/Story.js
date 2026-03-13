@@ -53,6 +53,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const dataBilder = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
+    const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
+    const [deleteText] = texteApi.endpoints.deleteText.useMutation();
     const [reorderBilder] = bilderApi.endpoints.reorderBilder.useMutation();
     const [reorderTexte] = texteApi.endpoints.reorderTexte.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
@@ -110,6 +112,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 story={story}
                                                 onClickText={(t) => dispatch(setOpenText(t))}
                                                 onSetComplete={(args) => setTextComplete(args)}
+                                                onDeleteText={(t) => deleteText(t).unwrap().then(() => dispatch(texteApi.util.invalidateTags(['Text']))).catch(e => console.error(e))}
                                             />
                                         )}
                                     </TableBody>
@@ -145,6 +148,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             story={story}
                                             onClickBild={(b) => dispatch(setOpenBild(b))}
                                             onSetComplete={(args) => setBildComplete(args)}
+                                            onDeleteBild={(b) => deleteBild(b).unwrap().then(() => dispatch(bilderApi.util.invalidateTags(['Bild']))).catch(e => console.error(e))}
                                         />
                                     ))}
                                 </Grid>

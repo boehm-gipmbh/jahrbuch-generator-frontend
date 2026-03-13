@@ -4,7 +4,6 @@ import {
   AppBar,
   Box,
   Button,
-  ButtonGroup,
   Dialog,
   Grid,
   IconButton,
@@ -132,7 +131,14 @@ export const EditText = () => {
                 <CompleteChip text={openText} />
                 <StoryChip text={openText} onDelete={() => dispatch(setOpenText({...openText, story: null}))} />
               </Grid>
-              <Grid item xs={6} display='flex' justifyContent='flex-end'>
+              <Grid item xs={6} display='flex' justifyContent='flex-end' alignItems='center'>
+                <Tooltip title="Erinnerung löschen">
+                  <span>
+                    <IconButton disabled={isComplete} onClick={doDeleteText} size="small">
+                      <DeleteIcon fontSize="small"/>
+                    </IconButton>
+                  </span>
+                </Tooltip>
                 <SelectStory
                   disabled={isComplete}
                   onSelectStory={story => dispatch(setOpenText({...openText, story}))}
@@ -143,17 +149,6 @@ export const EditText = () => {
                 />
               </Grid>
             </Grid>
-          <Grid item xs={12} sx={{mt: 2, display: 'flex', justifyContent: 'center'}}>
-            <ButtonGroup size="small">
-              <Tooltip title="Erinnerung löschen">
-                <span>
-                  <IconButton disabled={isComplete} onClick={doDeleteText}>
-                    <DeleteIcon/>
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </ButtonGroup>
-          </Grid>
           </Grid>
         </Box>
       )}

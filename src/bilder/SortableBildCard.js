@@ -1,14 +1,15 @@
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Grid, Paper, Box, Typography, Tooltip, Checkbox} from '@mui/material';
+import {Grid, Paper, Box, Typography, Tooltip, Checkbox, IconButton, ButtonGroup} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteIcon from '@mui/icons-material/Delete';
 import AuthImage from './AuthImage';
 import {Priority} from '../texte/Priority';
 import {StoryChip} from '../texte/StoryChip';
 
-export const SortableBildCard = ({bild, story, onClickBild, onSetComplete}) => {
+export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDeleteBild}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: bild.id
     });
@@ -116,6 +117,32 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete}) => {
                             {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
                         </pre>
                     </Box>
+                </Box>
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: 4,
+                    backgroundColor: 'rgba(255,255,255,0.7)',
+                    borderRadius: 1,
+                    padding: '2px',
+                    zIndex: 1
+                }}>
+                    <ButtonGroup size="small">
+                        <Tooltip title="Bild löschen">
+                            <span>
+                                <IconButton
+                                    disabled={Boolean(bild.complete)}
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteBild(bild);
+                                    }}
+                                >
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </ButtonGroup>
                 </Box>
             </Paper>
         </Grid>

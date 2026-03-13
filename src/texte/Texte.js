@@ -81,7 +81,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                   </TableCell>
                 <TableCell
                   onClick={() => dispatch(setOpenText(text))}
-                  sx={{cursor: 'pointer'}}
+                  sx={{cursor: 'pointer', position: 'relative'}}
                 >
                   <Box sx={{display: 'flex', alignItems: 'center'}}>
                     <Box sx={{flex: 1}}>
@@ -99,24 +99,31 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                       {text.description} {!Boolean(story) }
                     </pre>
                   </Box>
-                </TableCell>
-                <TableCell sx={{width: '2rem'}}>
-                  <Tooltip title="Erinnerung löschen">
-                    <span>
-                      <IconButton
-                        disabled={Boolean(text.complete)}
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteText(text).unwrap()
-                            .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
-                            .catch(error => console.error("Fehler beim Löschen:", error));
-                        }}
-                      >
-                        <DeleteIcon fontSize="small"/>
-                      </IconButton>
-                    </span>
-                  </Tooltip>
+                  <Box sx={{
+                    position: 'absolute',
+                    bottom: 4,
+                    right: 4,
+                    backgroundColor: 'rgba(255,255,255,0.7)',
+                    borderRadius: 1,
+                    padding: '2px',
+                  }}>
+                    <Tooltip title="Erinnerung löschen">
+                      <span>
+                        <IconButton
+                          disabled={Boolean(text.complete)}
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteText(text).unwrap()
+                              .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
+                              .catch(error => console.error("Fehler beim Löschen:", error));
+                          }}
+                        >
+                          <DeleteIcon fontSize="small"/>
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               </TableRow>
             )}
