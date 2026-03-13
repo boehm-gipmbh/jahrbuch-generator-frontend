@@ -7,6 +7,7 @@ import {Grid} from '@mui/material';
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
 import {
     Box, Button, Container, Checkbox, Paper, Typography
@@ -39,6 +40,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
+    const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
 
     return <Layout>
         <Box sx={{mt: 2}}>
@@ -194,6 +196,22 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                                 >
                                                     <SettingsBackupRestoreIcon fontSize="small"/>
                                                 </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Bild löschen">
+                                                <span>
+                                                    <IconButton
+                                                        disabled={Boolean(bild.complete)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteBild(bild).catch(error => {
+                                                                console.error("Fehler beim Löschen:", error);
+                                                            });
+                                                        }}
+                                                        size="small"
+                                                    >
+                                                        <DeleteIcon fontSize="small"/>
+                                                    </IconButton>
+                                                </span>
                                             </Tooltip>
                                         </ButtonGroup>
                                     </Box>
