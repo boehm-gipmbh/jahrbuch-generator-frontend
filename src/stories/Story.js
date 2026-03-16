@@ -345,22 +345,27 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
                     <DragOverlay>
                         {activeItem && (
-                            <Paper elevation={8} sx={{p: 2, opacity: 0.92, display: 'flex', flexDirection: 'column'}}>
+                            <Paper elevation={8} sx={{p: 2, opacity: 0.92, display: 'flex', flexDirection: 'column', position: 'relative'}}>
                                 <Typography variant="subtitle1" color="primary"
-                                            sx={{mb: 1, fontWeight: 'bold', textAlign: 'center'}}>
+                                            sx={{mb: 1, fontWeight: 'bold', textAlign: 'center', pt: 2}}>
                                     {activeItem.item.title || 'Kein Titel'}
                                 </Typography>
                                 {activeItem.type === 'bild' ? (
-                                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 1}}>
+                                    <Box sx={{mb: 2}}>
                                         <AuthImage
                                             src={activeItem.item.pfad?.startsWith('/') ? `/api/bilder/extern${activeItem.item.pfad}` : activeItem.item.pfad}
                                             alt={activeItem.item.description || ''}
                                             thumb
-                                            style={{maxWidth: '100%', maxHeight: 200, objectFit: 'contain'}}
+                                            style={{width: '100%', height: 'auto', display: 'block'}}
                                         />
+                                        {activeItem.item.description && (
+                                            <pre className="wrap-pre" style={{margin: '8px 0 0 0'}}>
+                                                {activeItem.item.description}
+                                            </pre>
+                                        )}
                                     </Box>
                                 ) : (
-                                    <pre className="wrap-pre" style={{margin: 0, fontSize: '0.85em'}}>
+                                    <pre className="wrap-pre" style={{margin: 0}}>
                                         {activeItem.item.description}
                                     </pre>
                                 )}

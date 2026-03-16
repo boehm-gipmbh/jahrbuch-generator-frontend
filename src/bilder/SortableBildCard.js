@@ -97,16 +97,12 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDel
                         {bild.title || 'Kein Titel'}
                     </Typography>
 
-                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
+                    <Box sx={{mb: 2}}>
                         <AuthImage
                             src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                             alt={bild.description || ''}
                             thumb
-                            style={{
-                                maxWidth: '100%',
-                                maxHeight: 300,
-                                objectFit: 'contain'
-                            }}
+                            style={{width: '100%', height: 'auto', display: 'block'}}
                         />
                     </Box>
 
