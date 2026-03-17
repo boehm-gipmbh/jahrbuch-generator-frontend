@@ -1,7 +1,7 @@
 // @ts-check
 /**
- * Global setup: login once and save the JWT to auth-state.json.
- * Tests inject the JWT via page.addInitScript() so React reads it from sessionStorage on startup.
+ * Global setup: fetch a fresh JWT directly from the API (no browser UI interaction)
+ * and save it to auth-state.json for all tests to inject via addInitScript().
  */
 const {test: setup, expect} = require('@playwright/test');
 const fs = require('fs');
@@ -9,20 +9,20 @@ const path = require('path');
 
 const USERNAME = process.env.TEST_USERNAME || 'test';
 const PASSWORD = process.env.TEST_PASSWORD || 'test';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-setup('authenticate', async ({page}) => {
-    await page.goto('/');
-    await page.waitForSelector('input[name="username"]', {timeout: 15_000});
-    await page.fill('input[name="username"]', USERNAME);
-    await page.fill('input[name="password"]', PASSWORD);
-    await page.locator('button:has-text("Sign In")').click();
+setup('authenticate', async () => {
+    const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: USERNAME, password: PASSWORD}),
+    });
 
-    // Wait for JWT to appear in sessionStorage (React sets it after successful login)
-    const jwt = await page.waitForFunction(() => sessionStorage.getItem('jwt'), {timeout: 15_000});
-    const jwtValue = await jwt.jsonValue();
-    expect(jwtValue).toBeTruthy();
+    expect(response.ok, `Login failed: ${response.status} ${response.statusText}`).toBeTruthy();
 
-    // Save JWT for all tests to use
+    const jwt = await response.text();
+    expect(jwt, 'JWT must not be empty').toBeTruthy();
+
     const authDir = path.join(__dirname, '..');
-    fs.writeFileSync(path.join(authDir, 'auth-state.json'), JSON.stringify({jwt: jwtValue}));
+    fs.writeFileSync(path.join(authDir, 'auth-state.json'), JSON.stringify({jwt}));
 });

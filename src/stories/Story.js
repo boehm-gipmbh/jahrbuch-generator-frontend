@@ -184,15 +184,25 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         pointerYRef.current = (activatorEvent?.clientY ?? 0) + (delta?.y ?? 0);
     };
 
-    const handleDragOver = ({active, over}) => {
+    const handleDragOver = ({active, over, collisions}) => {
         if (!over || is1col) return;
         const current = dragItemsRef.current || [...serverItems];
 
+        // Prefer a col-X hit from the full collisions list — it uses pointer-within
+        // boundaries and is more reliable than the primary over.id (which may be a
+        // card whose storyColumn in dragItems is stale after a previous over-event).
+        const colCollision = collisions?.find(c => c.id.toString().startsWith('col-'));
         let overColumn;
-        if (over.id.toString().startsWith('col-')) {
+        if (colCollision) {
+            overColumn = parseInt(colCollision.id.replace('col-', ''));
+        } else if (over.id.toString().startsWith('col-')) {
             overColumn = parseInt(over.id.replace('col-', ''));
         } else {
-            overColumn = current.find(i => i.id === over.id)?.item.storyColumn ?? 0;
+            // Last resort: use server column of the over-item (not dragItems, to avoid
+            // stale state cascading into the wrong column)
+            overColumn = serverItems.find(i => i.id === over.id)?.item.storyColumn
+                ?? current.find(i => i.id === over.id)?.item.storyColumn
+                ?? 0;
         }
 
         const activeIdx = current.findIndex(i => i.id === active.id);
@@ -245,23 +255,21 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
             if (overItemInTarget) {
                 const overIdx = colMap[overColumn].findIndex(i => i.id === over.id);
-                const originalColumn = serverItems.find(i => i.id === active.id)?.item.storyColumn ?? 0;
-                const isCrossColumn = originalColumn !== overColumn;
-                // Use dragged card center for both cases — more intuitive than pointer Y at grab-handle
-                // Cross-column: 0.5 threshold; same-column: 0.55 (slight bias toward "after" for drag-down)
-                const draggedCenter = (active.rect.current.translated?.top ?? 0) + (active.rect.current.translated?.height ?? 0) / 2;
-                const threshold = isCrossColumn ? 0.5 : 0.55;
-                const overThreshold = over.rect.top + over.rect.height * threshold;
-                const insertIdx = draggedCenter > overThreshold ? overIdx + 1 : overIdx;
+                // Use pointer Y at drop — more reliable than dragged card center when cards are tall
+                // (card center can be far from the pointer when dragging across long distances).
+                const overThreshold = over.rect.top + over.rect.height * 0.5;
+                const insertIdx = pointerYRef.current > overThreshold ? overIdx + 1 : overIdx;
                 colMap[overColumn] = [
                     ...colMap[overColumn].slice(0, insertIdx),
                     updated,
                     ...colMap[overColumn].slice(insertIdx)
                 ];
             } else if (colMap[overColumn].length > 0) {
-                // Pointer over column background (not on any item): top padding → position 0, bottom area → append
+                // Pointer over column background (not on any item): use column midpoint to
+                // decide prepend vs append — more robust than a fixed 50 px offset.
                 const pointerY = pointerYRef.current;
-                const insertAtStart = pointerY < over.rect.top + 50;
+                const colMidY = over.rect.top + over.rect.height / 2;
+                const insertAtStart = pointerY < colMidY;
                 colMap[overColumn] = insertAtStart
                     ? [updated, ...colMap[overColumn]]
                     : [...colMap[overColumn], updated];

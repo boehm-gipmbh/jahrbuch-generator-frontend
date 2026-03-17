@@ -74,13 +74,16 @@ async function getCardTitles(page) {
     return titles.map(t => t.trim());
 }
 
+// Only leaf card Papers — excludes the outer wrapper Paper (which contains nested MuiPaper-root elements).
 function cardOf(page, index) {
-    return page.locator('main .MuiPaper-root').nth(index);
+    return page.locator('main .MuiPaper-root')
+        .filter({hasNot: page.locator('.MuiPaper-root')})
+        .nth(index);
 }
 
+// The drag handle Box carries aria-roledescription="sortable" via dnd-kit's {...attributes}.
 function dragHandleOf(page, cardIndex) {
-    return cardOf(page, cardIndex)
-        .locator('svg[data-testid="DragIndicatorIcon"]').first();
+    return page.locator('main [aria-roledescription="sortable"]').nth(cardIndex);
 }
 
 async function dndKitDrag(page, dragHandle, dropTarget, position = 'after') {
@@ -95,13 +98,34 @@ async function dndKitDrag(page, dragHandle, dropTarget, position = 'after') {
         ? targetBox.y + targetBox.height * 0.2
         : targetBox.y + targetBox.height * 0.8;
 
+    // Hover so the handle is ready
     await page.mouse.move(startX, startY);
+    await page.waitForTimeout(50);
     await page.mouse.down();
-    await page.mouse.move(startX + 1, startY + 10, {steps: 3});
-    await page.mouse.move(targetX, targetY, {steps: 20});
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(50);
+
+    // Slow initial movement — gives the PointerSensor (distance: 8) time to activate
+    for (let i = 1; i <= 6; i++) {
+        await page.mouse.move(startX, startY + i * 3);
+        await page.waitForTimeout(30);
+    }
+    // Wait for drag-start animation to settle
+    await page.waitForTimeout(200);
+
+    // Move to target with real delays so collision detection fires at each step
+    const moveSteps = 30;
+    const fromX = startX;
+    const fromY = startY + 18; // where activation loop left off
+    for (let s = 1; s <= moveSteps; s++) {
+        const mx = fromX + (targetX - fromX) * s / moveSteps;
+        const my = fromY + (targetY - fromY) * s / moveSteps;
+        await page.mouse.move(mx, my);
+        await page.waitForTimeout(20);
+    }
+    await page.waitForTimeout(300);
     await page.mouse.up();
-    await page.waitForTimeout(800);
+    // Wait for optimistic state update + API round-trip
+    await page.waitForTimeout(2000);
 }
 
 async function switch3Col(page) {
@@ -147,7 +171,7 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
     });
 
     // Known bug: dragging first item to last position within a column has no effect.
-    test.fail('bug: same-col drag col1[0] → col1[2] (runter, Spalte 1)', async ({page}, testInfo) => {
+    test('bug: same-col drag col1[0] → col1[2] (runter, Spalte 1)', async ({page}, testInfo) => {
         // col1 vorher: 4027, 3160, 213
         // col1 nachher erwartet: 3160, 213, 4027
         await screenshotBefore(page, testInfo);
@@ -161,7 +185,7 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
     });
 
     // Known bug: dragging last item to first position crosses into wrong column.
-    test.fail('bug: same-col drag col1[2] → col1[0] (hoch, Spalte 1)', async ({page}, testInfo) => {
+    test('bug: same-col drag col1[2] → col1[0] (hoch, Spalte 1)', async ({page}, testInfo) => {
         // col1 nachher erwartet: 213, 4027, 3160
         await screenshotBefore(page, testInfo);
         await dndKitDrag(page, dragHandleOf(page, 4), cardOf(page, 2), 'before');
@@ -190,15 +214,15 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
     });
 
     // Known bug: cross-column drag does not reliably land in the correct column.
-    test.fail('bug: cross-col drag col0 → col2', async ({page}, testInfo) => {
+    test('bug: cross-col drag col0 → col2', async ({page}, testInfo) => {
         // Drag "Einer war…" (col0, idx 0) in col2 (nach idx 5)
         await screenshotBefore(page, testInfo);
         await dndKitDrag(page, dragHandleOf(page, 0), cardOf(page, 5), 'after');
         await screenshotAfter(page, testInfo);
 
         const titles = await getCardTitles(page);
-        // "Einer war…" sollte jetzt in col2 sein
-        expect(titles).not.toContain(INITIAL_TITLES[0]); // nicht mehr in col0
-        expect(titles.slice(4)).toContain(INITIAL_TITLES[0]); // in col2 (idx 4-6)
+        // "Einer war…" sollte aus col0 raus und in col2 (idx 4-6) sein
+        expect(titles[0]).not.toBe(INITIAL_TITLES[0]); // nicht mehr an col0[0]
+        expect(titles.slice(4)).toContain(INITIAL_TITLES[0]); // jetzt in col2
     });
 });
