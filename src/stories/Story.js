@@ -25,13 +25,18 @@ import {SortableTextCard} from '../texte/SortableTextCard';
 import AuthImage from '../bilder/AuthImage';
 
 const multiColCollision = (args) => {
+    const activeId = args.active.id;
     // Primary: pointer within a droppable (reliable for columns)
-    const pointerHits = pointerWithin(args);
-    if (pointerHits.length > 0) return pointerHits;
+    const pointerHits = pointerWithin(args).filter(h => h.id !== activeId);
+    if (pointerHits.length > 0) {
+        // Prefer item hits over column hits so position can be computed precisely
+        const itemHits = pointerHits.filter(h => !h.id.toString().startsWith('col-'));
+        return itemHits.length > 0 ? itemHits : pointerHits;
+    }
     // Fallback: dragged rect overlaps with a droppable (generous hit area for tall cards)
-    const rectHits = rectIntersection(args);
+    const rectHits = rectIntersection(args).filter(h => h.id !== activeId);
     if (rectHits.length > 0) return rectHits;
-    return closestCorners(args);
+    return closestCorners(args).filter(h => h.id !== activeId);
 };
 
 const LAYOUT_KEY = (storyId) => `story-layout-${storyId}`;
@@ -113,10 +118,12 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
     const [dragItems, setDragItems] = useState(null);
     const dragItemsRef = useRef(null);
+    const pendingReorderRef = useRef(false);
+    const pointerYRef = useRef(0);
 
-    // Clear optimistic state when server data arrives (only when not actively dragging)
+    // Clear optimistic state when server data arrives (only when not actively dragging and no reorder pending)
     useEffect(() => {
-        if (activeItem === null) updateDragItems(null);
+        if (activeItem === null && !pendingReorderRef.current) updateDragItems(null);
     }, [texteData, bilderData]); // eslint-disable-line react-hooks/exhaustive-deps
     const [activeItem, setActiveItem] = useState(null);
 
@@ -167,9 +174,14 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         />
     );
 
-    const handleDragStart = ({active}) => {
+    const handleDragStart = ({active, activatorEvent}) => {
+        pointerYRef.current = activatorEvent?.clientY ?? 0;
         updateDragItems([...serverItems]);
         setActiveItem(serverItems.find(i => i.id === active.id) || null);
+    };
+
+    const handleDragMove = ({activatorEvent, delta}) => {
+        pointerYRef.current = (activatorEvent?.clientY ?? 0) + (delta?.y ?? 0);
     };
 
     const handleDragOver = ({active, over}) => {
@@ -233,35 +245,60 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
             if (overItemInTarget) {
                 const overIdx = colMap[overColumn].findIndex(i => i.id === over.id);
-                // Insert before or after based on drag position vs over-item midpoint
-                const activeCenter = (active.rect.current.translated?.top ?? 0) +
-                    (active.rect.current.translated?.height ?? 0) / 2;
-                const overThreshold = over.rect.top + over.rect.height * 0.5;
-                const insertIdx = activeCenter > overThreshold ? overIdx + 1 : overIdx;
+                const originalColumn = serverItems.find(i => i.id === active.id)?.item.storyColumn ?? 0;
+                const isCrossColumn = originalColumn !== overColumn;
+                // Use dragged card center for both cases — more intuitive than pointer Y at grab-handle
+                // Cross-column: 0.5 threshold; same-column: 0.55 (slight bias toward "after" for drag-down)
+                const draggedCenter = (active.rect.current.translated?.top ?? 0) + (active.rect.current.translated?.height ?? 0) / 2;
+                const threshold = isCrossColumn ? 0.5 : 0.55;
+                const overThreshold = over.rect.top + over.rect.height * threshold;
+                const insertIdx = draggedCenter > overThreshold ? overIdx + 1 : overIdx;
                 colMap[overColumn] = [
                     ...colMap[overColumn].slice(0, insertIdx),
                     updated,
                     ...colMap[overColumn].slice(insertIdx)
                 ];
+            } else if (colMap[overColumn].length > 0) {
+                // Pointer over column background (not on any item): top padding → position 0, bottom area → append
+                const pointerY = pointerYRef.current;
+                const insertAtStart = pointerY < over.rect.top + 50;
+                colMap[overColumn] = insertAtStart
+                    ? [updated, ...colMap[overColumn]]
+                    : [...colMap[overColumn], updated];
             } else {
-                colMap[overColumn] = [...colMap[overColumn], updated];
+                colMap[overColumn] = [updated];
             }
 
             reordered = flattenColMap(colMap, columnCount);
         }
 
+        // Update storyPosition optimistically so colSorted/itemsSorted1col display the correct order
+        if (reordered) {
+            const posCounters = {};
+            reordered = reordered.map(item => {
+                const col = item.item.storyColumn ?? 0;
+                posCounters[col] = posCounters[col] ?? 0;
+                return {...item, item: {...item.item, storyPosition: posCounters[col]++}};
+            });
+        }
+
         if (story && reordered) {
             // Optimistic: keep reordered state visible immediately
+            pendingReorderRef.current = true;
             updateDragItems(reordered);
             reorderStory({
                 storyId: story.id,
                 items: reordered.map(i => ({type: i.type, id: i.item.id, column: i.item.storyColumn ?? 0}))
             }).unwrap()
                 .then(() => {
+                    pendingReorderRef.current = false;
                     dispatch(bilderApi.util.invalidateTags(['Bild']));
                     dispatch(texteApi.util.invalidateTags(['Text']));
                 })
-                .catch(() => updateDragItems(null));
+                .catch((err) => {
+                    pendingReorderRef.current = false;
+                    updateDragItems(null);
+                });
         } else {
             updateDragItems(null);
         }
@@ -303,6 +340,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     collisionDetection={is1col ? closestCenter : multiColCollision}
                     modifiers={is1col ? [restrictToVerticalAxis] : []}
                     onDragStart={handleDragStart}
+                    onDragMove={handleDragMove}
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}
