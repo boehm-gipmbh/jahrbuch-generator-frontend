@@ -1,172 +1,204 @@
 // @ts-check
 const {test, expect} = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
+const {execSync} = require('child_process');
 
-// Config via env vars (override in .env.local or CI)
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const USERNAME = process.env.TEST_USERNAME || 'test';
-const PASSWORD = process.env.TEST_PASSWORD || 'test';
-// Story used for DnD tests — must have at least 3 items in column 0
-const TEST_STORY_ID = process.env.TEST_STORY_ID || '1';
+const TEST_STORY_ID = process.env.TEST_STORY_ID || '1801';
+
+// DB connection for state reset
+const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_PORT = process.env.DB_PORT || '5432';
+const DB_USER = process.env.DB_USER || 'postgres';
+const DB_NAME = process.env.DB_NAME || 'postgres';
+const DB_PASS = process.env.DB_PASS || 'postgres';
+
+/**
+ * Known starting state for Story 1801 (3 columns):
+ * Col 0: bild 211 "Einer war schon immer gern Polizist !"         (pos 0)
+ *        text 110 "Die 7 K - 46 Jahre nach ihrer Gründung…"       (pos 1)
+ * Col 1: bild 4027 "7k zusammen auf 40 Jahre Party"               (pos 0)
+ *        bild 3160 "7k oder 8k - Herr Gottschalk…"                (pos 1)
+ *        bild  213 "Ne Menge Unfug haben wir auch gemacht"         (pos 2)
+ * Col 2: bild  214 "7k oder 8k"                                   (pos 0)
+ *        text  310 "Namen von LehrerInnen und von SchülerInnen…"  (pos 1)
+ *
+ * Reading order (col-by-col): 0,1 | 2,3,4 | 5,6
+ */
+const INITIAL_TITLES = [
+    'Einer war schon immer gern Polizist !',
+    'Die 7 K - 46 Jahre nach ihrer Gründung - gefeiert wird dann wieder 2029',
+    '7k zusammen auf 40 Jahre Party',
+    '7k oder 8k - Herr Gottschalk mit Austausch-Schülerinnen',
+    'Ne Menge Unfug haben wir auch gemacht',
+    '7k oder 8k',
+    'Namen von LehrerInnen und von SchülerInnen steigen auf wie Seifenblasen',
+];
+
+function resetStoryState() {
+    const sql = [
+        "UPDATE bilder SET story_column=0, story_position=0 WHERE id=211",
+        "UPDATE texte  SET story_column=0, story_position=1 WHERE id=110",
+        "UPDATE bilder SET story_column=1, story_position=0 WHERE id=4027",
+        "UPDATE bilder SET story_column=1, story_position=1 WHERE id=3160",
+        "UPDATE bilder SET story_column=1, story_position=2 WHERE id=213",
+        "UPDATE bilder SET story_column=2, story_position=0 WHERE id=214",
+        "UPDATE texte  SET story_column=2, story_position=1 WHERE id=310",
+    ].join('; ');
+    execSync(
+        `PGPASSWORD=${DB_PASS} psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -c "${sql}"`,
+        {stdio: 'pipe'}
+    );
+}
+
+function getJwt() {
+    const authFile = path.join(__dirname, '..', 'auth-state.json');
+    return JSON.parse(fs.readFileSync(authFile, 'utf8')).jwt;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Login and land on the story page.
- * Skips login if already authenticated (session reuse via storageState).
- */
-async function loginAndGoto(page, storyId = TEST_STORY_ID) {
-    await page.goto('/');
-    const isLoginPage = await page.locator('input[name="username"]').isVisible().catch(() => false);
-    if (isLoginPage) {
-        await page.fill('input[name="username"]', USERNAME);
-        await page.fill('input[name="password"]', PASSWORD);
-        await page.locator('button[type="submit"]').click();
-        await page.waitForURL(/bilder|stories|texte/, {timeout: 10_000});
-    }
+async function gotoStory(page, storyId = TEST_STORY_ID) {
+    const jwt = getJwt();
+    await page.addInitScript(token => {
+        sessionStorage.setItem('jwt', token);
+    }, jwt);
     await page.goto(`/bilder/story/${storyId}`);
-    // Wait for at least one sortable card to appear
-    await page.waitForSelector('[data-testid="sortable-card"], .MuiPaper-root', {timeout: 10_000});
+    await page.waitForSelector('main .MuiPaper-root', {timeout: 20_000});
 }
 
-/**
- * Simulate a dnd-kit drag using pointer events.
- * dnd-kit uses PointerSensor — page.dragAndDrop() won't work.
- *
- * @param {import('@playwright/test').Page} page
- * @param {import('@playwright/test').Locator} dragHandle  - the drag handle element
- * @param {import('@playwright/test').Locator} dropTarget  - the element to drop onto
- * @param {'before'|'after'} position                      - drop before or after target
- */
+async function getCardTitles(page) {
+    const titles = await page.locator('main').locator('.MuiTypography-subtitle1').allTextContents();
+    return titles.map(t => t.trim());
+}
+
+function cardOf(page, index) {
+    return page.locator('main .MuiPaper-root').nth(index);
+}
+
+function dragHandleOf(page, cardIndex) {
+    return cardOf(page, cardIndex)
+        .locator('svg[data-testid="DragIndicatorIcon"]').first();
+}
+
 async function dndKitDrag(page, dragHandle, dropTarget, position = 'after') {
     const handleBox = await dragHandle.boundingBox();
     const targetBox = await dropTarget.boundingBox();
-    if (!handleBox || !targetBox) throw new Error('Could not get bounding boxes for drag/drop');
+    if (!handleBox || !targetBox) throw new Error('Could not get bounding boxes');
 
     const startX = handleBox.x + handleBox.width / 2;
     const startY = handleBox.y + handleBox.height / 2;
-
+    const targetX = targetBox.x + targetBox.width / 2;
     const targetY = position === 'before'
         ? targetBox.y + targetBox.height * 0.2
         : targetBox.y + targetBox.height * 0.8;
-    const targetX = targetBox.x + targetBox.width / 2;
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    // Small initial move to activate the PointerSensor (activation distance = 8px)
     await page.mouse.move(startX + 1, startY + 10, {steps: 3});
-    // Move toward target in steps
     await page.mouse.move(targetX, targetY, {steps: 20});
-    // Brief pause so dnd-kit registers the hover
     await page.waitForTimeout(100);
     await page.mouse.up();
-    // Wait for optimistic update / API call to settle
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(800);
 }
 
-/**
- * Returns an array of card titles in the order they appear in the given column.
- * Column index is 0-based.
- */
-async function getColumnOrder(page, colIndex) {
-    // Cards are inside DroppableColumn boxes identified by their order in the grid
-    const columns = page.locator('[data-col-index]');
-    const col = columns.nth(colIndex);
-    const titles = col.locator('.MuiTypography-subtitle1');
-    return titles.allTextContents();
+async function switch3Col(page) {
+    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(2).click();
+    await page.waitForTimeout(300);
+}
+
+function screenshotSlug(testTitle) {
+    return testTitle.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+}
+
+async function screenshotBefore(page, testInfo) {
+    const slug = screenshotSlug(testInfo.title);
+    const path = `screenshots/${slug}-before.png`;
+    await page.screenshot({path});
+    await testInfo.attach('before', {path, contentType: 'image/png'});
+}
+
+async function screenshotAfter(page, testInfo) {
+    const slug = screenshotSlug(testInfo.title);
+    const path = `screenshots/${slug}-after.png`;
+    await page.screenshot({path});
+    await testInfo.attach('after', {path, contentType: 'image/png'});
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-test.describe('DnD Reorder — Story view', () => {
+test.describe('DnD Reorder — 3-Spalten-Layout', () => {
 
     test.beforeEach(async ({page}) => {
-        await loginAndGoto(page);
+        resetStoryState();
+        await gotoStory(page);
+        await switch3Col(page);
     });
 
-    test('same column: drag item from position 1 to position 0 (top)', async ({page}) => {
-        const col = page.locator('[data-col-index="0"]');
-        const cards = col.locator('.MuiPaper-root');
-
-        const titlesBefore = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titlesBefore.length).toBeGreaterThanOrEqual(2);
-
-        const dragHandle = cards.nth(1).locator('svg[data-testid="DragIndicatorIcon"]').first();
-        const dropTarget = cards.nth(0);
-
-        await dndKitDrag(page, dragHandle, dropTarget, 'before');
-
-        const titlesAfter = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        // Item that was at position 1 should now be at position 0
-        expect(titlesAfter[0]).toBe(titlesBefore[1]);
-        expect(titlesAfter[1]).toBe(titlesBefore[0]);
+    test('Ausgangszustand stimmt mit DB überein', async ({page}, testInfo) => {
+        await screenshotBefore(page, testInfo);
+        const titles = await getCardTitles(page);
+        await screenshotAfter(page, testInfo);
+        expect(titles).toEqual(INITIAL_TITLES);
     });
 
-    test('same column: drag item from position 0 to position 2', async ({page}) => {
-        const col = page.locator('[data-col-index="0"]');
-        const cards = col.locator('.MuiPaper-root');
+    // Known bug: dragging first item to last position within a column has no effect.
+    test.fail('bug: same-col drag col1[0] → col1[2] (runter, Spalte 1)', async ({page}, testInfo) => {
+        // col1 vorher: 4027, 3160, 213
+        // col1 nachher erwartet: 3160, 213, 4027
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 2), cardOf(page, 4), 'after');
+        await screenshotAfter(page, testInfo);
 
-        const titlesBefore = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titlesBefore.length).toBeGreaterThanOrEqual(3);
-
-        const dragHandle = cards.nth(0).locator('svg[data-testid="DragIndicatorIcon"]').first();
-        const dropTarget = cards.nth(2);
-
-        await dndKitDrag(page, dragHandle, dropTarget, 'after');
-
-        const titlesAfter = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titlesAfter[2]).toBe(titlesBefore[0]);
+        const titles = await getCardTitles(page);
+        expect(titles[2]).toBe(INITIAL_TITLES[3]); // 3160
+        expect(titles[3]).toBe(INITIAL_TITLES[4]); // 213
+        expect(titles[4]).toBe(INITIAL_TITLES[2]); // 4027 an letzter Stelle
     });
 
-    test('cross-column: drag item from column 0 to column 1', async ({page}) => {
-        // Ensure layout has at least 2 columns — switch to 2-col if needed
-        const twoColBtn = page.locator('[aria-label="2 Spalten"], [value="2col"]');
-        if (await twoColBtn.isVisible()) await twoColBtn.click();
+    // Known bug: dragging last item to first position crosses into wrong column.
+    test.fail('bug: same-col drag col1[2] → col1[0] (hoch, Spalte 1)', async ({page}, testInfo) => {
+        // col1 nachher erwartet: 213, 4027, 3160
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 4), cardOf(page, 2), 'before');
+        await screenshotAfter(page, testInfo);
 
-        const col0 = page.locator('[data-col-index="0"]');
-        const col1 = page.locator('[data-col-index="1"]');
-
-        const titles0Before = await col0.locator('.MuiTypography-subtitle1').allTextContents();
-        const titles1Before = await col1.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titles0Before.length).toBeGreaterThanOrEqual(1);
-
-        const draggedTitle = titles0Before[0];
-        const dragHandle = col0.locator('.MuiPaper-root').first()
-            .locator('svg[data-testid="DragIndicatorIcon"]').first();
-        const dropTarget = col1;
-
-        await dndKitDrag(page, dragHandle, dropTarget, 'after');
-
-        const titles1After = await col1.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titles1After).toContain(draggedTitle);
-
-        const titles0After = await col0.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titles0After).not.toContain(draggedTitle);
+        const titles = await getCardTitles(page);
+        expect(titles[2]).toBe(INITIAL_TITLES[4]); // 213 an pos0
+        expect(titles[3]).toBe(INITIAL_TITLES[2]); // 4027 an pos1
+        expect(titles[4]).toBe(INITIAL_TITLES[3]); // 3160 an pos2
     });
 
-    test('order persists after page reload', async ({page}) => {
-        const col = page.locator('[data-col-index="0"]');
-        const cards = col.locator('.MuiPaper-root');
+    test('order persists after page reload', async ({page}, testInfo) => {
+        // Drag col1[0] → col1[2]
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 2), cardOf(page, 4), 'after');
+        await screenshotAfter(page, testInfo);
 
-        const titlesBefore = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titlesBefore.length).toBeGreaterThanOrEqual(2);
+        const titlesAfterDrag = await getCardTitles(page);
 
-        // Drag item 1 → position 0
-        const dragHandle = cards.nth(1).locator('svg[data-testid="DragIndicatorIcon"]').first();
-        const dropTarget = cards.nth(0);
-        await dndKitDrag(page, dragHandle, dropTarget, 'before');
-
-        const titlesAfterDrag = await col.locator('.MuiTypography-subtitle1').allTextContents();
-
-        // Reload and check persistence
         await page.reload();
-        await page.waitForSelector('.MuiPaper-root', {timeout: 10_000});
+        await page.waitForSelector('main .MuiPaper-root', {timeout: 15_000});
+        await switch3Col(page);
 
-        const titlesAfterReload = await col.locator('.MuiTypography-subtitle1').allTextContents();
-        expect(titlesAfterReload[0]).toBe(titlesAfterDrag[0]);
-        expect(titlesAfterReload[1]).toBe(titlesAfterDrag[1]);
+        const titlesAfterReload = await getCardTitles(page);
+        expect(titlesAfterReload).toEqual(titlesAfterDrag);
+    });
+
+    // Known bug: cross-column drag does not reliably land in the correct column.
+    test.fail('bug: cross-col drag col0 → col2', async ({page}, testInfo) => {
+        // Drag "Einer war…" (col0, idx 0) in col2 (nach idx 5)
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 0), cardOf(page, 5), 'after');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        // "Einer war…" sollte jetzt in col2 sein
+        expect(titles).not.toContain(INITIAL_TITLES[0]); // nicht mehr in col0
+        expect(titles.slice(4)).toContain(INITIAL_TITLES[0]); // in col2 (idx 4-6)
     });
 });

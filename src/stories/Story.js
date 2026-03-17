@@ -63,11 +63,9 @@ const flattenColMap = (colMap, columnCount) => {
 
 const DroppableColumn = ({id, children}) => {
     const {setNodeRef, isOver} = useDroppable({id});
-    const colIndex = id.replace('col-', '');
     return (
         <Box
             ref={setNodeRef}
-            data-col-index={colIndex}
             sx={{
                 height: '100%',
                 display: 'flex',

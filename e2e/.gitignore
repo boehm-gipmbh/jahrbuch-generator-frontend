@@ -2,3 +2,6 @@ node_modules/
 playwright-report/
 test-results/
 .env.local
+auth-state.json
+auth.json
+screenshots/
