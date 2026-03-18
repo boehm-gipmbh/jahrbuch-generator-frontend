@@ -128,6 +128,11 @@ async function dndKitDrag(page, dragHandle, dropTarget, position = 'after') {
     await page.waitForTimeout(2000);
 }
 
+async function switch1Col(page) {
+    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(0).click();
+    await page.waitForTimeout(300);
+}
+
 async function switch3Col(page) {
     await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(2).click();
     await page.waitForTimeout(300);
@@ -213,6 +218,79 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
         expect(titlesAfterReload).toEqual(titlesAfterDrag);
     });
 
+    test('adjacent same-col drag col1[0] → col1[1] (einen Platz runter)', async ({page}, testInfo) => {
+        // col1 vorher: 4027, 3160, 213
+        // col1 nachher erwartet: 3160, 4027, 213
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 2), cardOf(page, 3), 'after');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[2]).toBe(INITIAL_TITLES[3]); // 3160 an pos0
+        expect(titles[3]).toBe(INITIAL_TITLES[2]); // 4027 an pos1
+        expect(titles[4]).toBe(INITIAL_TITLES[4]); // 213 unverändert
+    });
+
+    test('cross-col drag col0 → col1 Mitte (zwischen zwei Items)', async ({page}, testInfo) => {
+        // Drag bild-211 (col0[0]) in col1 zwischen bild-4027 und bild-3160.
+        // Während des Drags verschiebt handleDragOver bild-211 visuell in col1 (storyPosition=0),
+        // was die anderen col1-Karten nach unten schiebt. Die Zielposition (cardOf(page,3) = bild-3160)
+        // ist daher pre-drag berechnet und kann nach dem Verschieben auf bild-4027 zeigen.
+        // Wir prüfen daher nur: bild-211 hat col0 verlassen und ist jetzt in col1 (Pos 1-4).
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 0), cardOf(page, 3), 'before');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[1]);              // text-110 ist col0[0]
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[0]); // bild-211 irgendwo in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[2]); // bild-4027 noch in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[3]); // bild-3160 noch in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[4]); // bild-213 noch in col1
+    });
+
+    // --- Text-Karten-Tests ---
+
+    test('text same-col drag col0[1] → col0[0] (text-110 nach oben)', async ({page}, testInfo) => {
+        // col0 vorher: bild-211 (pos0), text-110 (pos1)
+        // col0 nachher erwartet: text-110 (pos0), bild-211 (pos1)
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 1), cardOf(page, 0), 'before');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[1]); // text-110 an col0[0]
+        expect(titles[1]).toBe(INITIAL_TITLES[0]); // bild-211 an col0[1]
+    });
+
+    test('text same-col drag col2[1] → col2[0] (text-310 nach oben)', async ({page}, testInfo) => {
+        // col2 vorher: bild-214 (pos0), text-310 (pos1)
+        // col2 nachher erwartet: text-310 (pos0), bild-214 (pos1)
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 6), cardOf(page, 5), 'before');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[5]).toBe(INITIAL_TITLES[6]); // text-310 an col2[0]
+        expect(titles[6]).toBe(INITIAL_TITLES[5]); // bild-214 an col2[1]
+    });
+
+    test('cross-col text drag col0[1] → col1 (text-110 von col0 nach col1)', async ({page}, testInfo) => {
+        // Drag text-110 (col0, idx 1) in col1 vor bild-4027
+        // col0 nachher: nur bild-211
+        // col1 nachher: text-110 irgendwo drin
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 1), cardOf(page, 2), 'before');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[0]);               // bild-211 bleibt in col0
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[1]); // text-110 irgendwo in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[2]); // bild-4027 noch in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[3]); // bild-3160 noch in col1
+        expect(titles.slice(1, 5)).toContain(INITIAL_TITLES[4]); // bild-213 noch in col1
+    });
+
     // Known bug: cross-column drag does not reliably land in the correct column.
     test('bug: cross-col drag col0 → col2', async ({page}, testInfo) => {
         // Drag "Einer war…" (col0, idx 0) in col2 (nach idx 5)
@@ -224,5 +302,74 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
         // "Einer war…" sollte aus col0 raus und in col2 (idx 4-6) sein
         expect(titles[0]).not.toBe(INITIAL_TITLES[0]); // nicht mehr an col0[0]
         expect(titles.slice(4)).toContain(INITIAL_TITLES[0]); // jetzt in col2
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 1-Spalten-Layout Tests
+// In 1col wird restrictToVerticalAxis verwendet und arrayMove auf der flachen
+// Liste. storyColumn bleibt unverändert; nur storyPosition wird neu vergeben.
+// Flat-Reihenfolge = INITIAL_TITLES (sortiert nach storyColumn, dann storyPosition).
+// ---------------------------------------------------------------------------
+
+test.describe('DnD Reorder — 1-Spalten-Layout', () => {
+
+    test.beforeEach(async ({page}) => {
+        resetStoryState();
+        await gotoStory(page);
+        await switch1Col(page);
+    });
+
+    test('Ausgangszustand 1col stimmt mit DB überein', async ({page}, testInfo) => {
+        await screenshotBefore(page, testInfo);
+        const titles = await getCardTitles(page);
+        await screenshotAfter(page, testInfo);
+        expect(titles).toEqual(INITIAL_TITLES);
+    });
+
+    test('1col bild adjacent drag runter: col0[0] → col0[1] (bild-211 nach text-110)', async ({page}, testInfo) => {
+        // bild-211 (idx 0) nach unten, hinter text-110 (idx 1)
+        // Erwartet: text-110, bild-211, bild-4027, bild-3160, bild-213, bild-214, text-310
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 0), cardOf(page, 1), 'after');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[1]); // text-110 an pos0
+        expect(titles[1]).toBe(INITIAL_TITLES[0]); // bild-211 an pos1
+        // Rest unverändert
+        expect(titles.slice(2)).toEqual(INITIAL_TITLES.slice(2));
+    });
+
+    test('1col text adjacent drag hoch: col0[1] → col0[0] (text-110 vor bild-211)', async ({page}, testInfo) => {
+        // text-110 (idx 1, col0) nach oben, vor bild-211 (idx 0, col0) — beide sichtbar
+        // text-310 (idx 6) wäre off-screen in 1col (5 volle Fotokarten ≈ 5×850px), daher text-110 getestet
+        // Erwartet: text-110, bild-211, bild-4027, …
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 1), cardOf(page, 0), 'before');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[1]); // text-110 an idx 0
+        expect(titles[1]).toBe(INITIAL_TITLES[0]); // bild-211 an idx 1
+        // Rest unverändert
+        expect(titles.slice(2)).toEqual(INITIAL_TITLES.slice(2));
+    });
+
+    test('1col cross-col visual drag: bild-211 (col0) → nach text-110 (col0[1]) — col bleibt unverändert', async ({page}, testInfo) => {
+        // In 1col behält das gezogene Item sein storyColumn; es ändert sich nur die flache Reihenfolge.
+        // bild-211 (col0) wird nach unten gezogen — wegen der großen Karte kommt es
+        // mindestens hinter text-110. Exakte Zielposition ist viewport-abhängig.
+        // HINWEIS: Diese Assertion prüft nur, dass bild-211 nicht mehr an idx 0 ist und
+        // alle Items vorhanden sind.
+        await screenshotBefore(page, testInfo);
+        await dndKitDrag(page, dragHandleOf(page, 0), cardOf(page, 1), 'after');
+        await screenshotAfter(page, testInfo);
+
+        const titles = await getCardTitles(page);
+        expect(titles[0]).toBe(INITIAL_TITLES[1]);       // text-110 ist jetzt vorne
+        expect(titles).toContain(INITIAL_TITLES[0]);     // bild-211 ist noch irgendwo vorhanden
+        expect(titles).toContain(INITIAL_TITLES[2]);     // bild-4027 noch vorhanden
+        expect(titles.length).toBe(INITIAL_TITLES.length); // alle 7 Items
     });
 });
