@@ -1,6 +1,6 @@
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Grid, Paper, Box, Typography, Tooltip, Checkbox, IconButton, ButtonGroup} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, ButtonGroup} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -11,7 +11,7 @@ import {StoryChip} from '../texte/StoryChip';
 
 export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDeleteBild}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
-        id: bild.id
+        id: `bild-${bild.id}`
     });
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -20,12 +20,11 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDel
     };
 
     return (
-        <Grid item xs={12} ref={setNodeRef} style={style}>
+        <Box ref={setNodeRef} style={style}>
             <Paper elevation={isDragging ? 4 : 1} sx={{
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                height: '100%',
                 position: 'relative'
             }}>
                 {/* Drag Handle */}
@@ -98,16 +97,12 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDel
                         {bild.title || 'Kein Titel'}
                     </Typography>
 
-                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
+                    <Box sx={{mb: 2}}>
                         <AuthImage
                             src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                             alt={bild.description || ''}
                             thumb
-                            style={{
-                                maxWidth: '100%',
-                                maxHeight: 300,
-                                objectFit: 'contain'
-                            }}
+                            style={{width: '100%', height: 'auto', display: 'block'}}
                         />
                     </Box>
 
@@ -145,6 +140,6 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDel
                     </ButtonGroup>
                 </Box>
             </Paper>
-        </Grid>
+        </Box>
     );
 };

@@ -25,6 +25,13 @@ export const api = createApi({
         body: story
       }),
       invalidatesTags: ['Story'],
-    })
+    }),
+    reorderStory: builder.mutation({
+      query: ({storyId, items}) => ({
+        url: `/${storyId}/reorder`,
+        method: 'PUT',
+        body: items
+      }),
+    }),
   })
 });
