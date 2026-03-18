@@ -120,7 +120,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
 
-    const sensors = useSensors(useSensor(PointerSensor, {activationConstraint: {distance: 8}}));
+    const sensors = useSensors(useSensor(PointerSensor));
 
     const [dragItems, setDragItems] = useState(null);
     const dragItemsRef = useRef(null);

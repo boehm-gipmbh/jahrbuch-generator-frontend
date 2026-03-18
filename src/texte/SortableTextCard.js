@@ -32,11 +32,14 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
                     {...listeners}
                     sx={{
                         position: 'absolute',
-                        top: 4,
+                        top: 0,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         cursor: 'grab',
                         zIndex: 2,
+                        p: 1,
+                        touchAction: 'none',
+                        userSelect: 'none',
                         color: 'action.disabled',
                         '&:hover': {color: 'action.active'}
                     }}
