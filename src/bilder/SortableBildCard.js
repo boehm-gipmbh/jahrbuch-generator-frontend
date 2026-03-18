@@ -1,15 +1,15 @@
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, ButtonGroup} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import DeleteIcon from '@mui/icons-material/Delete';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AuthImage from './AuthImage';
 import {Priority} from '../texte/Priority';
 import {StoryChip} from '../texte/StoryChip';
 
-export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDeleteBild}) => {
+export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -122,22 +122,20 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onDel
                     padding: '2px',
                     zIndex: 1
                 }}>
-                    <ButtonGroup size="small">
-                        <Tooltip title="Bild löschen">
-                            <span>
-                                <IconButton
-                                    disabled={Boolean(bild.complete)}
-                                    size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDeleteBild(bild);
-                                    }}
-                                >
-                                    <DeleteIcon fontSize="small"/>
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </ButtonGroup>
+                    <Tooltip title="Aus Story entfernen">
+                        <span>
+                            <IconButton
+                                disabled={Boolean(bild.complete)}
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemoveFromStory(bild);
+                                }}
+                            >
+                                <LinkOffIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
                 </Box>
             </Paper>
         </Box>

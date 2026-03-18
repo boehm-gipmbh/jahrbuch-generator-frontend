@@ -4,11 +4,11 @@ import {Paper, Box, Typography, Tooltip, Checkbox, IconButton} from '@mui/materi
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import DeleteIcon from '@mui/icons-material/Delete';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 import {Priority} from './Priority';
 import {StoryChip} from './StoryChip';
 
-export const SortableTextCard = ({text, story, onClickText, onSetComplete, onDeleteText}) => {
+export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `text-${text.id}`
     });
@@ -80,7 +80,7 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onDel
                     <pre className="wrap-pre">{text.description}</pre>
                 </Box>
 
-                {/* Delete unten rechts */}
+                {/* Remove from story unten rechts */}
                 <Box sx={{
                     position: 'absolute',
                     bottom: 4,
@@ -90,17 +90,17 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onDel
                     padding: '2px',
                     zIndex: 1
                 }}>
-                    <Tooltip title="Erinnerung löschen">
+                    <Tooltip title="Aus Story entfernen">
                         <span>
                             <IconButton
                                 disabled={Boolean(text.complete)}
                                 size="small"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onDeleteText(text);
+                                    onRemoveFromStory(text);
                                 }}
                             >
-                                <DeleteIcon fontSize="small"/>
+                                <LinkOffIcon fontSize="small"/>
                             </IconButton>
                         </span>
                     </Tooltip>

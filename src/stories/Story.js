@@ -114,8 +114,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const {data: bilderData} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
-    const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
-    const [deleteText] = texteApi.endpoints.deleteText.useMutation();
+    const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
+    const [updateText] = texteApi.endpoints.updateText.useMutation();
     const [reorderStory] = storyApi.endpoints.reorderStory.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
@@ -163,7 +163,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             story={story}
             onClickBild={(b) => dispatch(setOpenBild(b))}
             onSetComplete={(args) => setBildComplete(args)}
-            onDeleteBild={(b) => deleteBild(b).unwrap()
+            onRemoveFromStory={(b) => updateBild({...b, story: null}).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
                 .catch(e => console.error(e))}
         />
@@ -174,7 +174,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             story={story}
             onClickText={(t) => dispatch(setOpenText(t))}
             onSetComplete={(args) => setTextComplete(args)}
-            onDeleteText={(t) => deleteText(t).unwrap()
+            onRemoveFromStory={(t) => updateText({...t, story: null}).unwrap()
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
                 .catch(e => console.error(e))}
         />
