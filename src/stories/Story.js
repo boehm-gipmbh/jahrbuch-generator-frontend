@@ -41,16 +41,22 @@ const multiColCollision = (args) => {
 
 const LAYOUT_KEY = (storyId) => `story-layout-${storyId}`;
 
-// Returns column-sorted items for a given column index
-const colSorted = (items, colIdx) =>
+// Returns column-sorted items for a given column index.
+// Items whose storyColumn >= columnCount are clamped into the last column
+// so they don't disappear when switching from a wider to a narrower layout.
+const colSorted = (items, colIdx, columnCount) =>
     items
-        .filter(i => (i.item.storyColumn ?? 0) === colIdx)
+        .filter(i => {
+            const col = i.item.storyColumn ?? 0;
+            const effective = columnCount != null ? Math.min(col, columnCount - 1) : col;
+            return effective === colIdx;
+        })
         .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
 
 // Splits items into a per-column map
 const toColMap = (items, columnCount) => {
     const map = {};
-    for (let c = 0; c < columnCount; c++) map[c] = colSorted(items, c);
+    for (let c = 0; c < columnCount; c++) map[c] = colSorted(items, c, columnCount);
     return map;
 };
 
@@ -371,7 +377,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             gap: 2,
                         }}>
                             {Array.from({length: columnCount}).map((_, colIdx) => {
-                                const colItems = colSorted(activeItems, colIdx);
+                                const colItems = colSorted(activeItems, colIdx, columnCount);
                                 return (
                                     <SortableContext
                                         key={colIdx}
