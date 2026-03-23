@@ -4,6 +4,8 @@ import {
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import AuthImage from '../bilder/AuthImage';
 
 const matchesDateRange = (item, dateFrom, dateTo) => {
@@ -14,15 +16,18 @@ const matchesDateRange = (item, dateFrom, dateTo) => {
     return true;
 };
 
-const sortItems = (items, sortBy) => [...items].sort((a, b) => {
-    if (sortBy === 'priority') return (b.priority ?? 0) - (a.priority ?? 0);
-    return new Date(b.created) - new Date(a.created);
+const sortItems = (items, sortBy, sortAsc) => [...items].sort((a, b) => {
+    const cmp = sortBy === 'priority'
+        ? (b.priority ?? 0) - (a.priority ?? 0)
+        : new Date(b.created) - new Date(a.created);
+    return sortAsc ? -cmp : cmp;
 });
 
 export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => {
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date');
+    const [sortAsc, setSortAsc] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
@@ -37,16 +42,16 @@ export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => 
             pendingBilder.filter(b =>
                 (!q || (b.title || '').toLowerCase().includes(q) || (b.description || '').toLowerCase().includes(q)) &&
                 matchesDateRange(b, dateFrom, dateTo));
-        return sortItems(filtered, sortBy);
-    }, [pendingBilder, q, typeFilter, sortBy, dateFrom, dateTo]);
+        return sortItems(filtered, sortBy, sortAsc);
+    }, [pendingBilder, q, typeFilter, sortBy, sortAsc, dateFrom, dateTo]);
 
     const filteredTexte = useMemo(() => {
         const filtered = typeFilter === 'bild' ? [] :
             pendingTexte.filter(t =>
                 (!q || (t.title || '').toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q)) &&
                 matchesDateRange(t, dateFrom, dateTo));
-        return sortItems(filtered, sortBy);
-    }, [pendingTexte, q, typeFilter, sortBy, dateFrom, dateTo]);
+        return sortItems(filtered, sortBy, sortAsc);
+    }, [pendingTexte, q, typeFilter, sortBy, sortAsc, dateFrom, dateTo]);
 
     const empty = filteredBilder.length === 0 && filteredTexte.length === 0;
 
@@ -64,7 +69,16 @@ export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => 
             <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                 <TextField
                     size="small" type="datetime-local" label="Von"
-                    value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    value={dateFrom} onChange={e => {
+                        const val = e.target.value;
+                        setDateFrom(val);
+                        if (val) {
+                            const next = new Date(val);
+                            next.setDate(next.getDate() + 1);
+                            const pad = n => String(n).padStart(2, '0');
+                            setDateTo(`${next.getFullYear()}-${pad(next.getMonth()+1)}-${pad(next.getDate())}T${pad(next.getHours())}:${pad(next.getMinutes())}`);
+                        }
+                    }}
                     InputLabelProps={{shrink: true}} sx={{flex: 1}}
                 />
                 <TextField
@@ -83,13 +97,20 @@ export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => 
                     <ToggleButton value="bild">Bilder</ToggleButton>
                     <ToggleButton value="text">Texte</ToggleButton>
                 </ToggleButtonGroup>
-                <ToggleButtonGroup
-                    value={sortBy} exclusive size="small"
-                    onChange={(_, v) => v && setSortBy(v)}
-                >
-                    <ToggleButton value="date">Datum</ToggleButton>
-                    <ToggleButton value="priority">Priorität</ToggleButton>
-                </ToggleButtonGroup>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                    <ToggleButtonGroup
+                        value={sortBy} exclusive size="small"
+                        onChange={(_, v) => v && setSortBy(v)}
+                    >
+                        <ToggleButton value="date">Datum</ToggleButton>
+                        <ToggleButton value="priority">Priorität</ToggleButton>
+                    </ToggleButtonGroup>
+                    <Tooltip title={sortAsc ? 'Aufsteigend' : 'Absteigend'}>
+                        <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
+                            {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
+                </Box>
             </Box>
 
             <Box sx={{overflowY: 'auto', flex: 1}}>
