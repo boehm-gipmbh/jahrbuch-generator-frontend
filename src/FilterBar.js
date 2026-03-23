@@ -39,7 +39,6 @@ const StoryFilterButton = ({stories, storyFilter, setStoryFilter}) => {
                     startIcon={<FilterListIcon fontSize="small"/>}
                     onClick={e => setAnchor(a => a ? null : e.currentTarget)}
                     onMouseEnter={cancelClose}
-                    onMouseLeave={scheduleClose}
                 >
                     Stories
                 </Button>
