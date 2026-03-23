@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo, useRef} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
@@ -11,13 +11,17 @@ import {
     TableBody,
     TableCell,
     TableRow,
-    Typography, Tooltip
+    Typography, Tooltip,
+    Popover, MenuList, MenuItem, Divider, TextField as MuiTextField
 } from '@mui/material';
 import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddLinkIcon from '@mui/icons-material/AddLink';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CheckIcon from '@mui/icons-material/Check';
 import {IconButton} from '@mui/material';
 import {api as texteApi} from './api';
 import {Priority} from './Priority';
@@ -28,6 +32,85 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
+
+const AssignToStoryButton = ({text, stories}) => {
+    const dispatch = useDispatch();
+    const [updateText] = texteApi.endpoints.updateText.useMutation();
+    const [addStory] = storyApi.endpoints.addStory.useMutation();
+    const [anchor, setAnchor] = useState(null);
+    const [newStoryName, setNewStoryName] = useState('');
+    const timerRef = useRef(null);
+    const scheduleClose = () => { timerRef.current = setTimeout(() => setAnchor(null), 400); };
+    const cancelClose = () => { if (timerRef.current) clearTimeout(timerRef.current); };
+
+    const assignTo = (storyId) => {
+        const storyObj = stories.find(s => s.id === storyId) || null;
+        dispatch(texteApi.util.updateQueryData('getTexte', undefined, draft => {
+            const t = draft.find(t => t.id === text.id);
+            if (t) t.story = storyObj ? {id: storyObj.id, name: storyObj.name} : null;
+        }));
+        updateText({...text, story: storyObj ? {id: storyId} : null}).unwrap()
+            .catch(e => {
+                dispatch(texteApi.util.invalidateTags(['Text']));
+                console.error(e);
+            });
+        setAnchor(null);
+    };
+
+    const handleCreateAndAssign = () => {
+        if (!newStoryName.trim()) return;
+        addStory({name: newStoryName.trim()}).unwrap()
+            .then(story => {
+                dispatch(storyApi.util.invalidateTags(['Story']));
+                assignTo(story.id);
+            })
+            .catch(e => console.error(e));
+        setNewStoryName('');
+    };
+
+    return (
+        <>
+            <Tooltip title="Zu Story hinzufügen">
+                <IconButton size="small"
+                    onClick={e => { e.stopPropagation(); setAnchor(a => a ? null : e.currentTarget); }}>
+                    <AddLinkIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+            <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
+                transitionDuration={0}
+                anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}
+                transformOrigin={{vertical: 'top', horizontal: 'left'}}
+                slotProps={{paper: {onMouseEnter: cancelClose, onMouseLeave: scheduleClose}}}
+            >
+                <MenuList dense>
+                    {stories.map(s => {
+                        const isCurrent = text.story?.id === s.id;
+                        return (
+                            <MenuItem key={s.id} selected={isCurrent} onClick={() => assignTo(s.id)}
+                                sx={{display: 'flex', gap: 1}}>
+                                {isCurrent ? <CheckIcon fontSize="small" color="primary"/> : <Box sx={{width: 20}}/>}
+                                {s.name}
+                            </MenuItem>
+                        );
+                    })}
+                </MenuList>
+                <Divider/>
+                <Box sx={{p: 1, display: 'flex', gap: 0.5}} onMouseEnter={cancelClose}>
+                    <MuiTextField
+                        size="small" placeholder="Neue Story…" value={newStoryName}
+                        onChange={e => setNewStoryName(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleCreateAndAssign()}
+                        autoComplete="off"
+                        sx={{flex: 1}}
+                    />
+                    <IconButton size="small" onClick={handleCreateAndAssign} disabled={!newStoryName.trim()}>
+                        <AddCircleOutlineIcon fontSize="small"/>
+                    </IconButton>
+                </Box>
+            </Popover>
+        </>
+    );
+};
 
 export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
@@ -139,6 +222,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
                     borderRadius: 1,
                     padding: '2px',
                   }}>
+                    {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
                     <Tooltip title="Erinnerung löschen">
                       <span>
                         <IconButton
