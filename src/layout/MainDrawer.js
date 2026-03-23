@@ -20,7 +20,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
 import {HasRole} from '../auth';
 
-const Item = ({Icon, iconSize, title, to, disableTooltip = false}) => {
+const Item = ({Icon, iconSize, title, to, disableTooltip = false, bold = false}) => {
     const match = Boolean(useMatch(to));
     return (
         <ListItemButton component={Link} to={to} selected={match}>
@@ -28,7 +28,7 @@ const Item = ({Icon, iconSize, title, to, disableTooltip = false}) => {
                 <ListItemIcon><Icon fontSize={iconSize}/></ListItemIcon>
             </Tooltip>
             }
-            <ListItemText primary={title}/>
+            <ListItemText primary={title} primaryTypographyProps={bold ? {fontWeight: 'bold'} : undefined}/>
         </ListItemButton>
     )
 };
@@ -76,14 +76,10 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
         <Toolbar/>
         <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden'}}>
             <List>
-                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Erinnerungen ohne Story' to='/texte/pending'/>
-                {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/texte/completed'/>*/}
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Erinnerungen' to='/texte'/>
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Erinnerungen' to='/texte' bold/>
 
                 <Divider/>
-                <Item disableTooltip={drawerOpen} Icon={InboxIcon} title='Bilder ohne Story' to='/bilder/pending'/>
-                {/*<Item disableTooltip={drawerOpen} Icon={CheckIcon} title='Completed' to='/bilder/completed'/>*/}
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Alle Bilder' to='/bilder'/>
+                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
                 <Stories
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
                 />

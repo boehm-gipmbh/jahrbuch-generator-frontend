@@ -21,3 +21,16 @@ export const byPriorityAsc  = (a, b) => (a.priority ?? FALLBACK) - (b.priority ?
 export const byPositionAsc  = (a, b) => (a.position ?? FALLBACK) - (b.position ?? FALLBACK);
 export const byIdDesc       = (a, b) => b.id - a.id;
 export const byIdAsc        = (a, b) => a.id - b.id;
+export const byDateDesc     = (a, b) => new Date(b.created) - new Date(a.created);
+export const byDateAsc      = (a, b) => new Date(a.created) - new Date(b.created);
+
+export const matchesSearch = (item, q) =>
+    !q || (item.title || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q);
+
+export const matchesDateRange = (item, dateFrom, dateTo) => {
+    if (!dateFrom && !dateTo) return true;
+    const created = new Date(item.created);
+    if (dateFrom && created < new Date(dateFrom)) return false;
+    if (dateTo && created > new Date(dateTo)) return false;
+    return true;
+};

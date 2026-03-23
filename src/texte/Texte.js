@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useMemo} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
@@ -26,20 +26,17 @@ import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-
-const textSort = (t1, t2) => {
-  const p1 = t1.priority ?? Number.MAX_SAFE_INTEGER;
-  const p2 = t2.priority ?? Number.MAX_SAFE_INTEGER;
-  if (p1 !== p2) {
-    return p1 - p2
-  }
-  return t1.id - t2.id;
-};
+import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
+import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
 export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
-  const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
-    selectFromResult: ({data}) => ({story: data?.find(p => p.id === parseInt(storyId))})
+  const {story, stories, storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined, {
+    selectFromResult: ({data, isSuccess}) => ({
+      story: data?.find(p => p.id === parseInt(storyId)),
+      stories: data || [],
+      storiesLoaded: isSuccess
+    })
   });
   if (Boolean(story)) {
     title = story?.name;
@@ -49,6 +46,32 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {data} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
   const [setComplete] = texteApi.endpoints.setComplete.useMutation();
   const [deleteText] = texteApi.endpoints.deleteText.useMutation();
+
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [sortField, setSortField] = useState('date');
+  const [sortAsc, setSortAsc] = useState(false);
+  const [storyFilter, setStoryFilter] = useState(new Set());
+
+  const q = search.toLowerCase();
+  const filteredTexte = useMemo(() => {
+    const base = (data || []).filter(text => {
+      if (!filter(text)) return false;
+      if (!matchesSearch(text, q)) return false;
+      if (!matchesDateRange(text, dateFrom, dateTo)) return false;
+      if (storyFilter.size > 0) {
+        const key = text.story ? text.story.id : STORY_FILTER_NONE;
+        if (!storyFilter.has(key)) return false;
+      }
+      return true;
+    });
+    const cmp = sortField === 'priority'
+      ? (sortAsc ? (a, b) => (a.priority ?? 0) - (b.priority ?? 0) : (a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+      : (sortAsc ? byDateAsc : byDateDesc);
+    return [...base].sort(cmp);
+  }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter]);
+
   return <Layout>
     <Box sx={{mt: 2}}>
       <Button startIcon={<AddIcon />} onClick={() => dispatch(newText({story: story}))}>
@@ -60,9 +83,18 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
         <Typography component="h2" variant="h6" color="primary" gutterBottom>
           {title}
         </Typography>
+        <FilterBar
+          search={search} setSearch={setSearch}
+          dateFrom={dateFrom} setDateFrom={setDateFrom}
+          dateTo={dateTo} setDateTo={setDateTo}
+          sortField={sortField} setSortField={setSortField}
+          sortAsc={sortAsc} setSortAsc={setSortAsc}
+          stories={storiesLoaded && !story ? stories : undefined}
+          storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+        />
         <Table size='small'>
           <TableBody>
-              {data && Array.from(data).filter(filter).sort(textSort).map(text =>
+              {filteredTexte.map(text =>
               <TableRow key={text.id}>
                   <TableCell sx={{width: '2rem'}}>
                       <Tooltip title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>

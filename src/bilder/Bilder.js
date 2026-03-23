@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useMemo} from 'react';
 import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
@@ -25,9 +25,8 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
-import {sortBy, byPriorityDesc, byIdDesc} from '../sortUtils';
-
-const bildSort = sortBy(byPriorityDesc, byIdDesc);
+import {sortBy, byPriorityDesc, byIdDesc, byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
+import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
 const AssignToStoryButton = ({bild, stories}) => {
     const dispatch = useDispatch();
@@ -131,6 +130,31 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
     const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
 
+    const [search, setSearch] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [sortField, setSortField] = useState('date');
+    const [sortAsc, setSortAsc] = useState(false);
+    const [storyFilter, setStoryFilter] = useState(new Set());
+
+    const q = search.toLowerCase();
+    const filteredBilder = useMemo(() => {
+        const base = (data || []).filter(bild => {
+            if (!filter(bild)) return false;
+            if (!matchesSearch(bild, q)) return false;
+            if (!matchesDateRange(bild, dateFrom, dateTo)) return false;
+            if (storyFilter.size > 0) {
+                const key = bild.story ? bild.story.id : STORY_FILTER_NONE;
+                if (!storyFilter.has(key)) return false;
+            }
+            return true;
+        });
+        const cmp = sortField === 'priority'
+            ? (sortAsc ? (a, b) => (a.priority ?? 0) - (b.priority ?? 0) : (a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+            : (sortAsc ? byDateAsc : byDateDesc);
+        return [...base].sort(cmp);
+    }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter]);
+
     return <Layout>
         <Box sx={{mt: 2}}>
             {capturesConfig?.enabled && (<Button
@@ -154,8 +178,18 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     {title}
                 </Typography>
 
+                <FilterBar
+                    search={search} setSearch={setSearch}
+                    dateFrom={dateFrom} setDateFrom={setDateFrom}
+                    dateTo={dateTo} setDateTo={setDateTo}
+                    sortField={sortField} setSortField={setSortField}
+                    sortAsc={sortAsc} setSortAsc={setSortAsc}
+                    stories={storiesLoaded && !story ? stories : undefined}
+                    storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+                />
+
                 <Grid container spacing={2}>
-                    {data ? Array.from(data).filter(filter).sort(bildSort).map(bild => (
+                    {filteredBilder.map(bild => (
                         <Grid item xs={12} sm={6} key={bild.id}>
                             <Paper elevation={1} sx={{
                                 p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'
@@ -310,7 +344,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                                         </ButtonGroup>
                                     </Box>
                             </Paper>
-                        </Grid>)) : null}
+                        </Grid>))}
                 </Grid>
             </Paper>
         </Container>
