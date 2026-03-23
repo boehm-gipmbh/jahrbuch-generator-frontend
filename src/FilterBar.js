@@ -6,6 +6,7 @@ import {
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import ClearIcon from '@mui/icons-material/Clear';
 
 const NONE = '__none__';
 
@@ -83,6 +84,13 @@ export const FilterBar = ({
             size="small" placeholder="Suchen…" value={search}
             onChange={e => setSearch(e.target.value)}
             sx={{minWidth: 160}}
+            InputProps={search ? {
+                endAdornment: (
+                    <IconButton size="small" onClick={() => setSearch('')} edge="end">
+                        <ClearIcon fontSize="small"/>
+                    </IconButton>
+                )
+            } : undefined}
         />
         <TextField
             size="small" type="datetime-local" label="Von"
