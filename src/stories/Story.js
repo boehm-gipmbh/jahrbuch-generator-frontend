@@ -5,6 +5,7 @@ import {
     Box, Button, Container, Paper, ToggleButton, ToggleButtonGroup, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import GridViewIcon from '@mui/icons-material/GridView';
@@ -22,6 +23,7 @@ import {SortableContext, arrayMove, verticalListSortingStrategy} from '@dnd-kit/
 import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
 import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
+import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
 
 const multiColCollision = (args) => {
@@ -122,6 +124,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
     const sensors = useSensors(useSensor(PointerSensor));
 
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const [dragItems, setDragItems] = useState(null);
     const dragItemsRef = useRef(null);
     const pendingReorderRef = useRef(false);
@@ -318,6 +321,18 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         }
     };
 
+    const handleAssignToStory = (type, item) => {
+        if (type === 'bild') {
+            updateBild({...item, story: {id: story.id}}).unwrap()
+                .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                .catch(e => console.error(e));
+        } else {
+            updateText({...item, story: {id: story.id}}).unwrap()
+                .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
+                .catch(e => console.error(e));
+        }
+    };
+
     const handleDragCancel = () => {
         updateDragItems(null);
         setActiveItem(null);
@@ -340,6 +355,11 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 <Button startIcon={<AddIcon/>} onClick={() => dispatch(newText({story: story}))}>
                     Erinnerung hinzufügen
                 </Button>
+                {story && (
+                    <Button startIcon={<LibraryAddIcon/>} onClick={() => setDrawerOpen(true)}>
+                        Aus Bibliothek
+                    </Button>
+                )}
                 {capturesConfig?.enabled && (
                     <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
                         Fotoaufnahme
@@ -427,5 +447,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 </DndContext>
             </Paper>
         </Container>
+
+        <PendingItemsDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            bilder={bilderData}
+            texte={texteData}
+            onAssign={(type, item) => {
+                handleAssignToStory(type, item);
+                setDrawerOpen(false);
+            }}
+        />
     </Layout>;
 };
