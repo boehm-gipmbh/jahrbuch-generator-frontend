@@ -307,11 +307,10 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>
-                <Typography component="h2" variant="h6" color="primary" gutterBottom>
-                    {title}
-                </Typography>
-
                 <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pt: 1, pb: 1, mx: -2, px: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
+                    <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                        {title}
+                    </Typography>
                     <FilterBar
                         search={search} setSearch={setSearch}
                         dateFrom={dateFrom} setDateFrom={setDateFrom}

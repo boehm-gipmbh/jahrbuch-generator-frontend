@@ -338,32 +338,34 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
     return <Layout>
         <Container sx={{mt: theme => theme.spacing(2)}}>
-            <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2}}>
-                <Typography component="h2" variant="h6" color="primary">
-                    {title}
-                </Typography>
-                <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
-                    <ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton>
-                    <ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton>
-                    <ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton>
-                </ToggleButtonGroup>
-            </Box>
+            <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.default', pt: 1, pb: 1, mb: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
+                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1}}>
+                    <Typography component="h2" variant="h6" color="primary">
+                        {title}
+                    </Typography>
+                    <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
+                        <ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton>
+                        <ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton>
+                        <ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
 
-            <Box sx={{mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap'}}>
-                <Button startIcon={<AddIcon/>} onClick={() => dispatch(newText({story: story}))}>
-                    Erinnerung hinzufügen
-                </Button>
-                {story && (
-                    <Button startIcon={<LibraryAddIcon/>} onClick={() => setDrawerOpen(true)}>
-                        Aus Bibliothek
+                <Box sx={{display: 'flex', gap: 1, flexWrap: 'wrap'}}>
+                    <Button startIcon={<AddIcon/>} onClick={() => dispatch(newText({story: story}))}>
+                        Erinnerung hinzufügen
                     </Button>
-                )}
-                {capturesConfig?.enabled && (
-                    <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
-                        Fotoaufnahme
-                    </Button>
-                )}
-                <BilderUploadDialog story={story}/>
+                    {story && (
+                        <Button startIcon={<LibraryAddIcon/>} onClick={() => setDrawerOpen(true)}>
+                            Aus Bibliothek
+                        </Button>
+                    )}
+                    {capturesConfig?.enabled && (
+                        <Button startIcon={<AddIcon/>} onClick={() => triggerCapture()}>
+                            Fotoaufnahme
+                        </Button>
+                    )}
+                    <BilderUploadDialog story={story}/>
+                </Box>
             </Box>
 
             <Paper sx={{p: 2}}>
