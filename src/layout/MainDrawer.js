@@ -1,7 +1,9 @@
-import React from 'react';
-import {Link, useMatch} from 'react-router-dom';
+import React, {useState} from 'react';
+import {Link, useMatch, useNavigate} from 'react-router-dom';
 import {
     Box,
+    Button,
+    Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
     Divider,
     Drawer, IconButton,
     List, ListItem,
@@ -12,6 +14,7 @@ import {
     Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import InboxIcon from '@mui/icons-material/Inbox';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
@@ -19,6 +22,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
 import {HasRole} from '../auth';
+import {api as storyApi} from '../stories';
 
 const Item = ({Icon, iconSize, title, to, disableTooltip = false, bold = false}) => {
     const match = Boolean(useMatch(to));
@@ -33,6 +37,63 @@ const Item = ({Icon, iconSize, title, to, disableTooltip = false, bold = false})
     )
 };
 
+const DeleteStoryDialog = ({story, onClose}) => {
+    const navigate = useNavigate();
+    const [deleteStory] = storyApi.endpoints.deleteStory.useMutation();
+    const [deleteStoryCascade] = storyApi.endpoints.deleteStoryCascade.useMutation();
+
+    const handleDelete = (cascade) => {
+        const action = cascade ? deleteStoryCascade(story.id) : deleteStory(story.id);
+        action.unwrap()
+            .then(() => { navigate('/bilder'); onClose(); })
+            .catch(e => console.error(e));
+    };
+
+    return (
+        <Dialog open onClose={onClose}>
+            <DialogTitle>Story „{story.name}" löschen?</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    Was soll mit den Bildern und Texten in dieser Story passieren?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions sx={{flexDirection: 'column', alignItems: 'stretch', gap: 1, p: 2}}>
+                <Button variant="outlined" onClick={() => handleDelete(false)}>
+                    Zurücklegen (Bilder &amp; Texte behalten)
+                </Button>
+                <Button variant="contained" color="error" onClick={() => handleDelete(true)}>
+                    Mitlöschen (Bilder &amp; Texte löschen)
+                </Button>
+                <Button onClick={onClose}>Abbrechen</Button>
+            </DialogActions>
+        </Dialog>
+    );
+};
+
+const StoryItem = ({s, drawerOpen}) => {
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    return (
+        <>
+            <ListItem disablePadding secondaryAction={drawerOpen &&
+                <Tooltip title="Story löschen">
+                    <IconButton edge="end" size="small" onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}>
+                        <DeleteIcon fontSize="small"/>
+                    </IconButton>
+                </Tooltip>
+            }>
+                <ListItemButton component={Link} to={`/bilder/story/${s.id}`}
+                    selected={Boolean(useMatch(`/bilder/story/${s.id}`))}>
+                    <Tooltip title={s.name} placement='right' disableHoverListener={drawerOpen}>
+                        <ListItemIcon><CircleIcon fontSize='small'/></ListItemIcon>
+                    </Tooltip>
+                    <ListItemText primary={s.name}/>
+                </ListItemButton>
+            </ListItem>
+            {confirmDelete && <DeleteStoryDialog story={s} onClose={() => setConfirmDelete(false)}/>}
+        </>
+    );
+};
+
 const Stories = ({drawerOpen, openNewStory, stories}) => (
     <>
         <Divider/>
@@ -44,17 +105,12 @@ const Stories = ({drawerOpen, openNewStory, stories}) => (
             }
         >
             <ListItemIcon><SnippetFolderIcon/></ListItemIcon>
-            <ListItemText
-                primaryTypographyProps={{fontWeight: 'medium'}}
-            >
+            <ListItemText primaryTypographyProps={{fontWeight: 'medium'}}>
                 Deine Stories
             </ListItemText>
         </ListItem>
         {Array.from(stories).map(s => (
-            <Item
-                key={s.id} disableTooltip={drawerOpen}
-                Icon={CircleIcon} iconSize='small'
-                title={s.name} to={`/bilder/story/${s.id}`}/>
+            <StoryItem key={s.id} s={s} drawerOpen={drawerOpen}/>
         ))}
     </>
 );

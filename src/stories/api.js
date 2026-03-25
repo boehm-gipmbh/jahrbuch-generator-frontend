@@ -26,6 +26,14 @@ export const api = createApi({
       }),
       invalidatesTags: ['Story'],
     }),
+    deleteStory: builder.mutation({
+      query: id => ({url: `/${id}`, method: 'DELETE'}),
+      invalidatesTags: ['Story'],
+    }),
+    deleteStoryCascade: builder.mutation({
+      query: id => ({url: `/${id}/cascade`, method: 'DELETE'}),
+      invalidatesTags: ['Story'],
+    }),
     reorderStory: builder.mutation({
       query: ({storyId, items}) => ({
         url: `/${storyId}/reorder`,
