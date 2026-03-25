@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef} from 'react';
+import React, {useState, useMemo, useRef, memo} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
@@ -114,7 +114,7 @@ const AssignToStoryButton = ({text, stories}) => {
     );
 };
 
-const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
+const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
@@ -218,7 +218,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
         />
         </>
     );
-};
+}, (prev, next) =>
+    prev.text === next.text &&
+    prev.story === next.story &&
+    prev.storiesLoaded === next.storiesLoaded &&
+    prev.stories === next.stories
+);
 
 export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
@@ -272,18 +277,20 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
     </Box>
     <Container sx={{mt: theme => theme.spacing(2)}}>
       <Paper sx={{p: 2}}>
-        <Typography component="h2" variant="h6" color="primary" gutterBottom>
-          {title}
-        </Typography>
-        <FilterBar
-          search={search} setSearch={setSearch}
-          dateFrom={dateFrom} setDateFrom={setDateFrom}
-          dateTo={dateTo} setDateTo={setDateTo}
-          sortField={sortField} setSortField={setSortField}
-          sortAsc={sortAsc} setSortAsc={setSortAsc}
-          stories={storiesLoaded && !story ? stories : undefined}
-          storyFilter={storyFilter} setStoryFilter={setStoryFilter}
-        />
+        <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pt: 1, pb: 1, mx: -2, px: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
+          <Typography component="h2" variant="h6" color="primary" gutterBottom>
+            {title}
+          </Typography>
+          <FilterBar
+            search={search} setSearch={setSearch}
+            dateFrom={dateFrom} setDateFrom={setDateFrom}
+            dateTo={dateTo} setDateTo={setDateTo}
+            sortField={sortField} setSortField={setSortField}
+            sortAsc={sortAsc} setSortAsc={setSortAsc}
+            stories={storiesLoaded && !story ? stories : undefined}
+            storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+          />
+        </Box>
         <Table size='small'>
           <TableBody>
               {filteredTexte.map(text =>

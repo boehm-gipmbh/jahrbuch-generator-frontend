@@ -1,4 +1,7 @@
-import React, {useState, useRef, useMemo} from 'react';
+import React, {useState, useRef, useMemo, memo, useEffect} from 'react';
+import {useWindowVirtualizer} from '@tanstack/react-virtual';
+import {useTheme} from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
@@ -107,7 +110,7 @@ const AssignToStoryButton = ({bild, stories}) => {
     );
 };
 
-const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
+const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
@@ -239,7 +242,12 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
         />
         </>
     );
-};
+}, (prev, next) =>
+    prev.bild === next.bild &&
+    prev.story === next.story &&
+    prev.storiesLoaded === next.storiesLoaded &&
+    prev.stories === next.stories
+);
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {storyId} = useParams();
@@ -270,6 +278,10 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());
 
+    const theme = useTheme();
+    const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+    const cols = isSmall ? 1 : 2;
+
     const q = search.toLowerCase();
     const filteredBilder = useMemo(() => {
         const base = (data || []).filter(bild => {
@@ -287,6 +299,28 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
             : (sortAsc ? byDateAsc : byDateDesc);
         return [...base].sort(cmp);
     }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter]);
+
+    const rows = useMemo(() => {
+        const result = [];
+        for (let i = 0; i < filteredBilder.length; i += cols) {
+            result.push(filteredBilder.slice(i, i + cols));
+        }
+        return result;
+    }, [filteredBilder, cols]);
+
+    const gridRef = useRef(null);
+    const [scrollMargin, setScrollMargin] = useState(0);
+    useEffect(() => {
+        if (gridRef.current) setScrollMargin(gridRef.current.offsetTop);
+    }, [rows.length]);
+
+    const rowVirtualizer = useWindowVirtualizer({
+        count: rows.length,
+        estimateSize: () => 420,
+        overscan: 3,
+        scrollMargin,
+        measureElement: el => el.getBoundingClientRect().height,
+    });
 
     return <Layout>
         <Box sx={{mt: 2}}>
@@ -307,39 +341,51 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>
-                <Typography component="h2" variant="h6" color="primary" gutterBottom>
-                    {title}
-                </Typography>
+                <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pt: 1, pb: 1, mx: -2, px: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
+                    <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                        {title}
+                    </Typography>
+                    <FilterBar
+                        search={search} setSearch={setSearch}
+                        dateFrom={dateFrom} setDateFrom={setDateFrom}
+                        dateTo={dateTo} setDateTo={setDateTo}
+                        sortField={sortField} setSortField={setSortField}
+                        sortAsc={sortAsc} setSortAsc={setSortAsc}
+                        stories={storiesLoaded && !story ? stories : undefined}
+                        storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+                    />
+                </Box>
 
-                <FilterBar
-                    search={search} setSearch={setSearch}
-                    dateFrom={dateFrom} setDateFrom={setDateFrom}
-                    dateTo={dateTo} setDateTo={setDateTo}
-                    sortField={sortField} setSortField={setSortField}
-                    sortAsc={sortAsc} setSortAsc={setSortAsc}
-                    stories={storiesLoaded && !story ? stories : undefined}
-                    storyFilter={storyFilter} setStoryFilter={setStoryFilter}
-                />
-
-                <Grid container spacing={2}>
-                    {filteredBilder.map(bild => (
-                        <Grid item xs={12} sm={6} key={bild.id}>
-                            <BildCard
-                                bild={bild}
-                                story={story}
-                                storiesLoaded={storiesLoaded}
-                                stories={stories}
-                                onSetComplete={(args) => setComplete(args)}
-                                onUpdate={(updated) => updateBild(updated)}
-                                onRotate={(degrees) => rotateBild({bildId: bild.id, degrees}).unwrap()
-                                    .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
-                                    .catch(e => console.error(e))}
-                                onDelete={() => deleteBild(bild).unwrap()
-                                    .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
-                                    .catch(e => console.error(e))}
-                            />
-                        </Grid>))}
-                </Grid>
+                <Box ref={gridRef} style={{height: rowVirtualizer.getTotalSize(), position: 'relative'}}>
+                    {rowVirtualizer.getVirtualItems().map(virtualRow => (
+                        <Box key={virtualRow.key}
+                            data-index={virtualRow.index}
+                            ref={rowVirtualizer.measureElement}
+                            style={{position: 'absolute', top: 0, left: 0, width: '100%',
+                                transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`}}>
+                            <Grid container spacing={2} sx={{mb: 2}}>
+                                {rows[virtualRow.index].map(bild => (
+                                    <Grid item xs={12} sm={6} key={bild.id}>
+                                        <BildCard
+                                            bild={bild}
+                                            story={story}
+                                            storiesLoaded={storiesLoaded}
+                                            stories={stories}
+                                            onSetComplete={(args) => setComplete(args)}
+                                            onUpdate={(updated) => updateBild(updated)}
+                                            onRotate={(degrees) => rotateBild({bildId: bild.id, degrees}).unwrap()
+                                                .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                                                .catch(e => console.error(e))}
+                                            onDelete={() => deleteBild(bild).unwrap()
+                                                .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                                                .catch(e => console.error(e))}
+                                        />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    ))}
+                </Box>
             </Paper>
         </Container>
 
