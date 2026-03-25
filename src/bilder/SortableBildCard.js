@@ -146,7 +146,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                     </Box>
 
                     {/* Beschreibung */}
-                    <Box sx={{mt: 'auto'}}>
+                    <Box sx={{mt: 'auto', mb: 5}}>
                         {editField === 'description' ? (
                             <TextField
                                 autoFocus
@@ -165,9 +165,9 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                                 className="wrap-pre"
                                 onClick={() => startEdit('description')}
                                 style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
-                                    border: (!isComplete && !bild.description) ? '1px dashed rgba(0,0,0,0.2)' : 'none',
-                                    borderRadius: (!isComplete && !bild.description) ? 4 : 0,
-                                    padding: (!isComplete && !bild.description) ? '2px 6px' : 0}}
+                                    border: !isComplete ? '1px solid rgba(0,0,0,0.23)' : 'none',
+                                    borderRadius: 4,
+                                    padding: '8.5px 14px'}}
                             >
                                 {bild.description}
                                 {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
