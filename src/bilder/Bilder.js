@@ -311,15 +311,17 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     {title}
                 </Typography>
 
-                <FilterBar
-                    search={search} setSearch={setSearch}
-                    dateFrom={dateFrom} setDateFrom={setDateFrom}
-                    dateTo={dateTo} setDateTo={setDateTo}
-                    sortField={sortField} setSortField={setSortField}
-                    sortAsc={sortAsc} setSortAsc={setSortAsc}
-                    stories={storiesLoaded && !story ? stories : undefined}
-                    storyFilter={storyFilter} setStoryFilter={setStoryFilter}
-                />
+                <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pb: 1, mx: -2, px: 2}}>
+                    <FilterBar
+                        search={search} setSearch={setSearch}
+                        dateFrom={dateFrom} setDateFrom={setDateFrom}
+                        dateTo={dateTo} setDateTo={setDateTo}
+                        sortField={sortField} setSortField={setSortField}
+                        sortAsc={sortAsc} setSortAsc={setSortAsc}
+                        stories={storiesLoaded && !story ? stories : undefined}
+                        storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+                    />
+                </Box>
 
                 <Grid container spacing={2}>
                     {filteredBilder.map(bild => (
