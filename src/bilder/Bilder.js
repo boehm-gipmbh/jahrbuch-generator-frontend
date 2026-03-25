@@ -311,7 +311,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     {title}
                 </Typography>
 
-                <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pb: 1, mx: -2, px: 2}}>
+                <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.paper', pt: 1, pb: 1, mx: -2, px: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
                     <FilterBar
                         search={search} setSearch={setSearch}
                         dateFrom={dateFrom} setDateFrom={setDateFrom}
