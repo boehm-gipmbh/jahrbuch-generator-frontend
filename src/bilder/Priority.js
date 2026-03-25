@@ -15,9 +15,10 @@ const texteMap = {
 };
 
 
-export const Priority = ({priority}) => Boolean(priority) ?
-    <TrafficIcon sx={{ color: colorMap[priority] }}/> :
-    <TrafficIcon sx={{ color: colorMap[3] }}/>;  // default to green if no priority is set
+export const Priority = ({priority, disabled}) => {
+    const color = disabled ? 'text.disabled' : (colorMap[priority] ?? colorMap[3]);
+    return <TrafficIcon sx={{ color }}/>;
+};
 
 export const EditBildPriority = ({priority, setPriority, disabled}) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -32,7 +33,7 @@ export const EditBildPriority = ({priority, setPriority, disabled}) => {
         disabled={disabled}
         onClick={event => setAnchorEl(event.currentTarget)}
       >
-        <Priority priority={priority} />
+        <Priority priority={priority} disabled={disabled}/>
       </IconButton>
       <Menu
         anchorEl={anchorEl}
