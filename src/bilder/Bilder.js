@@ -174,7 +174,7 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
                     <Box sx={{mt: 'auto'}}>
-                        <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'}>
+                        <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                         <pre className="wrap-pre" onClick={() => startEdit('description')}
                             style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
                             {bild.description}

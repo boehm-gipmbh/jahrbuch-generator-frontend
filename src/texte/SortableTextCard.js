@@ -149,7 +149,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                         />
                     ) : (
-                        <Tooltip title={isComplete ? '' : 'Text bearbeiten'}>
+                        <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
                         <pre
                             className="wrap-pre"
                             onClick={() => startEdit('description')}

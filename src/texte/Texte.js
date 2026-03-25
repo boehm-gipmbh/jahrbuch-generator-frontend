@@ -176,7 +176,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                         onBlur={commitEdit} onKeyDown={handleKeyDown}
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
-                    <Tooltip title={isComplete ? '' : 'Text bearbeiten'}>
+                    <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
                     <pre className="wrap-pre" onClick={() => startEdit('description')}
                         style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
                         {text.description}

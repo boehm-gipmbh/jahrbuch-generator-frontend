@@ -158,7 +158,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                                 inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                             />
                         ) : (
-                            <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'}>
+                            <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                             <pre
                                 className="wrap-pre"
                                 onClick={() => startEdit('description')}
