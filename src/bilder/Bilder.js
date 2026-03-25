@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo} from 'react';
+import React, {useState, useRef, useMemo, memo} from 'react';
 import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
@@ -107,7 +107,7 @@ const AssignToStoryButton = ({bild, stories}) => {
     );
 };
 
-const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
+const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
@@ -239,7 +239,12 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
         />
         </>
     );
-};
+}, (prev, next) =>
+    prev.bild === next.bild &&
+    prev.story === next.story &&
+    prev.storiesLoaded === next.storiesLoaded &&
+    prev.stories === next.stories
+);
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {storyId} = useParams();
