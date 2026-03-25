@@ -178,7 +178,10 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                     <Box sx={{mt: 'auto'}}>
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                         <pre className="wrap-pre" onClick={() => startEdit('description')}
-                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
+                                border: (!isComplete && !bild.description) ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+                                borderRadius: (!isComplete && !bild.description) ? 4 : 0,
+                                padding: (!isComplete && !bild.description) ? '2px 6px' : 0}}>
                             {bild.description}
                         </pre>
                         </Tooltip>

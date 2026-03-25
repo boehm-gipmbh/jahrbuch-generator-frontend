@@ -155,7 +155,10 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                         <pre
                             className="wrap-pre"
                             onClick={() => startEdit('description')}
-                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '3em'}}
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '3em',
+                                border: (!isComplete && !text.description) ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+                                borderRadius: (!isComplete && !text.description) ? 4 : 0,
+                                padding: (!isComplete && !text.description) ? '2px 6px' : 0}}
                         >
                             {text.description}
                         </pre>
