@@ -150,7 +150,7 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                     <TextField autoFocus size="small" value={editValue} onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
                 ) : (
-                    <Tooltip title={isComplete ? '' : 'Titel bearbeiten'}>
+                    <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
                     <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
                         cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                         onClick={() => startEdit('title')}>

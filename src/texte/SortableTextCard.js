@@ -116,7 +116,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             sx={{mb: 1}}
                         />
                     ) : (
-                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'}>
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
                         <Typography
                             variant="subtitle1"
                             component="div"

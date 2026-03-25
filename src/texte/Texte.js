@@ -155,7 +155,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                                 onChange={e => setEditValue(e.target.value)}
                                 onBlur={commitEdit} onKeyDown={handleKeyDown}/>
                         ) : (
-                            <Tooltip title={isComplete ? '' : 'Titel bearbeiten'}>
+                            <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
                             <Typography variant="subtitle1" component="span" color="primary"
                                 sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
                                     '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
