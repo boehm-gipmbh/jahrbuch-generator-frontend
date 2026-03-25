@@ -43,8 +43,8 @@ const AssignToStoryButton = ({text, stories}) => {
     const scheduleClose = () => { timerRef.current = setTimeout(() => setAnchor(null), 400); };
     const cancelClose = () => { if (timerRef.current) clearTimeout(timerRef.current); };
 
-    const assignTo = (storyId) => {
-        const storyObj = stories.find(s => s.id === storyId) || null;
+    const assignTo = (storyId, knownStory) => {
+        const storyObj = knownStory || stories.find(s => s.id === storyId) || null;
         dispatch(texteApi.util.updateQueryData('getTexte', undefined, draft => {
             const t = draft.find(t => t.id === text.id);
             if (t) t.story = storyObj ? {id: storyObj.id, name: storyObj.name} : null;
@@ -62,7 +62,7 @@ const AssignToStoryButton = ({text, stories}) => {
         addStory({name: newStoryName.trim()}).unwrap()
             .then(story => {
                 dispatch(storyApi.util.invalidateTags(['Story']));
-                assignTo(story.id);
+                assignTo(story.id, story);
             })
             .catch(e => console.error(e));
         setNewStoryName('');
