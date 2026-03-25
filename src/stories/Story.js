@@ -41,7 +41,6 @@ const multiColCollision = (args) => {
     return closestCorners(args).filter(h => h.id !== activeId);
 };
 
-const LAYOUT_KEY = (storyId) => `story-layout-${storyId}`;
 
 // Returns column-sorted items for a given column index.
 // Items whose storyColumn >= columnCount are clamped into the last column
@@ -103,12 +102,13 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         filterBild = bild => bild.story?.id === story.id;
     }
 
-    const savedLayout = storyId ? (localStorage.getItem(LAYOUT_KEY(storyId)) || '1col') : '1col';
-    const [layout, setLayout] = useState(savedLayout);
+    const [layout, setLayout] = useState('2col');
+    useEffect(() => { if (story?.layout) setLayout(story.layout); }, [story?.layout]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [updateStory] = storyApi.endpoints.updateStory.useMutation();
     const handleLayout = (_, newLayout) => {
         if (!newLayout) return;
         setLayout(newLayout);
-        if (storyId) localStorage.setItem(LAYOUT_KEY(storyId), newLayout);
+        if (story) updateStory({...story, layout: newLayout});
     };
 
     const dispatch = useDispatch();
