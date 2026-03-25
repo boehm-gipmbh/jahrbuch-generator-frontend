@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Link, useMatch, useNavigate} from 'react-router-dom';
 import {
+    Badge,
     Box,
     Button,
     Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
@@ -28,6 +29,27 @@ import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
 import {HasRole} from '../auth';
 import {api as storyApi} from '../stories';
+import {api as bilderApi} from '../bilder/api';
+import {api as texteApi} from '../texte/api';
+
+const PapierkorbItem = ({disableTooltip}) => {
+    const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
+    const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
+    const count = bilderDeleted.length + texteDeleted.length;
+    const match = Boolean(useMatch('/papierkorb'));
+    return (
+        <ListItemButton component={Link} to='/papierkorb' selected={match}>
+            <Tooltip title='Papierkorb' placement='right' disableHoverListener={disableTooltip}>
+                <ListItemIcon>
+                    <Badge badgeContent={count} color="error" max={99}>
+                        <DeleteOutlineIcon/>
+                    </Badge>
+                </ListItemIcon>
+            </Tooltip>
+            <ListItemText primary='Papierkorb'/>
+        </ListItemButton>
+    );
+};
 
 const Item = ({Icon, iconSize, title, to, disableTooltip = false, bold = false}) => {
     const match = Boolean(useMatch(to));
@@ -170,7 +192,7 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
 
                 <Divider/>
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
-                <Item disableTooltip={drawerOpen} Icon={DeleteOutlineIcon} title='Papierkorb' to='/papierkorb'/>
+                <PapierkorbItem disableTooltip={drawerOpen}/>
                 <Stories
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
                 />
