@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef} from 'react';
+import React, {useState, useMemo, useRef, memo} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
@@ -114,7 +114,7 @@ const AssignToStoryButton = ({text, stories}) => {
     );
 };
 
-const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
+const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
@@ -218,7 +218,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
         />
         </>
     );
-};
+}, (prev, next) =>
+    prev.text === next.text &&
+    prev.story === next.story &&
+    prev.storiesLoaded === next.storiesLoaded &&
+    prev.stories === next.stories
+);
 
 export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
