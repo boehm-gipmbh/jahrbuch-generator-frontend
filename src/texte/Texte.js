@@ -13,8 +13,9 @@ import {
     TableRow,
     Typography, Tooltip,
     Popover, MenuList, MenuItem, Divider, TextField as MuiTextField,
-    Snackbar
+    Snackbar, InputAdornment
 } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -176,7 +177,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                     <MuiTextField autoFocus size="small" multiline minRows={Math.max(3, (text.description || '').split('\n').length)} value={editValue} fullWidth
                         onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown}
-                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
+                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                        InputProps={{endAdornment: editValue ? (
+                            <InputAdornment position="end">
+                                <IconButton size="small" onMouseDown={e => { e.preventDefault(); setEditValue(''); }}><ClearIcon fontSize="small"/></IconButton>
+                            </InputAdornment>
+                        ) : null}}/>
                 ) : (
                     <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
                     <pre className="wrap-pre" onClick={() => startEdit('description')}

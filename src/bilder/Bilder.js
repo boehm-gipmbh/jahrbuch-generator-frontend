@@ -8,7 +8,8 @@ import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
-import {Box, Button, Container, Checkbox, Paper, Typography, TextField, Snackbar} from '@mui/material';
+import {Box, Button, Container, Checkbox, Paper, Typography, TextField, Snackbar, InputAdornment} from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -173,7 +174,12 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                 {editField === 'description' ? (
                     <TextField autoFocus size="small" multiline value={editValue} onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth
-                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
+                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                        InputProps={{endAdornment: editValue ? (
+                            <InputAdornment position="end">
+                                <IconButton size="small" onMouseDown={e => { e.preventDefault(); setEditValue(''); }}><ClearIcon fontSize="small"/></IconButton>
+                            </InputAdornment>
+                        ) : null}}/>
                 ) : (
                     <Box sx={{mt: 'auto', mb: 5}}>
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>

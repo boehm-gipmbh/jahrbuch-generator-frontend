@@ -1,7 +1,8 @@
 import {useState} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment} from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -149,6 +150,11 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             onKeyDown={handleKeyDown}
                             fullWidth
                             inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                            InputProps={{endAdornment: editValue ? (
+                                <InputAdornment position="end">
+                                    <IconButton size="small" onMouseDown={e => { e.preventDefault(); setEditValue(''); }}><ClearIcon fontSize="small"/></IconButton>
+                                </InputAdornment>
+                            ) : null}}
                         />
                     ) : (
                         <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
