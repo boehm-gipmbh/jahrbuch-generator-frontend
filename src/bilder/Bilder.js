@@ -150,11 +150,13 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                     <TextField autoFocus size="small" value={editValue} onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
                 ) : (
+                    <Tooltip title={isComplete ? '' : 'Titel bearbeiten'}>
                     <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
                         cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                         onClick={() => startEdit('title')}>
                         {bild.title || 'Kein Titel'}
                     </Typography>
+                    </Tooltip>
                 )}
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                     <AuthImage
@@ -172,10 +174,12 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
                     <Box sx={{mt: 'auto'}}>
+                        <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'}>
                         <pre className="wrap-pre" onClick={() => startEdit('description')}
                             style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
                             {bild.description}
                         </pre>
+                        </Tooltip>
                     </Box>
                 )}
                 {!Boolean(story) && (

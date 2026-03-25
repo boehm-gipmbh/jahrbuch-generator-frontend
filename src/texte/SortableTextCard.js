@@ -116,6 +116,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             sx={{mb: 1}}
                         />
                     ) : (
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'}>
                         <Typography
                             variant="subtitle1"
                             component="div"
@@ -130,6 +131,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             {text.title}
                             {!Boolean(story) && <StoryChip text={text} size='small'/>}
                         </Typography>
+                        </Tooltip>
                     )}
 
                     {/* Text */}
@@ -147,6 +149,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                         />
                     ) : (
+                        <Tooltip title={isComplete ? '' : 'Text bearbeiten'}>
                         <pre
                             className="wrap-pre"
                             onClick={() => startEdit('description')}
@@ -154,6 +157,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                         >
                             {text.description}
                         </pre>
+                        </Tooltip>
                     )}
                 </Box>
 
