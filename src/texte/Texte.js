@@ -12,7 +12,8 @@ import {
     TableCell,
     TableRow,
     Typography, Tooltip,
-    Popover, MenuList, MenuItem, Divider, TextField as MuiTextField
+    Popover, MenuList, MenuItem, Divider, TextField as MuiTextField,
+    Snackbar
 } from '@mui/material';
 import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
@@ -116,9 +117,13 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
+    const [lockMsg, setLockMsg] = useState(false);
     const isComplete = Boolean(text.complete);
 
-    const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(text[field] ?? ''); } };
+    const startEdit = (field) => {
+        if (isComplete) { setLockMsg(true); return; }
+        setEditField(field); setEditValue(text[field] ?? '');
+    };
     const commitEdit = () => {
         if (editField && editValue !== (text[editField] ?? '')) onUpdate({...text, [editField]: editValue});
         setEditField(null);
@@ -129,6 +134,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
     };
 
     return (
+        <>
         <TableRow>
             <TableCell sx={{width: '2rem'}}>
                 <Tooltip title={isComplete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
@@ -149,14 +155,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                                 onChange={e => setEditValue(e.target.value)}
                                 onBlur={commitEdit} onKeyDown={handleKeyDown}/>
                         ) : (
-                            <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                                <Typography variant="subtitle1" component="span" color="primary"
-                                    sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
-                                        '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
-                                    onClick={() => startEdit('title')}>
-                                    {text.title}
-                                </Typography>
-                            </Tooltip>
+                            <Typography variant="subtitle1" component="span" color="primary"
+                                sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
+                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                                onClick={() => startEdit('title')}>
+                                {text.title}
+                            </Typography>
                         )}
                         {!Boolean(story) && <StoryChip text={text} size='small'/>}
                     </Box>
@@ -170,12 +174,10 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                         onBlur={commitEdit} onKeyDown={handleKeyDown}
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
-                    <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                        <pre className="wrap-pre" onClick={() => startEdit('description')}
-                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
-                            {text.description}
-                        </pre>
-                    </Tooltip>
+                    <pre className="wrap-pre" onClick={() => startEdit('description')}
+                        style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
+                        {text.description}
+                    </pre>
                 )}
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
@@ -189,6 +191,15 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                 </Box>
             </TableCell>
         </TableRow>
+        <Snackbar
+
+            open={lockMsg}
+            autoHideDuration={2500}
+            onClose={() => setLockMsg(false)}
+            message="Entsperren zum Bearbeiten"
+            anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+        />
+        </>
     );
 };
 

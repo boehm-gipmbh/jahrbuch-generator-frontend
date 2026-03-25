@@ -8,7 +8,7 @@ import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
-import {Box, Button, Container, Checkbox, Paper, Typography, TextField} from '@mui/material';
+import {Box, Button, Container, Checkbox, Paper, Typography, TextField, Snackbar} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -110,9 +110,13 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
+    const [lockMsg, setLockMsg] = useState(false);
     const isComplete = Boolean(bild.complete);
 
-    const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(bild[field] ?? ''); } };
+    const startEdit = (field) => {
+        if (isComplete) { setLockMsg(true); return; }
+        setEditField(field); setEditValue(bild[field] ?? '');
+    };
     const commitEdit = () => {
         if (editField && editValue !== (bild[editField] ?? '')) onUpdate({...bild, [editField]: editValue});
         setEditField(null);
@@ -123,6 +127,7 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
     };
 
     return (
+        <>
         <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
             {/* Priority oben links */}
             <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
@@ -145,13 +150,11 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                     <TextField autoFocus size="small" value={editValue} onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
                 ) : (
-                    <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                        <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
-                            cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
-                            onClick={() => startEdit('title')}>
-                            {bild.title || 'Kein Titel'}
-                        </Typography>
-                    </Tooltip>
+                    <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                        cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                        onClick={() => startEdit('title')}>
+                        {bild.title || 'Kein Titel'}
+                    </Typography>
                 )}
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                     <AuthImage
@@ -169,12 +172,10 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
                     <Box sx={{mt: 'auto'}}>
-                        <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                            <pre className="wrap-pre" onClick={() => startEdit('description')}
-                                style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
-                                {bild.description}
-                            </pre>
-                        </Tooltip>
+                        <pre className="wrap-pre" onClick={() => startEdit('description')}
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
+                            {bild.description}
+                        </pre>
                     </Box>
                 )}
                 {!Boolean(story) && (
@@ -213,6 +214,14 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                 </ButtonGroup>
             </Box>
         </Paper>
+        <Snackbar
+            open={lockMsg}
+            autoHideDuration={2500}
+            onClose={() => setLockMsg(false)}
+            message="Entsperren zum Bearbeiten"
+            anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+        />
+        </>
     );
 };
 

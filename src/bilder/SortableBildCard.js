@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -25,10 +25,11 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
+    const [lockMsg, setLockMsg] = useState(false);
     const isComplete = Boolean(bild.complete);
 
     const startEdit = (field) => {
-        if (isComplete) return;
+        if (isComplete) { setLockMsg(true); return; }
         setEditField(field);
         setEditValue(bild[field] ?? '');
     };
@@ -115,21 +116,19 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                             sx={{mb: 1}}
                         />
                     ) : (
-                        <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                            <Typography
-                                variant="subtitle1"
-                                component="div"
-                                color="primary"
-                                onClick={() => startEdit('title')}
-                                sx={{
-                                    mb: 1, fontWeight: 'bold', textAlign: 'center',
-                                    cursor: isComplete ? 'default' : 'text',
-                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
-                                }}
-                            >
-                                {bild.title || 'Kein Titel'}
-                            </Typography>
-                        </Tooltip>
+                        <Typography
+                            variant="subtitle1"
+                            component="div"
+                            color="primary"
+                            onClick={() => startEdit('title')}
+                            sx={{
+                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                cursor: isComplete ? 'default' : 'text',
+                                '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
+                            }}
+                        >
+                            {bild.title || 'Kein Titel'}
+                        </Typography>
                     )}
 
                     {/* Bild */}
@@ -157,16 +156,14 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                                 inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                             />
                         ) : (
-                            <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
-                                <pre
-                                    className="wrap-pre"
-                                    onClick={() => startEdit('description')}
-                                    style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}
-                                >
-                                    {bild.description}
-                                    {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
-                                </pre>
-                            </Tooltip>
+                            <pre
+                                className="wrap-pre"
+                                onClick={() => startEdit('description')}
+                                style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}
+                            >
+                                {bild.description}
+                                {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
+                            </pre>
                         )}
                     </Box>
                 </Box>
@@ -194,6 +191,13 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                     </Tooltip>
                 </Box>
             </Paper>
+            <Snackbar
+                open={lockMsg}
+                autoHideDuration={2500}
+                onClose={() => setLockMsg(false)}
+                message="Entsperren zum Bearbeiten"
+                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+            />
         </Box>
     );
 };
