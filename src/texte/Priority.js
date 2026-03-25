@@ -16,8 +16,8 @@ const texteMap = {
 
 
 export const Priority = ({priority, disabled}) => {
-    const color = disabled ? 'text.disabled' : (colorMap[priority] ?? colorMap[3]);
-    return <TrafficIcon sx={{ color }}/>;
+    const color = colorMap[priority] ?? colorMap[3];
+    return <TrafficIcon sx={{ color, opacity: disabled ? 0.4 : 1 }}/>;
 };
 
 export const EditTextPriority = ({priority, setPriority, disabled}) => {
