@@ -117,6 +117,11 @@ const Stories = ({drawerOpen, openNewStory, stories}) => {
             </ListItem>
             {drawerOpen && (
                 <Box sx={{px: 1, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center'}}>
+                    <Tooltip title={sortAsc ? 'A→Z' : 'Z→A'}>
+                        <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
+                            {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
                     <TextField
                         size="small" placeholder="Suchen…" value={search}
                         onChange={e => setSearch(e.target.value)}
@@ -129,11 +134,6 @@ const Stories = ({drawerOpen, openNewStory, stories}) => {
                             )
                         } : undefined}
                     />
-                    <Tooltip title={sortAsc ? 'A→Z' : 'Z→A'}>
-                        <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
-                            {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
-                        </IconButton>
-                    </Tooltip>
                     <Tooltip title="Neue Story">
                         <IconButton size="small" onClick={openNewStory}>
                             <AddIcon fontSize="small"/>
