@@ -1,14 +1,16 @@
+import {useState} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
-import {Priority} from './Priority';
+import {EditTextPriority} from './Priority';
 import {StoryChip} from './StoryChip';
+import {api} from './api';
 
-export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRemoveFromStory}) => {
+export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `text-${text.id}`
     });
@@ -17,6 +19,33 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
         transition,
         opacity: isDragging ? 0.5 : 1,
     };
+
+    const [updateText] = api.endpoints.updateText.useMutation();
+    const [editField, setEditField] = useState(null); // 'title' | 'description' | null
+    const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(text.priority);
+    const [lockMsg, setLockMsg] = useState(false);
+    const isComplete = Boolean(text.complete);
+
+    const startEdit = (field) => {
+        if (isComplete) { setLockMsg(true); return; }
+        setEditField(field);
+        setEditValue(text[field] ?? '');
+    };
+
+    const commitEdit = () => {
+        if (editField && editValue !== (text[editField] ?? '')) {
+            updateText({...text, [editField]: editValue});
+        }
+        setEditField(null);
+    };
+
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') { setEditField(null); }
+    };
+
+    const setPriority = (p) => { setPriorityState(p); updateText({...text, priority: p}); };
 
     return (
         <Box ref={setNodeRef} style={style}>
@@ -48,19 +77,21 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
                 </Box>
 
                 {/* Priority oben links */}
-                {Boolean(text.priority) && (
-                    <Box sx={{position: 'absolute', top: 4, left: 4, zIndex: 1}}>
-                        <Priority priority={text.priority}/>
-                    </Box>
-                )}
+                <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
+                    <EditTextPriority
+                        priority={priority}
+                        setPriority={setPriority}
+                        disabled={isComplete}
+                    />
+                </Box>
 
                 {/* Lock oben rechts */}
-                <Tooltip title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
+                <Tooltip title={isComplete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
                     <Checkbox
-                        checked={Boolean(text.complete)}
+                        checked={isComplete}
                         checkedIcon={<LockIcon color="success" fontSize='small'/>}
                         icon={<LockOpenIcon color="action" fontSize='small'/>}
-                        onChange={() => onSetComplete({text, complete: !Boolean(text.complete)})}
+                        onChange={() => onSetComplete({text, complete: !isComplete})}
                         sx={{
                             position: 'absolute',
                             top: 0,
@@ -71,19 +102,66 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
                 </Tooltip>
 
                 {/* Inhalt */}
-                <Box
-                    onClick={() => onClickText(text)}
-                    sx={{cursor: 'pointer', flex: 1, pt: 3}}
-                >
-                    <Typography variant="subtitle1" component="div" color="primary"
-                                sx={{mb: 1, fontWeight: 'bold', textAlign: 'center'}}>
-                        {text.title}
-                        {!Boolean(story) && <StoryChip text={text} size='small'/>}
-                    </Typography>
-                    <pre className="wrap-pre">{text.description}</pre>
+                <Box sx={{flex: 1, pt: 3}}>
+                    {/* Titel */}
+                    {editField === 'title' ? (
+                        <TextField
+                            autoFocus
+                            size="small"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={handleKeyDown}
+                            fullWidth
+                            sx={{mb: 1}}
+                        />
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
+                        <Typography
+                            variant="subtitle1"
+                            component="div"
+                            color="primary"
+                            onClick={() => startEdit('title')}
+                            sx={{
+                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                cursor: isComplete ? 'default' : 'text',
+                                '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
+                            }}
+                        >
+                            {text.title}
+                            {!Boolean(story) && <StoryChip text={text} size='small'/>}
+                        </Typography>
+                        </Tooltip>
+                    )}
+
+                    {/* Text */}
+                    {editField === 'description' ? (
+                        <TextField
+                            autoFocus
+                            size="small"
+                            multiline
+                            minRows={Math.max(3, (text.description || '').split('\n').length)}
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={handleKeyDown}
+                            fullWidth
+                            inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                        />
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
+                        <pre
+                            className="wrap-pre"
+                            onClick={() => startEdit('description')}
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '3em'}}
+                        >
+                            {text.description}
+                        </pre>
+                        </Tooltip>
+                    )}
                 </Box>
 
-                {/* Remove from story unten rechts */}
+                {/* Aus Story entfernen */}
                 <Box sx={{
                     position: 'absolute',
                     bottom: 4,
@@ -96,12 +174,9 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
                     <Tooltip title="Aus Story entfernen">
                         <span>
                             <IconButton
-                                disabled={Boolean(text.complete)}
+                                disabled={isComplete}
                                 size="small"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveFromStory(text);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); onRemoveFromStory(text); }}
                             >
                                 <LinkOffIcon fontSize="small"/>
                             </IconButton>
@@ -109,6 +184,13 @@ export const SortableTextCard = ({text, story, onClickText, onSetComplete, onRem
                     </Tooltip>
                 </Box>
             </Paper>
+            <Snackbar
+                open={lockMsg}
+                autoHideDuration={2500}
+                onClose={() => setLockMsg(false)}
+                message="Entsperren zum Bearbeiten"
+                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+            />
         </Box>
     );
 };

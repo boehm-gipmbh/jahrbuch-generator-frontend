@@ -1,15 +1,17 @@
+import {useState} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar} from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AuthImage from './AuthImage';
-import {Priority} from '../texte/Priority';
+import {EditBildPriority} from './Priority';
 import {StoryChip} from '../texte/StoryChip';
+import {api} from './api';
 
-export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRemoveFromStory}) => {
+export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -18,6 +20,33 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRem
         transition,
         opacity: isDragging ? 0.5 : 1,
     };
+
+    const [updateBild] = api.endpoints.updateBild.useMutation();
+    const [editField, setEditField] = useState(null); // 'title' | 'description' | null
+    const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(bild.priority);
+    const [lockMsg, setLockMsg] = useState(false);
+    const isComplete = Boolean(bild.complete);
+
+    const startEdit = (field) => {
+        if (isComplete) { setLockMsg(true); return; }
+        setEditField(field);
+        setEditValue(bild[field] ?? '');
+    };
+
+    const commitEdit = () => {
+        if (editField && editValue !== (bild[editField] ?? '')) {
+            updateBild({...bild, [editField]: editValue});
+        }
+        setEditField(null);
+    };
+
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') { setEditField(null); }
+    };
+
+    const setPriority = (p) => { setPriorityState(p); updateBild({...bild, priority: p}); };
 
     return (
         <Box ref={setNodeRef} style={style}>
@@ -49,57 +78,62 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRem
                 </Box>
 
                 {/* Priority oben links */}
-                {Boolean(bild.priority) && (
-                    <Box
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClickBild(bild);
-                        }}
-                        sx={{
-                            position: 'absolute',
-                            top: 4,
-                            left: 4,
-                            zIndex: 1,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <Priority priority={bild.priority}/>
-                    </Box>
-                )}
+                <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
+                    <EditBildPriority
+                        priority={priority}
+                        setPriority={setPriority}
+                        disabled={isComplete}
+                    />
+                </Box>
 
                 {/* Löschschutz oben rechts */}
-                <Tooltip title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
+                <Tooltip title={isComplete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
                     <Checkbox
-                        checked={Boolean(bild.complete)}
+                        checked={isComplete}
                         checkedIcon={<LockIcon color="success" fontSize='small'/>}
                         icon={<LockOpenIcon color="action" fontSize='small'/>}
-                        onChange={() => onSetComplete({bild, complete: !Boolean(bild.complete)})}
+                        onChange={() => onSetComplete({bild, complete: !isComplete})}
                         sx={{
                             position: 'absolute',
                             top: 0,
                             right: 0,
-                            '&.Mui-checked': {
-                                color: theme => theme.palette.success.main
-                            }
+                            '&.Mui-checked': {color: theme => theme.palette.success.main}
                         }}
                     />
                 </Tooltip>
 
-                <Box
-                    onClick={() => onClickBild(bild)}
-                    sx={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flex: 1,
-                        pt: 3
-                    }}
-                >
-                    <Typography variant="subtitle1" component="div" color="primary"
-                                sx={{mb: 1, fontWeight: 'bold', textAlign: 'center'}}>
-                        {bild.title || 'Kein Titel'}
-                    </Typography>
+                <Box sx={{display: 'flex', flexDirection: 'column', flex: 1, pt: 3}}>
+                    {/* Titel */}
+                    {editField === 'title' ? (
+                        <TextField
+                            autoFocus
+                            size="small"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={handleKeyDown}
+                            fullWidth
+                            sx={{mb: 1}}
+                        />
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
+                        <Typography
+                            variant="subtitle1"
+                            component="div"
+                            color="primary"
+                            onClick={() => startEdit('title')}
+                            sx={{
+                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                cursor: isComplete ? 'default' : 'text',
+                                '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
+                            }}
+                        >
+                            {bild.title || 'Kein Titel'}
+                        </Typography>
+                        </Tooltip>
+                    )}
 
+                    {/* Bild */}
                     <Box sx={{mb: 2}}>
                         <AuthImage
                             src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
@@ -109,13 +143,36 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRem
                         />
                     </Box>
 
+                    {/* Beschreibung */}
                     <Box sx={{mt: 'auto'}}>
-                        <pre className="wrap-pre">
-                            {bild.description}
-                            {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
-                        </pre>
+                        {editField === 'description' ? (
+                            <TextField
+                                autoFocus
+                                size="small"
+                                multiline
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onBlur={commitEdit}
+                                onKeyDown={handleKeyDown}
+                                fullWidth
+                                inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                            />
+                        ) : (
+                            <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
+                            <pre
+                                className="wrap-pre"
+                                onClick={() => startEdit('description')}
+                                style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}
+                            >
+                                {bild.description}
+                                {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
+                            </pre>
+                            </Tooltip>
+                        )}
                     </Box>
                 </Box>
+
+                {/* Aus Story entfernen */}
                 <Box sx={{
                     position: 'absolute',
                     bottom: 4,
@@ -128,12 +185,9 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRem
                     <Tooltip title="Aus Story entfernen">
                         <span>
                             <IconButton
-                                disabled={Boolean(bild.complete)}
+                                disabled={isComplete}
                                 size="small"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveFromStory(bild);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); onRemoveFromStory(bild); }}
                             >
                                 <LinkOffIcon fontSize="small"/>
                             </IconButton>
@@ -141,6 +195,13 @@ export const SortableBildCard = ({bild, story, onClickBild, onSetComplete, onRem
                     </Tooltip>
                 </Box>
             </Paper>
+            <Snackbar
+                open={lockMsg}
+                autoHideDuration={2500}
+                onClose={() => setLockMsg(false)}
+                message="Entsperren zum Bearbeiten"
+                anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
+            />
         </Box>
     );
 };

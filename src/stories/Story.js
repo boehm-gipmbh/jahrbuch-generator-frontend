@@ -12,7 +12,7 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
-import {Layout, newText, setOpenBild, setOpenText} from '../layout';
+import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
 import {
@@ -164,7 +164,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             key={id}
             bild={item}
             story={story}
-            onClickBild={(b) => dispatch(setOpenBild(b))}
             onSetComplete={(args) => setBildComplete(args)}
             onRemoveFromStory={(b) => updateBild({...b, story: null}).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
@@ -175,7 +174,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             key={id}
             text={item}
             story={story}
-            onClickText={(t) => dispatch(setOpenText(t))}
             onSetComplete={(args) => setTextComplete(args)}
             onRemoveFromStory={(t) => updateText({...t, story: null}).unwrap()
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
