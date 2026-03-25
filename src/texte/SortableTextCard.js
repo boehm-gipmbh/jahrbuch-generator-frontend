@@ -115,20 +115,22 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             sx={{mb: 1}}
                         />
                     ) : (
-                        <Typography
-                            variant="subtitle1"
-                            component="div"
-                            color="primary"
-                            onClick={() => startEdit('title')}
-                            sx={{
-                                mb: 1, fontWeight: 'bold', textAlign: 'center',
-                                cursor: isComplete ? 'default' : 'text',
-                                '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
-                            }}
-                        >
-                            {text.title}
-                            {!Boolean(story) && <StoryChip text={text} size='small'/>}
-                        </Typography>
+                        <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
+                            <Typography
+                                variant="subtitle1"
+                                component="div"
+                                color="primary"
+                                onClick={() => startEdit('title')}
+                                sx={{
+                                    mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                    cursor: isComplete ? 'default' : 'text',
+                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
+                                }}
+                            >
+                                {text.title}
+                                {!Boolean(story) && <StoryChip text={text} size='small'/>}
+                            </Typography>
+                        </Tooltip>
                     )}
 
                     {/* Text */}
@@ -146,13 +148,15 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                         />
                     ) : (
-                        <pre
-                            className="wrap-pre"
-                            onClick={() => startEdit('description')}
-                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '3em'}}
-                        >
-                            {text.description}
-                        </pre>
+                        <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
+                            <pre
+                                className="wrap-pre"
+                                onClick={() => startEdit('description')}
+                                style={{cursor: isComplete ? 'default' : 'text', minHeight: '3em'}}
+                            >
+                                {text.description}
+                            </pre>
+                        </Tooltip>
                     )}
                 </Box>
 

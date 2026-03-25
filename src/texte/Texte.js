@@ -149,12 +149,14 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                                 onChange={e => setEditValue(e.target.value)}
                                 onBlur={commitEdit} onKeyDown={handleKeyDown}/>
                         ) : (
-                            <Typography variant="subtitle1" component="span" color="primary"
-                                sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
-                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
-                                onClick={() => startEdit('title')}>
-                                {text.title}
-                            </Typography>
+                            <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
+                                <Typography variant="subtitle1" component="span" color="primary"
+                                    sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
+                                        '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                                    onClick={() => startEdit('title')}>
+                                    {text.title}
+                                </Typography>
+                            </Tooltip>
                         )}
                         {!Boolean(story) && <StoryChip text={text} size='small'/>}
                     </Box>
@@ -168,10 +170,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                         onBlur={commitEdit} onKeyDown={handleKeyDown}
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
                 ) : (
-                    <pre className="wrap-pre" onClick={() => startEdit('description')}
-                        style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
-                        {text.description}
-                    </pre>
+                    <Tooltip title={isComplete ? "Entsperren zum Bearbeiten" : ""} disableHoverListener={!isComplete}>
+                        <pre className="wrap-pre" onClick={() => startEdit('description')}
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
+                            {text.description}
+                        </pre>
+                    </Tooltip>
                 )}
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
