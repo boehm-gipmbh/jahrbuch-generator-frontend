@@ -163,7 +163,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                     </Box>
                 </Box>
                 {editField === 'description' ? (
-                    <MuiTextField autoFocus size="small" multiline rows={6} value={editValue} fullWidth
+                    <MuiTextField autoFocus size="small" multiline minRows={Math.max(3, (text.description || '').split('\n').length)} value={editValue} fullWidth
                         onChange={e => setEditValue(e.target.value)}
                         onBlur={commitEdit} onKeyDown={handleKeyDown}
                         inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>

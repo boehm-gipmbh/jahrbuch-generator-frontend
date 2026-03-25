@@ -137,7 +137,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                             autoFocus
                             size="small"
                             multiline
-                            rows={10}
+                            minRows={Math.max(3, (text.description || '').split('\n').length)}
                             value={editValue}
                             onChange={e => setEditValue(e.target.value)}
                             onBlur={commitEdit}
