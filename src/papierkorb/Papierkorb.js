@@ -1,16 +1,24 @@
 import React, {useState} from 'react';
 import {useDispatch} from 'react-redux';
 import {
-    Box, Button, Container, Paper, Typography, Table, TableBody, TableCell, TableRow,
-    Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
+    Box, Button, Container, Paper, Typography,
+    List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction,
+    Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+    Collapse
 } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import ImageIcon from '@mui/icons-material/Image';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {Layout} from '../layout';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
+
+const KEIN_STORY = '__kein_story__';
 
 const ConfirmDialog = ({open, title, text, onConfirm, onCancel}) => (
     <Dialog open={open} onClose={onCancel}>
@@ -25,6 +33,66 @@ const ConfirmDialog = ({open, title, text, onConfirm, onCancel}) => (
     </Dialog>
 );
 
+const ItemRow = ({type, item, onRestore, onHardDelete}) => (
+    <ListItem sx={{pl: 6}}>
+        <ListItemIcon sx={{minWidth: 32}}>
+            {type === 'bild'
+                ? <ImageIcon fontSize="small" color="action"/>
+                : <TextSnippetIcon fontSize="small" color="action"/>}
+        </ListItemIcon>
+        <ListItemText primary={item.title || 'Kein Titel'}
+            primaryTypographyProps={{variant: 'body2'}}/>
+        <ListItemSecondaryAction>
+            <Tooltip title="Wiederherstellen">
+                <IconButton size="small" onClick={() => onRestore(item)}>
+                    <RestoreIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Endgültig löschen">
+                <IconButton size="small" color="error" onClick={() => onHardDelete(type, item)}>
+                    <DeleteForeverIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+        </ListItemSecondaryAction>
+    </ListItem>
+);
+
+const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete}) => {
+    const [open, setOpen] = useState(true);
+    const count = bilder.length + texte.length;
+    const label = storyName === KEIN_STORY ? '(ohne Story)' : storyName;
+
+    return (
+        <>
+            <ListItem button onClick={() => setOpen(v => !v)} sx={{pl: 2}}>
+                <ListItemIcon sx={{minWidth: 32}}>
+                    {open ? <FolderOpenIcon fontSize="small" color="primary"/> : <FolderIcon fontSize="small" color="primary"/>}
+                </ListItemIcon>
+                <ListItemText
+                    primary={label}
+                    secondary={`${count} Einträge`}
+                    primaryTypographyProps={{fontWeight: 'medium'}}
+                />
+                {open ? <ExpandMoreIcon fontSize="small"/> : <ChevronRightIcon fontSize="small"/>}
+            </ListItem>
+            <Collapse in={open}>
+                <List dense disablePadding>
+                    {bilder.map(b => (
+                        <ItemRow key={`bild-${b.id}`} type="bild" item={b}
+                            onRestore={() => onRestore('bild', b)}
+                            onHardDelete={onHardDelete}/>
+                    ))}
+                    {texte.map(t => (
+                        <ItemRow key={`text-${t.id}`} type="text" item={t}
+                            onRestore={() => onRestore('text', t)}
+                            onHardDelete={onHardDelete}/>
+                    ))}
+                </List>
+            </Collapse>
+        </>
+    );
+};
+
 export const Papierkorb = () => {
     const dispatch = useDispatch();
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
@@ -34,7 +102,19 @@ export const Papierkorb = () => {
     const [restoreText] = texteApi.endpoints.restoreText.useMutation();
     const [hardDeleteText] = texteApi.endpoints.hardDeleteText.useMutation();
 
-    const [confirmItem, setConfirmItem] = useState(null); // {type: 'bild'|'text', item}
+    const [confirmItem, setConfirmItem] = useState(null); // {type, item}
+
+    const handleRestore = (type, item) => {
+        if (type === 'bild') {
+            restoreBild(item).unwrap()
+                .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                .catch(e => console.error(e));
+        } else {
+            restoreText(item).unwrap()
+                .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
+                .catch(e => console.error(e));
+        }
+    };
 
     const handleHardDelete = () => {
         if (!confirmItem) return;
@@ -50,6 +130,26 @@ export const Papierkorb = () => {
         setConfirmItem(null);
     };
 
+    // Gruppieren nach deletedFromStoryName
+    const groups = {};
+    bilderDeleted.forEach(b => {
+        const key = b.deletedFromStoryName || KEIN_STORY;
+        if (!groups[key]) groups[key] = {bilder: [], texte: []};
+        groups[key].bilder.push(b);
+    });
+    texteDeleted.forEach(t => {
+        const key = t.deletedFromStoryName || KEIN_STORY;
+        if (!groups[key]) groups[key] = {bilder: [], texte: []};
+        groups[key].texte.push(t);
+    });
+
+    // Story-Gruppen zuerst, "ohne Story" zuletzt
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+        if (a === KEIN_STORY) return 1;
+        if (b === KEIN_STORY) return -1;
+        return a.localeCompare(b);
+    });
+
     const isEmpty = bilderDeleted.length === 0 && texteDeleted.length === 0;
 
     return (
@@ -64,58 +164,18 @@ export const Papierkorb = () => {
                             Papierkorb ist leer
                         </Typography>
                     ) : (
-                        <Table size="small">
-                            <TableBody>
-                                {bilderDeleted.map(bild => (
-                                    <TableRow key={`bild-${bild.id}`}>
-                                        <TableCell sx={{width: 32}}>
-                                            <Tooltip title="Bild"><ImageIcon fontSize="small" color="action"/></Tooltip>
-                                        </TableCell>
-                                        <TableCell>{bild.title || 'Kein Titel'}</TableCell>
-                                        <TableCell align="right">
-                                            <Tooltip title="Wiederherstellen">
-                                                <IconButton size="small" onClick={() =>
-                                                    restoreBild(bild).unwrap()
-                                                        .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
-                                                        .catch(e => console.error(e))}>
-                                                    <RestoreIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Endgültig löschen">
-                                                <IconButton size="small" color="error"
-                                                    onClick={() => setConfirmItem({type: 'bild', item: bild})}>
-                                                    <DeleteForeverIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {texteDeleted.map(text => (
-                                    <TableRow key={`text-${text.id}`}>
-                                        <TableCell sx={{width: 32}}>
-                                            <Tooltip title="Text"><TextSnippetIcon fontSize="small" color="action"/></Tooltip>
-                                        </TableCell>
-                                        <TableCell>{text.title || 'Kein Titel'}</TableCell>
-                                        <TableCell align="right">
-                                            <Tooltip title="Wiederherstellen">
-                                                <IconButton size="small" onClick={() =>
-                                                    restoreText(text).unwrap()
-                                                        .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
-                                                        .catch(e => console.error(e))}>
-                                                    <RestoreIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Endgültig löschen">
-                                                <IconButton size="small" color="error"
-                                                    onClick={() => setConfirmItem({type: 'text', item: text})}>
-                                                    <DeleteForeverIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <List dense>
+                            {sortedKeys.map(key => (
+                                <StoryGroup
+                                    key={key}
+                                    storyName={key}
+                                    bilder={groups[key].bilder}
+                                    texte={groups[key].texte}
+                                    onRestore={handleRestore}
+                                    onHardDelete={(type, item) => setConfirmItem({type, item})}
+                                />
+                            ))}
+                        </List>
                     )}
                 </Paper>
             </Container>
@@ -123,7 +183,7 @@ export const Papierkorb = () => {
             <ConfirmDialog
                 open={Boolean(confirmItem)}
                 title="Endgültig löschen?"
-                text={`"${confirmItem?.item?.title || 'Eintrag'}" wird unwiderruflich gelöscht — inkl. Bilddatei.`}
+                text={`„${confirmItem?.item?.title || 'Eintrag'}" wird unwiderruflich gelöscht — inkl. Bilddatei.`}
                 onConfirm={handleHardDelete}
                 onCancel={() => setConfirmItem(null)}
             />
