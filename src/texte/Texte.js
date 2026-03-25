@@ -187,12 +187,12 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                     <Tooltip title={isComplete ? '' : 'Text bearbeiten'} followCursor>
                     <pre className="wrap-pre" onClick={() => startEdit('description')}
                         style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em',
-                            border: (!isComplete && !text.description) ? '1px solid rgba(0,0,0,0.23)' : 'none',
+                            border: !text.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                             borderRadius: 4,
                             padding: '8.5px 14px',
                             marginBottom: 40,
                             color: text.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
-                        {text.description || (!isComplete ? 'Erinnerung hinzufügen …' : '')}
+                        {text.description || 'Erinnerung hinzufügen …'}
                     </pre>
                     </Tooltip>
                 )}

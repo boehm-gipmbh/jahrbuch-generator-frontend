@@ -171,12 +171,12 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                                 className="wrap-pre"
                                 onClick={() => startEdit('description')}
                                 style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
-                                    border: (!isComplete && !bild.description) ? '1px solid rgba(0,0,0,0.23)' : 'none',
+                                    border: !bild.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                     borderRadius: 4,
                                     padding: '8.5px 14px',
                                     color: bild.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}
                             >
-                                {bild.description || (!isComplete ? 'Beschreibung hinzufügen …' : '')}
+                                {bild.description || 'Beschreibung hinzufügen …'}
                                 {!Boolean(story) && <StoryChip bild={bild} size='small'/>}
                             </pre>
                             </Tooltip>
