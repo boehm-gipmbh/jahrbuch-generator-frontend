@@ -17,6 +17,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {Layout} from '../layout';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
+import {api as storyApi} from '../stories';
 
 const KEIN_STORY = '__kein_story__';
 
@@ -57,10 +58,11 @@ const ItemRow = ({type, item, onRestore, onHardDelete}) => (
     </ListItem>
 );
 
-const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete}) => {
+const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestoreStory}) => {
     const [open, setOpen] = useState(true);
     const count = bilder.length + texte.length;
-    const label = storyName === KEIN_STORY ? '(ohne Story)' : storyName;
+    const isReal = storyName !== KEIN_STORY;
+    const label = isReal ? storyName : '(ohne Story)';
 
     return (
         <>
@@ -73,6 +75,22 @@ const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete}) => {
                     secondary={`${count} Einträge`}
                     primaryTypographyProps={{fontWeight: 'medium'}}
                 />
+                {isReal && (
+                    <Box sx={{display: 'flex', gap: 0.5, mr: 1}} onClick={e => e.stopPropagation()}>
+                        <Tooltip title="Story + Inhalt wiederherstellen">
+                            <Button size="small" startIcon={<RestoreIcon/>}
+                                onClick={() => onRestoreStory(storyName, true)}>
+                                Mit Inhalt
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title="Nur Story wiederherstellen (Inhalte bleiben im Papierkorb)">
+                            <Button size="small" variant="outlined"
+                                onClick={() => onRestoreStory(storyName, false)}>
+                                Nur Story
+                            </Button>
+                        </Tooltip>
+                    </Box>
+                )}
                 {open ? <ExpandMoreIcon fontSize="small"/> : <ChevronRightIcon fontSize="small"/>}
             </ListItem>
             <Collapse in={open}>
@@ -101,6 +119,7 @@ export const Papierkorb = () => {
     const [hardDeleteBild] = bilderApi.endpoints.hardDeleteBild.useMutation();
     const [restoreText] = texteApi.endpoints.restoreText.useMutation();
     const [hardDeleteText] = texteApi.endpoints.hardDeleteText.useMutation();
+    const [restoreStory] = storyApi.endpoints.restoreStory.useMutation();
 
     const [confirmItem, setConfirmItem] = useState(null); // {type, item}
 
@@ -114,6 +133,18 @@ export const Papierkorb = () => {
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
                 .catch(e => console.error(e));
         }
+    };
+
+    const handleRestoreStory = (name, withContent) => {
+        restoreStory({name, withContent}).unwrap()
+            .then(() => {
+                dispatch(storyApi.util.invalidateTags(['Story']));
+                if (withContent) {
+                    dispatch(bilderApi.util.invalidateTags(['Bild']));
+                    dispatch(texteApi.util.invalidateTags(['Text']));
+                }
+            })
+            .catch(e => console.error(e));
     };
 
     const handleHardDelete = () => {
@@ -173,6 +204,7 @@ export const Papierkorb = () => {
                                     texte={groups[key].texte}
                                     onRestore={handleRestore}
                                     onHardDelete={(type, item) => setConfirmItem({type, item})}
+                                    onRestoreStory={handleRestoreStory}
                                 />
                             ))}
                         </List>
