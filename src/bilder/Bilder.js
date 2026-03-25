@@ -131,7 +131,9 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
         <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
             {/* Priority oben links */}
             <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
-                <EditBildPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...bild, priority: p}); }} disabled={isComplete}/>
+                <span onClick={() => isComplete && setLockMsg(true)}>
+                    <EditBildPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...bild, priority: p}); }} disabled={isComplete}/>
+                </span>
             </Box>
             {/* Löschschutz oben rechts */}
             <Tooltip title={isComplete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
@@ -209,7 +211,7 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                     </Tooltip>
                     {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
                     <Tooltip title="Bild löschen">
-                        <span>
+                        <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
                                 <DeleteIcon fontSize="small"/>
                             </IconButton>

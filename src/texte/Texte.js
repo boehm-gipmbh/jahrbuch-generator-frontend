@@ -167,7 +167,9 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                         {!Boolean(story) && <StoryChip text={text} size='small'/>}
                     </Box>
                     <Box>
-                        <EditTextPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...text, priority: p}); }} disabled={isComplete}/>
+                        <span onClick={() => isComplete && setLockMsg(true)}>
+                            <EditTextPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...text, priority: p}); }} disabled={isComplete}/>
+                        </span>
                     </Box>
                 </Box>
                 {editField === 'description' ? (
@@ -186,7 +188,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
                     <Tooltip title="Erinnerung löschen">
-                        <span>
+                        <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
                                 <DeleteIcon fontSize="small"/>
                             </IconButton>

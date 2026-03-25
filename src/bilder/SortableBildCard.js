@@ -79,11 +79,13 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
 
                 {/* Priority oben links */}
                 <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
-                    <EditBildPriority
-                        priority={priority}
-                        setPriority={setPriority}
-                        disabled={isComplete}
-                    />
+                    <span onClick={() => isComplete && setLockMsg(true)}>
+                        <EditBildPriority
+                            priority={priority}
+                            setPriority={setPriority}
+                            disabled={isComplete}
+                        />
+                    </span>
                 </Box>
 
                 {/* Löschschutz oben rechts */}
@@ -183,7 +185,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                     zIndex: 1
                 }}>
                     <Tooltip title="Aus Story entfernen">
-                        <span>
+                        <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton
                                 disabled={isComplete}
                                 size="small"

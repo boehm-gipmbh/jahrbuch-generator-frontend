@@ -78,11 +78,13 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
 
                 {/* Priority oben links */}
                 <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
-                    <EditTextPriority
-                        priority={priority}
-                        setPriority={setPriority}
-                        disabled={isComplete}
-                    />
+                    <span onClick={() => isComplete && setLockMsg(true)}>
+                        <EditTextPriority
+                            priority={priority}
+                            setPriority={setPriority}
+                            disabled={isComplete}
+                        />
+                    </span>
                 </Box>
 
                 {/* Lock oben rechts */}
@@ -172,7 +174,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                     zIndex: 1
                 }}>
                     <Tooltip title="Aus Story entfernen">
-                        <span>
+                        <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton
                                 disabled={isComplete}
                                 size="small"
