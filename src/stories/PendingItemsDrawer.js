@@ -3,6 +3,7 @@ import {
     Drawer, Box, Typography, TextField, ToggleButton, ToggleButtonGroup, Paper, IconButton, Tooltip
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ClearIcon from '@mui/icons-material/Clear';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -65,6 +66,13 @@ export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => 
                 size="small" fullWidth placeholder="Suchen…"
                 value={search} onChange={e => setSearch(e.target.value)}
                 sx={{mb: 1}}
+                InputProps={search ? {
+                    endAdornment: (
+                        <IconButton size="small" onClick={() => setSearch('')} edge="end">
+                            <ClearIcon fontSize="small"/>
+                        </IconButton>
+                    )
+                } : undefined}
             />
             <Box sx={{display: 'flex', gap: 1, mb: 1}}>
                 <TextField
