@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, memo} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment} from '@mui/material';
@@ -12,7 +12,7 @@ import {EditBildPriority} from './Priority';
 import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 
-export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}) => {
+export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -216,4 +216,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
             />
         </Box>
     );
-};
+}, (prev, next) =>
+    prev.bild === next.bild &&
+    prev.story === next.story
+);
