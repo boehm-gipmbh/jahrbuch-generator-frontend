@@ -10,10 +10,14 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
+    TextField,
     Toolbar,
     Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InboxIcon from '@mui/icons-material/Inbox';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
@@ -94,26 +98,55 @@ const StoryItem = ({s, drawerOpen}) => {
     );
 };
 
-const Stories = ({drawerOpen, openNewStory, stories}) => (
-    <>
-        <Divider/>
-        <ListItem
-            secondaryAction={drawerOpen &&
-                <IconButton edge='end' onClick={openNewStory}>
-                    <AddIcon/>
-                </IconButton>
-            }
-        >
-            <ListItemIcon><SnippetFolderIcon/></ListItemIcon>
-            <ListItemText primaryTypographyProps={{fontWeight: 'medium'}}>
-                Deine Stories
-            </ListItemText>
-        </ListItem>
-        {Array.from(stories).map(s => (
-            <StoryItem key={s.id} s={s} drawerOpen={drawerOpen}/>
-        ))}
-    </>
-);
+const Stories = ({drawerOpen, openNewStory, stories}) => {
+    const [search, setSearch] = useState('');
+    const [sortAsc, setSortAsc] = useState(true);
+
+    const filtered = Array.from(stories)
+        .filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+
+    return (
+        <>
+            <Divider/>
+            <ListItem>
+                <ListItemIcon><SnippetFolderIcon/></ListItemIcon>
+                <ListItemText primaryTypographyProps={{fontWeight: 'medium'}}>
+                    Deine Stories
+                </ListItemText>
+            </ListItem>
+            {drawerOpen && (
+                <Box sx={{px: 1, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center'}}>
+                    <TextField
+                        size="small" placeholder="Suchen…" value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        sx={{flex: 1}}
+                        InputProps={search ? {
+                            endAdornment: (
+                                <IconButton size="small" onClick={() => setSearch('')} edge="end">
+                                    <ClearIcon fontSize="small"/>
+                                </IconButton>
+                            )
+                        } : undefined}
+                    />
+                    <Tooltip title={sortAsc ? 'A→Z' : 'Z→A'}>
+                        <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
+                            {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Neue Story">
+                        <IconButton size="small" onClick={openNewStory}>
+                            <AddIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            )}
+            {filtered.map(s => (
+                <StoryItem key={s.id} s={s} drawerOpen={drawerOpen}/>
+            ))}
+        </>
+    );
+};
 
 export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild, stories = [], bilder ={}}) => (
     <Drawer
