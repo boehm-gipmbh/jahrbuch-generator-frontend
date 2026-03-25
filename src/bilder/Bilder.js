@@ -11,7 +11,7 @@ import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
-import {Box, Button, Container, Checkbox, Paper, Typography, TextField, Snackbar, InputAdornment} from '@mui/material';
+import {Box, Button, Container, Checkbox, Paper, Typography, TextField, Snackbar, InputAdornment, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions} from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import LockIcon from '@mui/icons-material/Lock';
@@ -115,6 +115,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
     const [lockMsg, setLockMsg] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
     const isComplete = Boolean(bild.complete);
 
     const startEdit = (field) => {
@@ -225,7 +226,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
                     <Tooltip title="Bild löschen">
                         <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
                                 <DeleteIcon fontSize="small"/>
                             </IconButton>
                         </span>
@@ -240,6 +241,18 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
             message="Entsperren zum Bearbeiten"
             anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
         />
+        <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
+            <DialogTitle>Bild in Papierkorb?</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    „{bild.title || 'Kein Titel'}" wird in den Papierkorb verschoben und kann wiederhergestellt werden.
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => setDeleteConfirm(false)}>Abbrechen</Button>
+                <Button onClick={() => { setDeleteConfirm(false); onDelete(); }} color="error" variant="contained">In Papierkorb</Button>
+            </DialogActions>
+        </Dialog>
         </>
     );
 }, (prev, next) =>

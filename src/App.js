@@ -4,9 +4,9 @@ import {Login} from './auth';
 import {InitialPage} from './InitialPage';
 import {Bilder} from './bilder';
 import {Texte} from './texte';
-
 import {Users} from './users';
 import {Story} from "./stories/Story";
+import {Papierkorb} from "./papierkorb/Papierkorb";
 
 export const App = () => (
     <BrowserRouter>
@@ -20,6 +20,7 @@ export const App = () => (
             <Route exact path='/texte/story/:storyId' element={<Texte />} />
             <Route exact path='/bilder' element={<Bilder />} />
             <Route exact path='/bilder/story/:storyId' element={<Story />} />
+            <Route exact path='/papierkorb' element={<Papierkorb />} />
             <Route exact path='/users' element={<Users />} />
             {/*<Route exact path='/' element={<Navigate to='/initial-page' />} />*/}
             {/*<Route exact path='/initial-page' element={<InitialPage />} />*/}
