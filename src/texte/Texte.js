@@ -115,6 +115,7 @@ const AssignToStoryButton = ({text, stories}) => {
 const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(text.priority);
     const isComplete = Boolean(text.complete);
 
     const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(text[field] ?? ''); } };
@@ -158,7 +159,7 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                         {!Boolean(story) && <StoryChip text={text} size='small'/>}
                     </Box>
                     <Box>
-                        <EditTextPriority priority={text.priority} setPriority={(p) => onUpdate({...text, priority: p})} disabled={isComplete}/>
+                        <EditTextPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...text, priority: p}); }} disabled={isComplete}/>
                     </Box>
                 </Box>
                 {editField === 'description' ? (

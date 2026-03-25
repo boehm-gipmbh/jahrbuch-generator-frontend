@@ -24,6 +24,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
     const [updateBild] = api.endpoints.updateBild.useMutation();
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(bild.priority);
     const isComplete = Boolean(bild.complete);
 
     const startEdit = (field) => {
@@ -44,7 +45,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
         if (e.key === 'Escape') { setEditField(null); }
     };
 
-    const setPriority = (priority) => updateBild({...bild, priority});
+    const setPriority = (p) => { setPriorityState(p); updateBild({...bild, priority: p}); };
 
     return (
         <Box ref={setNodeRef} style={style}>
@@ -78,7 +79,7 @@ export const SortableBildCard = ({bild, story, onSetComplete, onRemoveFromStory}
                 {/* Priority oben links */}
                 <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
                     <EditBildPriority
-                        priority={bild.priority}
+                        priority={priority}
                         setPriority={setPriority}
                         disabled={isComplete}
                     />

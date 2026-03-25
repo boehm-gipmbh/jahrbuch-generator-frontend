@@ -109,6 +109,7 @@ const AssignToStoryButton = ({bild, stories}) => {
 const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(bild.priority);
     const isComplete = Boolean(bild.complete);
 
     const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(bild[field] ?? ''); } };
@@ -125,7 +126,7 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
         <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
             {/* Priority oben links */}
             <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
-                <EditBildPriority priority={bild.priority} setPriority={(p) => onUpdate({...bild, priority: p})} disabled={isComplete}/>
+                <EditBildPriority priority={priority} setPriority={(p) => { setPriorityState(p); onUpdate({...bild, priority: p}); }} disabled={isComplete}/>
             </Box>
             {/* Löschschutz oben rechts */}
             <Tooltip title={isComplete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>

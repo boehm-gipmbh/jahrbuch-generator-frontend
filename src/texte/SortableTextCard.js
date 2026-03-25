@@ -23,6 +23,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
     const [updateText] = api.endpoints.updateText.useMutation();
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
+    const [priority, setPriorityState] = useState(text.priority);
     const isComplete = Boolean(text.complete);
 
     const startEdit = (field) => {
@@ -43,7 +44,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
         if (e.key === 'Escape') { setEditField(null); }
     };
 
-    const setPriority = (priority) => updateText({...text, priority});
+    const setPriority = (p) => { setPriorityState(p); updateText({...text, priority: p}); };
 
     return (
         <Box ref={setNodeRef} style={style}>
@@ -77,7 +78,7 @@ export const SortableTextCard = ({text, story, onSetComplete, onRemoveFromStory}
                 {/* Priority oben links */}
                 <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
                     <EditTextPriority
-                        priority={text.priority}
+                        priority={priority}
                         setPriority={setPriority}
                         disabled={isComplete}
                     />
