@@ -187,8 +187,9 @@ const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate,
                             style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
                                 border: (!isComplete && !bild.description) ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                 borderRadius: 4,
-                                padding: '8.5px 14px'}}>
-                            {bild.description}
+                                padding: '8.5px 14px',
+                                color: bild.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
+                            {bild.description || (!isComplete ? 'Beschreibung hinzufügen …' : '')}
                         </pre>
                         </Tooltip>
                     </Box>

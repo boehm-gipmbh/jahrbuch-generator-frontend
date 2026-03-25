@@ -190,8 +190,9 @@ const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, 
                             border: (!isComplete && !text.description) ? '1px solid rgba(0,0,0,0.23)' : 'none',
                             borderRadius: 4,
                             padding: '8.5px 14px',
-                            marginBottom: 40}}>
-                        {text.description}
+                            marginBottom: 40,
+                            color: text.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
+                        {text.description || (!isComplete ? 'Erinnerung hinzufügen …' : '')}
                     </pre>
                     </Tooltip>
                 )}
