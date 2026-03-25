@@ -3,29 +3,26 @@ import AuthImage from './AuthImage';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {Grid} from '@mui/material';
-// Importiere die benötigten Icons
 import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 import RotateRightIcon from '@mui/icons-material/RotateRight';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {IconButton, ButtonGroup, Tooltip} from '@mui/material';
-import {
-    Box, Button, Container, Checkbox, Paper, Typography
-} from '@mui/material';
+import {Box, Button, Container, Checkbox, Paper, Typography, TextField} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddLinkIcon from '@mui/icons-material/AddLink';
-import {MenuItem, Popover, MenuList, Divider, TextField} from '@mui/material';
+import {MenuItem, Popover, MenuList, Divider} from '@mui/material';
 import {api as bilderApi} from './api';
-import {Priority} from './Priority';
-import {Layout, newBild, setOpenBild} from '../layout';
+import {EditBildPriority} from './Priority';
+import {Layout, newBild} from '../layout';
 import {api as storyApi} from '../stories';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
-import {sortBy, byPriorityDesc, byIdDesc, byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
+import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
 const AssignToStoryButton = ({bild, stories}) => {
@@ -109,6 +106,111 @@ const AssignToStoryButton = ({bild, stories}) => {
     );
 };
 
+const BildCard = ({bild, story, storiesLoaded, stories, onSetComplete, onUpdate, onRotate, onDelete}) => {
+    const [editField, setEditField] = useState(null);
+    const [editValue, setEditValue] = useState('');
+    const isComplete = Boolean(bild.complete);
+
+    const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(bild[field] ?? ''); } };
+    const commitEdit = () => {
+        if (editField && editValue !== (bild[editField] ?? '')) onUpdate({...bild, [editField]: editValue});
+        setEditField(null);
+    };
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') setEditField(null);
+    };
+
+    return (
+        <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
+            {/* Priority oben links */}
+            <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
+                <EditBildPriority priority={bild.priority} setPriority={(p) => onUpdate({...bild, priority: p})} disabled={isComplete}/>
+            </Box>
+            {/* Löschschutz oben rechts */}
+            <Tooltip title={isComplete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
+                <Checkbox
+                    checked={isComplete}
+                    checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                    icon={<LockOpenIcon color="action" fontSize='small'/>}
+                    onChange={() => onSetComplete({bild, complete: !isComplete})}
+                    sx={{position: 'absolute', top: 0, right: 0, '&.Mui-checked': {color: theme => theme.palette.success.main}}}
+                />
+            </Tooltip>
+
+            <Box sx={{display: 'flex', flexDirection: 'column', flex: 1, pt: 3}}>
+                {/* Titel */}
+                {editField === 'title' ? (
+                    <TextField autoFocus size="small" value={editValue} onChange={e => setEditValue(e.target.value)}
+                        onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
+                ) : (
+                    <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                        cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                        onClick={() => startEdit('title')}>
+                        {bild.title || 'Kein Titel'}
+                    </Typography>
+                )}
+                <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
+                    <AuthImage
+                        id={`bild-${bild.id}`}
+                        src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${bild.lastRotated ?? 0}`}
+                        alt={bild.description || ''}
+                        thumb
+                        style={{maxWidth: '100%', maxHeight: 200, objectFit: 'contain'}}
+                    />
+                </Box>
+                {/* Beschreibung */}
+                {editField === 'description' ? (
+                    <TextField autoFocus size="small" multiline value={editValue} onChange={e => setEditValue(e.target.value)}
+                        onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth
+                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
+                ) : (
+                    <Box sx={{mt: 'auto'}}>
+                        <pre className="wrap-pre" onClick={() => startEdit('description')}
+                            style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em'}}>
+                            {bild.description}
+                        </pre>
+                    </Box>
+                )}
+                {!Boolean(story) && (
+                    <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
+                        <StoryChip bild={bild} size='small'/>
+                    </Box>
+                )}
+            </Box>
+
+            {/* Aktionen unten rechts */}
+            <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px', zIndex: 1}}>
+                <ButtonGroup size="small">
+                    <Tooltip title="90° links drehen">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(-90); }}>
+                            <RotateLeftIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="90° rechts drehen">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(90); }}>
+                            <RotateRightIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="180° drehen">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(180); }}>
+                            <SettingsBackupRestoreIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                    {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
+                    <Tooltip title="Bild löschen">
+                        <span>
+                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                                <DeleteIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </ButtonGroup>
+            </Box>
+        </Paper>
+    );
+};
+
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {storyId} = useParams();
     const {story, stories, storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -126,6 +228,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const dispatch = useDispatch();
     const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
+    const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
     const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
@@ -191,159 +294,20 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                 <Grid container spacing={2}>
                     {filteredBilder.map(bild => (
                         <Grid item xs={12} sm={6} key={bild.id}>
-                            <Paper elevation={1} sx={{
-                                p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'
-                            }}>
-                                {/* Priority oben links */}
-                                {Boolean(bild.priority) && (<Box
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Verhindert Bubbling
-                                            dispatch(setOpenBild(bild));
-                                        }}
-                                        sx={{
-                                            position: 'absolute', top: 4, left: 4, zIndex: 1, cursor: 'pointer' // Zeigt an, dass es klickbar ist
-                                        }}
-                                    >
-                                        <Priority priority={bild.priority}/>
-                                    </Box>)}
-                                {/* Löschschutz oben rechts */}
-                                <Tooltip title={bild.complete ? "Bild ist geschützt" : "Bild kann gelöscht werden"}>
-                                    <Checkbox
-                                        checked={Boolean(bild.complete)}
-                                        checkedIcon={<LockIcon color="success" fontSize='small'/>}
-                                        icon={<LockOpenIcon color="action" fontSize='small'/>}
-                                        onChange={() => setComplete({bild, complete: !Boolean(bild.complete)})}
-                                        sx={{
-                                            position: 'absolute', top: 0, right: 0, '&.Mui-checked': {
-                                                color: theme => theme.palette.success.main
-                                            }
-                                        }}
-                                    />
-                                </Tooltip>
-
-                                <Box
-                                    onClick={() => dispatch(setOpenBild(bild))}
-                                    sx={{cursor: 'pointer', display: 'flex', flexDirection: 'column', flex: 1}}
-                                >
-                                    <Typography variant="subtitle1" component="div"
-                                                sx={{mb: 1, fontWeight: 'medium', textAlign: 'center'}}>
-                                        {bild.title || 'Kein Titel'}
-                                    </Typography>
-                                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
-                                        <AuthImage
-                                            id={`bild-${bild.id}`}
-                                            src={`${bild.pfad.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}?v=${bild.lastRotated ?? 0}`}
-                                            alt={bild.description || ''}
-                                            thumb
-                                            style={{
-                                                maxWidth: '100%', maxHeight: 200, objectFit: 'contain'
-                                            }}
-                                        />
-                                    </Box>
-
-                                    <Box sx={{mt: 'auto'}}>
-                                      <pre className="wrap-pre">
-                                        {bild.description}
-                                      </pre>
-                                    </Box>
-                                    {!Boolean(story) && (
-                                      <Box sx={{
-                                        position: 'absolute',
-                                        left: 8,
-                                        bottom: 8,
-                                        zIndex: 2
-                                      }}>
-                                        <StoryChip bild={bild} size='small'/>
-                                      </Box>
-                                    )}
-                                </Box>
-                                <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 4,
-                                            right: 4,
-                                            backgroundColor: 'rgba(255,255,255,0.7)',
-                                            borderRadius: 1,
-                                            padding: '2px',
-                                            zIndex: 1
-                                        }}
-                                    >
-                                        <ButtonGroup size="small">
-                                            <Tooltip title="90° links drehen">
-                                                <IconButton
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        rotateBild({bildId: bild.id, degrees: -90}).unwrap()
-                                                            .then(() => {
-                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            })
-                                                            .catch(error => {
-                                                                console.error("Fehler bei der Bildrotation:", error);
-                                                            });
-                                                    }}
-                                                    size="small"
-                                                >
-                                                    <RotateLeftIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="90° rechts drehen">
-                                                <IconButton
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        rotateBild({bildId: bild.id, degrees: 90}).unwrap()
-                                                            .then(() => {
-                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            })
-                                                            .catch(error => {
-                                                                console.error("Fehler bei der Bildrotation:", error);
-                                                            });
-                                                    }}
-                                                    size="small"
-                                                >
-                                                    <RotateRightIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="180° drehen">
-                                                <IconButton
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        rotateBild({bildId: bild.id, degrees: 180}).unwrap()
-                                                            .then(() => {
-                                                                dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                            })
-                                                            .catch(error => {
-                                                                console.error("Fehler bei der Bildrotation:", error);
-                                                            });
-                                                    }}
-                                                    size="small"
-                                                >
-                                                    <SettingsBackupRestoreIcon fontSize="small"/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
-                                            <Tooltip title="Bild löschen">
-                                                <span>
-                                                    <IconButton
-                                                        disabled={Boolean(bild.complete)}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteBild(bild).unwrap()
-                                                                .then(() => {
-                                                                    dispatch(bilderApi.util.invalidateTags(['Bild']));
-                                                                })
-                                                                .catch(error => {
-                                                                    console.error("Fehler beim Löschen:", error);
-                                                                });
-                                                        }}
-                                                        size="small"
-                                                    >
-                                                        <DeleteIcon fontSize="small"/>
-                                                    </IconButton>
-                                                </span>
-                                            </Tooltip>
-                                        </ButtonGroup>
-                                    </Box>
-                            </Paper>
+                            <BildCard
+                                bild={bild}
+                                story={story}
+                                storiesLoaded={storiesLoaded}
+                                stories={stories}
+                                onSetComplete={(args) => setComplete(args)}
+                                onUpdate={(updated) => updateBild(updated)}
+                                onRotate={(degrees) => rotateBild({bildId: bild.id, degrees}).unwrap()
+                                    .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                                    .catch(e => console.error(e))}
+                                onDelete={() => deleteBild(bild).unwrap()
+                                    .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                                    .catch(e => console.error(e))}
+                            />
                         </Grid>))}
                 </Grid>
             </Paper>

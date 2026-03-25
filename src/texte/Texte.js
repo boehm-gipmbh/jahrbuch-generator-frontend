@@ -24,8 +24,8 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {IconButton} from '@mui/material';
 import {api as texteApi} from './api';
-import {Priority} from './Priority';
-import {Layout, newText, setOpenText} from '../layout';
+import {EditTextPriority} from './Priority';
+import {Layout, newText} from '../layout';
 import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import LockIcon from "@mui/icons-material/Lock";
@@ -112,6 +112,81 @@ const AssignToStoryButton = ({text, stories}) => {
     );
 };
 
+const TextRow = ({text, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
+    const [editField, setEditField] = useState(null);
+    const [editValue, setEditValue] = useState('');
+    const isComplete = Boolean(text.complete);
+
+    const startEdit = (field) => { if (!isComplete) { setEditField(field); setEditValue(text[field] ?? ''); } };
+    const commitEdit = () => {
+        if (editField && editValue !== (text[editField] ?? '')) onUpdate({...text, [editField]: editValue});
+        setEditField(null);
+    };
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') setEditField(null);
+    };
+
+    return (
+        <TableRow>
+            <TableCell sx={{width: '2rem'}}>
+                <Tooltip title={isComplete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
+                    <Checkbox
+                        checked={isComplete}
+                        checkedIcon={<LockIcon color="success" fontSize='small'/>}
+                        icon={<LockOpenIcon color="action" fontSize='small'/>}
+                        onChange={() => onSetComplete({text, complete: !isComplete})}
+                        sx={{'&.Mui-checked': {color: theme => theme.palette.success.main}}}
+                    />
+                </Tooltip>
+            </TableCell>
+            <TableCell sx={{position: 'relative'}}>
+                <Box sx={{display: 'flex', alignItems: 'center', mb: 0.5}}>
+                    <Box sx={{flex: 1}}>
+                        {editField === 'title' ? (
+                            <MuiTextField autoFocus size="small" value={editValue} fullWidth
+                                onChange={e => setEditValue(e.target.value)}
+                                onBlur={commitEdit} onKeyDown={handleKeyDown}/>
+                        ) : (
+                            <Typography variant="subtitle1" component="span" color="primary"
+                                sx={{fontWeight: 'bold', cursor: isComplete ? 'default' : 'text',
+                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                                onClick={() => startEdit('title')}>
+                                {text.title}
+                            </Typography>
+                        )}
+                        {!Boolean(story) && <StoryChip text={text} size='small'/>}
+                    </Box>
+                    <Box>
+                        <EditTextPriority priority={text.priority} setPriority={(p) => onUpdate({...text, priority: p})} disabled={isComplete}/>
+                    </Box>
+                </Box>
+                {editField === 'description' ? (
+                    <MuiTextField autoFocus size="small" multiline rows={6} value={editValue} fullWidth
+                        onChange={e => setEditValue(e.target.value)}
+                        onBlur={commitEdit} onKeyDown={handleKeyDown}
+                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}/>
+                ) : (
+                    <pre className="wrap-pre" onClick={() => startEdit('description')}
+                        style={{cursor: isComplete ? 'default' : 'text', minHeight: '2em'}}>
+                        {text.description}
+                    </pre>
+                )}
+                <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
+                    {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
+                    <Tooltip title="Erinnerung löschen">
+                        <span>
+                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                                <DeleteIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                </Box>
+            </TableCell>
+        </TableRow>
+    );
+};
+
 export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const {storyId} = useParams();
   const {story, stories, storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -128,6 +203,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const dispatch = useDispatch();
   const {data} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
   const [setComplete] = texteApi.endpoints.setComplete.useMutation();
+  const [updateText] = texteApi.endpoints.updateText.useMutation();
   const [deleteText] = texteApi.endpoints.deleteText.useMutation();
 
   const [search, setSearch] = useState('');
@@ -178,70 +254,18 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
         <Table size='small'>
           <TableBody>
               {filteredTexte.map(text =>
-              <TableRow key={text.id}>
-                  <TableCell sx={{width: '2rem'}}>
-                      <Tooltip title={text.complete ? "Text ist geschützt" : "Text kann gelöscht werden"}>
-                          <Checkbox
-                              checked={Boolean(text.complete)}
-                              checkedIcon={<LockIcon color="success" fontSize='small'/>}
-                              icon={<LockOpenIcon color="action" fontSize='small'/>}
-                              onChange={() => setComplete({text, complete: !Boolean(text.complete)})}
-                              sx={{
-                                  '&.Mui-checked': {
-                                      color: theme => theme.palette.success.main
-                                  }
-                              }}
-                          />
-                      </Tooltip>
-                  </TableCell>
-                <TableCell
-                  onClick={() => dispatch(setOpenText(text))}
-                  sx={{cursor: 'pointer', position: 'relative'}}
-                >
-                  <Box sx={{display: 'flex', alignItems: 'center'}}>
-                    <Box sx={{flex: 1}}>
-                    <Typography variant="subtitle1" component="span" color="primary" sx={{fontWeight: 'bold'}}>
-                      {text.title}
-                      </Typography>
-                      {!Boolean(story) && <StoryChip text={text} size='small' />}
-                    </Box>
-                    <Box>
-                      {Boolean(text.priority) && <Priority priority={text.priority} />}
-                    </Box>
-                  </Box>
-                  <Box sx={{flex: 1}}>
-                    <pre className="wrap-pre">
-                      {text.description} {!Boolean(story) }
-                    </pre>
-                  </Box>
-                  <Box sx={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: 4,
-                    backgroundColor: 'rgba(255,255,255,0.7)',
-                    borderRadius: 1,
-                    padding: '2px',
-                  }}>
-                    {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
-                    <Tooltip title="Erinnerung löschen">
-                      <span>
-                        <IconButton
-                          disabled={Boolean(text.complete)}
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteText(text).unwrap()
-                              .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
-                              .catch(error => console.error("Fehler beim Löschen:", error));
-                          }}
-                        >
-                          <DeleteIcon fontSize="small"/>
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
+                <TextRow
+                    key={text.id}
+                    text={text}
+                    story={story}
+                    storiesLoaded={storiesLoaded}
+                    stories={stories}
+                    onSetComplete={(args) => setComplete(args)}
+                    onUpdate={(updated) => updateText(updated)}
+                    onDelete={() => deleteText(text).unwrap()
+                        .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
+                        .catch(e => console.error(e))}
+                />
             )}
           </TableBody>
         </Table>
