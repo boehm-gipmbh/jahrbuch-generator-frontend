@@ -27,7 +27,7 @@ ON CONFLICT (id) DO UPDATE
 
 -- Bilder — Col 0
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-SELECT 211, 'Einer war schon immer gern Polizist !', '/20250818_135428_6d60d04b-94d3-4036-9c06-9c11316abe40.jpg',
+SELECT 211, 'Einer war schon immer gern Polizist !', '/e2e-test-bild-1.jpg',
        1801, id, 0, 0, NOW(), 0, 0, false
 FROM users WHERE name = 'abi85'
 ON CONFLICT (id) DO UPDATE
@@ -35,21 +35,21 @@ ON CONFLICT (id) DO UPDATE
 
 -- Bilder — Col 1
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-SELECT 4027, '7k zusammen auf 40 Jahre Party', '/20250818_135510_f7b0be4e-1bbc-4ea0-81be-9d172acfa370.jpg',
+SELECT 4027, '7k zusammen auf 40 Jahre Party', '/e2e-test-bild-2.jpg',
        1801, id, 1, 0, NOW(), 0, 0, false
 FROM users WHERE name = 'abi85'
 ON CONFLICT (id) DO UPDATE
     SET pfad=EXCLUDED.pfad, story_id=1801, story_column=1, story_position=0, deleted=false;
 
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-SELECT 3160, '7k oder 8k - Herr Gottschalk mit Austausch-Schülerinnen', '/20250818_135703_61c3b02d-4fc0-4870-85b9-167ba70cae40.jpg',
+SELECT 3160, '7k oder 8k - Herr Gottschalk mit Austausch-Schülerinnen', '/e2e-test-bild-3.jpg',
        1801, id, 1, 1, NOW(), 0, 0, false
 FROM users WHERE name = 'abi85'
 ON CONFLICT (id) DO UPDATE
     SET pfad=EXCLUDED.pfad, story_id=1801, story_column=1, story_position=1, deleted=false;
 
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-SELECT 213, 'Ne Menge Unfug haben wir auch gemacht', '/20250818_135813_b7957ba8-9fdc-4054-928d-bcf086d7377c.jpg',
+SELECT 213, 'Ne Menge Unfug haben wir auch gemacht', '/e2e-test-bild-4.jpg',
        1801, id, 1, 2, NOW(), 0, 0, false
 FROM users WHERE name = 'abi85'
 ON CONFLICT (id) DO UPDATE
@@ -57,7 +57,7 @@ ON CONFLICT (id) DO UPDATE
 
 -- Bilder — Col 2
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-SELECT 214, '7k oder 8k', '/20250818_140105_a082e36a-4885-48bf-8945-d63fbe15b4ca.jpg',
+SELECT 214, '7k oder 8k', '/e2e-test-bild-5.jpg',
        1801, id, 2, 0, NOW(), 0, 0, false
 FROM users WHERE name = 'abi85'
 ON CONFLICT (id) DO UPDATE
