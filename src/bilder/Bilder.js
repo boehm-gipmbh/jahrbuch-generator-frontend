@@ -20,7 +20,7 @@ import AddLinkIcon from '@mui/icons-material/AddLink';
 import {MenuItem, Popover, MenuList, Divider} from '@mui/material';
 import {api as bilderApi} from './api';
 import {EditBildPriority} from './Priority';
-import {Layout, newBild} from '../layout';
+import {Layout} from '../layout';
 import {api as storyApi} from '../stories';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';

@@ -18,8 +18,6 @@ import {
 import ClearIcon from '@mui/icons-material/Clear';
 import '../App.css';
 import AddIcon from '@mui/icons-material/Add';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
