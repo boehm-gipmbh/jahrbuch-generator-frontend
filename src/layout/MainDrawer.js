@@ -25,6 +25,7 @@ import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckIcon from '@mui/icons-material/Check';
 import PersonIcon from '@mui/icons-material/Person';
+import Typography from '@mui/material/Typography';
 import {HasRole} from '../auth';
 import {api as storyApi} from '../stories';
 
@@ -163,7 +164,7 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
         }}
     >
         <Toolbar/>
-        <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden'}}>
+        <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden', flexGrow: 1}}>
             <List>
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Erinnerungen' to='/texte' bold/>
 
@@ -179,5 +180,10 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
                 </HasRole>
             </List>
         </Box>
+        {drawerOpen && process.env.REACT_APP_VERSION && (
+            <Typography variant='caption' sx={{p: 1, color: 'text.disabled', display: 'block'}}>
+                {process.env.REACT_APP_VERSION}
+            </Typography>
+        )}
     </Drawer>
 );
