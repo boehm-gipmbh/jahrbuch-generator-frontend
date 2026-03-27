@@ -28,10 +28,10 @@ ON CONFLICT DO NOTHING;
 
 -- Story 1801 (3-Spalten-Layout), owned by e2etestuser
 INSERT INTO stories (id, name, description, user_id, created, version, layout)
-SELECT 1801, 'DnD-Testalbum', 'Playwright-Testdaten', id, NOW(), 0, '3col'
+SELECT 1801, 'DnD-Testalbum', 'Playwright-Testdaten', id, NOW(), 0, 'grid'
 FROM users WHERE name = 'e2etestuser'
 ON CONFLICT (id) DO UPDATE
-    SET layout = '3col';
+    SET layout = 'grid';
 
 -- Bilder — Col 0
 INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
