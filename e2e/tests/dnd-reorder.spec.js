@@ -40,7 +40,7 @@ function resetStoryState() {
         // Story ggf. neu anlegen (kann durch Papierkorb-cascade-delete fehlen)
         `INSERT INTO stories (id, name, description, user_id, created, version, layout)
          SELECT 1801, 'DnD-Testalbum', 'Playwright-Testdaten', id, NOW(), 0, '3col'
-         FROM users WHERE name='abi85'
+         FROM users WHERE name='e2etestuser'
          ON CONFLICT (id) DO NOTHING`,
         // Duplikat-Stories mit gleichem Namen entfernen
         "DELETE FROM stories WHERE name='DnD-Testalbum' AND id != 1801",
