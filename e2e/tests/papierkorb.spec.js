@@ -1,4 +1,4 @@
-// @ts-check
+    // @ts-check
 const {test, expect} = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
@@ -27,26 +27,9 @@ function getJwt() {
 }
 
 function resetPapierkorbState() {
-    const sql = [
-        // 1. Story zuerst anlegen (FK-Constraint für story_id)
-        `INSERT INTO stories (id, name, description, user_id, created, version, layout)
-         SELECT ${TEST_STORY_ID}, '${TEST_STORY_NAME}', 'Playwright-Testdaten', id, NOW(), 0, '3col'
-         FROM users WHERE name='abi85'
-         ON CONFLICT (id) DO NOTHING`,
-        // 2. Duplikat-Stories mit gleichem Namen entfernen
-        `DELETE FROM stories WHERE name='${TEST_STORY_NAME}' AND id != ${TEST_STORY_ID}`,
-        // 3. Bild 211 neu einfügen falls durch hard-delete entfernt
-        `INSERT INTO bilder (id, title, pfad, story_id, user_id, story_column, story_position, created, version, priority, deleted)
-         SELECT 211, 'Einer war schon immer gern Polizist !', '/e2e-test-bild-1.jpg',
-                ${TEST_STORY_ID}, id, 0, 0, NOW(), 0, 0, false
-         FROM users WHERE name='abi85'
-         ON CONFLICT (id) DO UPDATE SET deleted=false, deleted_from_story_name=NULL, story_id=${TEST_STORY_ID}`,
-        // 4. Übrige Items zurücksetzen
-        `UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=${TEST_STORY_ID} WHERE id IN (4027,3160,213,214)`,
-        `UPDATE texte  SET deleted=false, deleted_from_story_name=NULL, story_id=${TEST_STORY_ID} WHERE id IN (110,310)`,
-    ].join('; ');
+    const seedFile = path.join(__dirname, '..', 'seed.sql');
     execSync(
-        `PGPASSWORD=${DB_PASS} psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -c "${sql}"`,
+        `PGPASSWORD=${DB_PASS} psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -f "${seedFile}"`,
         {stdio: 'pipe'}
     );
 }
@@ -68,8 +51,8 @@ async function goToPapierkorb(page) {
     await page.goto('/papierkorb');
     // Warte bis Papierkorb-Überschrift sichtbar
     await page.waitForSelector('h2', {timeout: 15_000});
-    // Kurz warten bis RTK Query-Daten geladen
-    await page.waitForTimeout(800);
+    // Warte bis RTK Query-Daten geladen (erhöht für langsame Umgebungen)
+    await page.waitForTimeout(1500);
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +74,11 @@ async function screenshot(page, testInfo, suffix) {
 // ---------------------------------------------------------------------------
 
 test.describe('Papierkorb', () => {
+
+    // Seriell ausführen: alle Tests teilen Bild 211 / Story 1801 —
+    // parallele Ausführung führt zu Race Conditions (hard-delete eines Workers
+    // zerstört Testdaten des anderen Workers).
+    test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(() => resetPapierkorbState());
 
@@ -120,7 +108,7 @@ test.describe('Papierkorb', () => {
         await screenshot(page, testInfo, 'before');
 
         const row = page.locator('li').filter({hasText: BILD_211_TITLE});
-        await row.locator('button').nth(0).click(); // Restore-Button (erster)
+        await row.getByRole('button', {name: 'Wiederherstellen'}).click();
         await expect(page.getByText(BILD_211_TITLE)).not.toBeVisible({timeout: 5_000});
         await screenshot(page, testInfo, 'after');
     });
@@ -130,7 +118,8 @@ test.describe('Papierkorb', () => {
         await goToPapierkorb(page);
 
         const row = page.locator('li').filter({hasText: BILD_211_TITLE});
-        await row.locator('button').nth(1).click(); // HardDelete-Button (zweiter)
+        // IconButton mit aria-label findet man durch role + tooltip-name
+        await row.getByRole('button', {name: 'Endgültig löschen'}).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await screenshot(page, testInfo, 'dialog');
 
@@ -144,7 +133,8 @@ test.describe('Papierkorb', () => {
         await goToPapierkorb(page);
 
         const row = page.locator('li').filter({hasText: BILD_211_TITLE});
-        await row.locator('button').nth(1).click(); // HardDelete-Button (zweiter)
+        // IconButton mit aria-label findet man durch role + tooltip-name
+        await row.getByRole('button', {name: 'Endgültig löschen'}).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await screenshot(page, testInfo, 'dialog');
 
@@ -172,7 +162,8 @@ test.describe('Papierkorb', () => {
         await expect(page.getByText(BILD_211_TITLE)).toBeVisible();
         await screenshot(page, testInfo, 'offen');
 
-        await page.locator('li').filter({hasText: TEST_STORY_NAME}).first().click();
+        // ListItem mit button-Prop ist kein actionables Element — den Text direkt klicken
+        await page.getByText(TEST_STORY_NAME, {exact: true}).first().click();
         await expect(page.getByText(BILD_211_TITLE)).not.toBeVisible({timeout: 3_000});
         await screenshot(page, testInfo, 'zugeklappt');
     });
@@ -182,8 +173,28 @@ test.describe('Papierkorb', () => {
         await goToPapierkorb(page);
         await screenshot(page, testInfo, 'before');
 
-        await page.getByLabel('Story + Inhalt wiederherstellen').click();
-        await expect(page.getByText('Papierkorb ist leer')).toBeVisible({timeout: 5_000});
+        // Warte auf API-Response und Click gleichzeitig
+        const [restoreResp] = await Promise.all([
+            page.waitForResponse(
+                r => r.url().includes('/stories/restore') && r.request().method() === 'POST',
+                {timeout: 10_000}
+            ),
+            page.getByLabel('Story + Inhalt wiederherstellen').click(),
+        ]);
+        // API muss 201 zurückgeben
+        if (restoreResp.status() !== 201) {
+            const body = await restoreResp.text();
+            throw new Error(`restoreByName schlug fehl: HTTP ${restoreResp.status()} — ${body}`);
+        }
+        await page.waitForTimeout(1500);
+        await screenshot(page, testInfo, 'after-click');
+
+        // Seite neu laden, damit RTK Query einen frischen Fetch macht
+        await page.reload();
+        await page.waitForSelector('h2', {timeout: 15_000});
+        await page.waitForTimeout(1500);
+        const content = page.locator('main');
+        await expect(content.getByText('Papierkorb ist leer')).toBeVisible({timeout: 5_000});
         await screenshot(page, testInfo, 'after');
     });
 
@@ -205,10 +216,14 @@ test.describe('Papierkorb', () => {
 
         await page.getByLabel('Nur Story wiederherstellen (Inhalte bleiben im Papierkorb)').click();
         await page.waitForTimeout(1_000);
+        // Maus wegbewegen damit kein Tooltip den nächsten Click blockiert
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(300);
         await screenshot(page, testInfo, 'nur-story');
 
+        // Finde das gelöschte Bild und stelle es wieder her
         const row = page.locator('li').filter({hasText: BILD_211_TITLE});
-        await row.locator('button').nth(0).click(); // Restore-Button (erster)
+        await row.getByLabel('Wiederherstellen').click();
         await expect(page.getByText(BILD_211_TITLE)).not.toBeVisible({timeout: 5_000});
         await screenshot(page, testInfo, 'after');
     });

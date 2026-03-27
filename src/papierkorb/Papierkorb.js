@@ -45,12 +45,12 @@ const ItemRow = ({type, item, onRestore, onHardDelete}) => (
             primaryTypographyProps={{variant: 'body2'}}/>
         <ListItemSecondaryAction>
             <Tooltip title="Wiederherstellen">
-                <IconButton size="small" onClick={() => onRestore(item)}>
+                <IconButton size="small" aria-label="Wiederherstellen" onClick={() => onRestore(item)}>
                     <RestoreIcon fontSize="small"/>
                 </IconButton>
             </Tooltip>
             <Tooltip title="Endgültig löschen">
-                <IconButton size="small" color="error" onClick={() => onHardDelete(type, item)}>
+                <IconButton size="small" color="error" aria-label="Endgültig löschen" onClick={() => onHardDelete(type, item)}>
                     <DeleteForeverIcon fontSize="small"/>
                 </IconButton>
             </Tooltip>
@@ -79,12 +79,14 @@ const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestor
                     <Box sx={{display: 'flex', gap: 0.5, mr: 1}} onClick={e => e.stopPropagation()}>
                         <Tooltip title="Story + Inhalt wiederherstellen">
                             <Button size="small" startIcon={<RestoreIcon/>}
+                                aria-label="Story + Inhalt wiederherstellen"
                                 onClick={() => onRestoreStory(storyName, true)}>
                                 Mit Inhalt
                             </Button>
                         </Tooltip>
                         <Tooltip title="Nur Story wiederherstellen (Inhalte bleiben im Papierkorb)">
                             <Button size="small" variant="outlined"
+                                aria-label="Nur Story wiederherstellen (Inhalte bleiben im Papierkorb)"
                                 onClick={() => onRestoreStory(storyName, false)}>
                                 Nur Story
                             </Button>

@@ -5,6 +5,14 @@
 -- und legt Story 1801 + feste Bild-/Text-IDs an.
 -- =============================================================================
 
+-- Duplikate von 'DnD-Testalbum' bereinigen (entstehen durch restoreByName in "Mit Inhalt"-Tests).
+-- Bilder/Texte zuerst auf NULL setzen, damit die FK-Constraint nicht verhindert.
+UPDATE bilder SET story_id = NULL
+    WHERE story_id IN (SELECT id FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801);
+UPDATE texte SET story_id = NULL
+    WHERE story_id IN (SELECT id FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801);
+DELETE FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801;
+
 -- Test-User abi85: Passwort auf Testwert setzen (egal welche ID er hat).
 -- Falls er noch nicht existiert, wird er mit ID 100 angelegt.
 INSERT INTO users (id, name, email, password, created, version)
