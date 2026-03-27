@@ -13,7 +13,8 @@ import {
     TableRow,
     Typography, Tooltip,
     Popover, MenuList, MenuItem, Divider, TextField as MuiTextField,
-    Snackbar, InputAdornment
+    Snackbar, InputAdornment,
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import '../App.css';
@@ -117,6 +118,7 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
     const [lockMsg, setLockMsg] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
     const isComplete = Boolean(text.complete);
 
     const startEdit = (field) => {
@@ -198,7 +200,7 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
                     <Tooltip title="Erinnerung löschen">
                         <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
                                 <DeleteIcon fontSize="small"/>
                             </IconButton>
                         </span>
@@ -207,13 +209,24 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
             </TableCell>
         </TableRow>
         <Snackbar
-
             open={lockMsg}
             autoHideDuration={2500}
             onClose={() => setLockMsg(false)}
             message="Entsperren zum Bearbeiten"
             anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}
         />
+        <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
+            <DialogTitle>Erinnerung in Papierkorb?</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    „{text.title || 'Kein Titel'}" wird in den Papierkorb verschoben und kann wiederhergestellt werden.
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => setDeleteConfirm(false)}>Abbrechen</Button>
+                <Button onClick={() => { setDeleteConfirm(false); onDelete(); }} color="error" variant="contained">In Papierkorb</Button>
+            </DialogActions>
+        </Dialog>
         </>
     );
 }, (prev, next) =>

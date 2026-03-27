@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Link, useMatch, useNavigate} from 'react-router-dom';
 import {
+    Badge,
     Box,
     Button,
     Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
@@ -19,6 +20,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -26,6 +28,27 @@ import PersonIcon from '@mui/icons-material/Person';
 import Typography from '@mui/material/Typography';
 import {HasRole} from '../auth';
 import {api as storyApi} from '../stories';
+import {api as bilderApi} from '../bilder/api';
+import {api as texteApi} from '../texte/api';
+
+const PapierkorbItem = ({disableTooltip}) => {
+    const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
+    const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
+    const count = bilderDeleted.length + texteDeleted.length;
+    const match = Boolean(useMatch('/papierkorb'));
+    return (
+        <ListItemButton component={Link} to='/papierkorb' selected={match}>
+            <Tooltip title='Papierkorb' placement='right' disableHoverListener={disableTooltip}>
+                <ListItemIcon>
+                    <Badge badgeContent={count} color="error" max={99}>
+                        <DeleteOutlineIcon/>
+                    </Badge>
+                </ListItemIcon>
+            </Tooltip>
+            <ListItemText primary='Papierkorb'/>
+        </ListItemButton>
+    );
+};
 
 const Item = ({Icon, iconSize, title, to, disableTooltip = false, bold = false}) => {
     const match = Boolean(useMatch(to));
@@ -168,6 +191,7 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
 
                 <Divider/>
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
+                <PapierkorbItem disableTooltip={drawerOpen}/>
                 <Stories
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
                 />

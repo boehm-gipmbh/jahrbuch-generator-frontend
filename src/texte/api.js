@@ -41,6 +41,24 @@ export const api = createApi({
       }),
       invalidatesTags: ['Text'],
     }),
+    getPapierkorb: builder.query({
+      query: () => '/papierkorb',
+      providesTags: ['Text'],
+    }),
+    restoreText: builder.mutation({
+      query: text => ({
+        url: `/${text.id}/restore`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['Text'],
+    }),
+    hardDeleteText: builder.mutation({
+      query: text => ({
+        url: `/${text.id}/hard`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Text'],
+    }),
     reorderTexte: builder.mutation({
       query: ({storyId, textIds}) => ({
         url: `/reorder/${storyId}`,

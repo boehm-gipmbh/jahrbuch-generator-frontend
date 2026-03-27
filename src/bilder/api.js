@@ -109,6 +109,24 @@ export const api = createApi({
                     method: 'POST',
                 }),
             }),
+            getPapierkorb: builder.query({
+                query: () => '/papierkorb',
+                providesTags: ['Bild'],
+            }),
+            restoreBild: builder.mutation({
+                query: bild => ({
+                    url: `/${bild.id}/restore`,
+                    method: 'PUT',
+                }),
+                invalidatesTags: ['Bild'],
+            }),
+            hardDeleteBild: builder.mutation({
+                query: bild => ({
+                    url: `/${bild.id}/hard`,
+                    method: 'DELETE',
+                }),
+                invalidatesTags: ['Bild'],
+            }),
         })
     })
     // Exportiere die generierte Hook

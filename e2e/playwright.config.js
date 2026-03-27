@@ -14,15 +14,26 @@ if (fs.existsSync(envLocal)) {
 
 module.exports = defineConfig({
     testDir: './tests',
+    globalSetup: './globalSetup.js',
     timeout: 60_000,
     expect: {timeout: 5_000},
     fullyParallel: false,
+    workers: 1,
     retries: 0,
     reporter: 'html',
     use: {
         baseURL: 'http://localhost:3000',
         trace: 'on-first-retry',
         video: 'on-first-retry',
+    },
+    // Frontend wird automatisch gestartet wenn nicht läuft.
+    // Backend muss manuell gestartet werden: ./dev-local.sh
+    webServer: {
+        command: 'npm start',
+        cwd: path.join(__dirname, '..'),
+        url: 'http://localhost:3000',
+        reuseExistingServer: true,
+        timeout: 60_000,
     },
     projects: [
         {

@@ -41,5 +41,13 @@ export const api = createApi({
         body: items
       }),
     }),
+    restoreStory: builder.mutation({
+      query: ({name, withContent}) => ({
+        url: '/restore',
+        method: 'POST',
+        body: {name, withContent}
+      }),
+      invalidatesTags: ['Story'],
+    }),
   })
 });

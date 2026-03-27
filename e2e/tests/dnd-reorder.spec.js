@@ -37,13 +37,21 @@ const INITIAL_TITLES = [
 
 function resetStoryState() {
     const sql = [
-        "UPDATE bilder SET story_column=0, story_position=0 WHERE id=211",
-        "UPDATE texte  SET story_column=0, story_position=1 WHERE id=110",
-        "UPDATE bilder SET story_column=1, story_position=0 WHERE id=4027",
-        "UPDATE bilder SET story_column=1, story_position=1 WHERE id=3160",
-        "UPDATE bilder SET story_column=1, story_position=2 WHERE id=213",
-        "UPDATE bilder SET story_column=2, story_position=0 WHERE id=214",
-        "UPDATE texte  SET story_column=2, story_position=1 WHERE id=310",
+        // Story ggf. neu anlegen (kann durch Papierkorb-cascade-delete fehlen)
+        `INSERT INTO stories (id, name, description, user_id, created, version, layout)
+         SELECT 1801, 'DnD-Testalbum', 'Playwright-Testdaten', id, NOW(), 0, '3col'
+         FROM users WHERE name='e2etestuser'
+         ON CONFLICT (id) DO NOTHING`,
+        // Duplikat-Stories mit gleichem Namen entfernen
+        "DELETE FROM stories WHERE name='DnD-Testalbum' AND id != 1801",
+        // Items: deleted zurücksetzen + story_id + column/position
+        "UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=0, story_position=0 WHERE id=211",
+        "UPDATE texte  SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=0, story_position=1 WHERE id=110",
+        "UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=1, story_position=0 WHERE id=4027",
+        "UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=1, story_position=1 WHERE id=3160",
+        "UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=1, story_position=2 WHERE id=213",
+        "UPDATE bilder SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=2, story_position=0 WHERE id=214",
+        "UPDATE texte  SET deleted=false, deleted_from_story_name=NULL, story_id=1801, story_column=2, story_position=1 WHERE id=310",
     ].join('; ');
     execSync(
         `PGPASSWORD=${DB_PASS} psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} -c "${sql}"`,
@@ -135,6 +143,10 @@ async function switch1Col(page) {
 
 async function switch3Col(page) {
     await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(2).click();
+    await page.waitForFunction(
+        () => document.querySelectorAll('main .MuiTypography-subtitle1').length >= 7,
+        {timeout: 15_000}
+    );
     await page.waitForTimeout(300);
 }
 
