@@ -1,6 +1,24 @@
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit';
 import {fetchBaseQuery} from '@reduxjs/toolkit/dist/query/react';
 
+export const register = createAsyncThunk(
+  'auth/register',
+  async ({token, name, email, password}, thunkAPI) => {
+    const response = await fetch(
+      `${process.env.REACT_APP_API_URL}/auth/register?token=${token}`,
+      {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, email, password}),
+      }
+    );
+    if (!response.ok) {
+      return thunkAPI.rejectWithValue({status: response.status});
+    }
+    return response.text();
+  }
+);
+
 export const login = createAsyncThunk(
   'auth/login',
   async ({name, password}, thunkAPI) => {
@@ -32,6 +50,10 @@ const authSlice = createSlice({
   },
   extraReducers: {
     [login.fulfilled]: (state, action) => {
+      sessionStorage.setItem('jwt', action.payload);
+      state.jwt = action.payload;
+    },
+    [register.fulfilled]: (state, action) => {
       sessionStorage.setItem('jwt', action.payload);
       state.jwt = action.payload;
     }

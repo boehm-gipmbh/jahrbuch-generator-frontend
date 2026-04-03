@@ -25,6 +25,7 @@ import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PersonIcon from '@mui/icons-material/Person';
+import LinkIcon from '@mui/icons-material/Link';
 import Typography from '@mui/material/Typography';
 import {HasRole} from '../auth';
 import {api as storyApi} from '../stories';
@@ -199,6 +200,7 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
                 <HasRole role='admin'>
                     <Divider/>
                     <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Users' to='/users'/>
+                    <Item disableTooltip={drawerOpen} Icon={LinkIcon} title='Einladungslinks' to='/invitations'/>
                 </HasRole>
             </List>
         </Box>

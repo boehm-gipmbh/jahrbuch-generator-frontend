@@ -4,7 +4,7 @@ import {authBaseQuery} from '../auth';
 export const api = createApi({
   reducerPath: 'users',
   baseQuery: authBaseQuery({path: 'users'}),
-  tagTypes: ['User'],
+  tagTypes: ['User', 'Invitation'],
   endpoints: builder => ({
     getUser: builder.query({
       query: id => `/${id}`,
@@ -31,6 +31,32 @@ export const api = createApi({
         method: 'PUT',
         body: passwordChange
       })
+    }),
+    getInvitations: builder.query({
+      query: () => '/invitations',
+      providesTags: ['Invitation']
+    }),
+    createInvitation: builder.mutation({
+      query: invitation => ({
+        url: '/invitations',
+        method: 'POST',
+        body: invitation
+      }),
+      invalidatesTags: ['Invitation']
+    }),
+    deactivateInvitation: builder.mutation({
+      query: id => ({
+        url: `/invitations/${id}/deactivate`,
+        method: 'PUT'
+      }),
+      invalidatesTags: ['Invitation']
+    }),
+    deleteInvitation: builder.mutation({
+      query: id => ({
+        url: `/invitations/${id}`,
+        method: 'DELETE'
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });
