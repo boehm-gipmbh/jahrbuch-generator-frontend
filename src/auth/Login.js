@@ -18,10 +18,14 @@ export const Login = () => {
         .then(({meta, payload}) => {
           if (meta.requestStatus === 'fulfilled') {
             navigate('/');
+          } else if (payload?.body?.includes('Email not verified')) {
+            setError('E-Mail noch nicht bestätigt. Bitte prüfe deinen Posteingang.');
+          } else if (payload?.body?.includes('Account deactivated')) {
+            setError('Konto deaktiviert. Bitte wende dich an den Administrator.');
           } else if (payload?.status === 401) {
-            setError('Invalid credentials');
+            setError('Benutzername oder Passwort falsch.');
           } else {
-            setError('Error');
+            setError('Anmeldung fehlgeschlagen.');
           }
         });
     }

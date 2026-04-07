@@ -29,11 +29,11 @@ export const login = createAsyncThunk(
       },
       body: JSON.stringify({name, password}),
     });
+    const body = await response.text();
     if (!response.ok) {
-      return thunkAPI.rejectWithValue({
-        status: response.status, statusText: response.statusText, data: response.data});
+      return thunkAPI.rejectWithValue({status: response.status, body});
     }
-    return response.text();
+    return body;
   }
 );
 
@@ -53,9 +53,8 @@ const authSlice = createSlice({
       sessionStorage.setItem('jwt', action.payload);
       state.jwt = action.payload;
     },
-    [register.fulfilled]: (state, action) => {
-      sessionStorage.setItem('jwt', action.payload);
-      state.jwt = action.payload;
+    [register.fulfilled]: () => {
+      // kein auto-login — User muss erst E-Mail bestätigen
     }
   }
 });

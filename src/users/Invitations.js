@@ -1,13 +1,17 @@
 import React, {useState} from 'react';
 import {
-  Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle,
-  IconButton, Paper, Snackbar, Table, TableBody, TableCell, TableHead, TableRow,
-  TextField, Tooltip, Typography
+  Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
+  Divider, IconButton, List, ListItem, ListItemText, Paper, Snackbar, Table, TableBody,
+  TableCell, TableHead, TableRow, TextField, Tooltip, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
 import {Layout} from '../layout';
 
@@ -50,19 +54,76 @@ const NewInvitationDialog = ({onClose}) => {
   );
 };
 
+const UserActions = ({user, self}) => {
+  const [deleteUser] = api.endpoints.deleteUser.useMutation();
+  const [deactivateUser] = api.endpoints.deactivateUser.useMutation();
+  const [reactivateUser] = api.endpoints.reactivateUser.useMutation();
+  const isSelf = user.id === self?.id;
+  return (
+    <Box sx={{display: 'flex', gap: 0.5}}>
+      {user.active ? (
+        <Tooltip title="Deaktivieren (Login sperren)">
+          <span>
+            <IconButton size="small" disabled={isSelf} onClick={() => deactivateUser(user.id)}>
+              <PersonOffIcon fontSize="small"/>
+            </IconButton>
+          </span>
+        </Tooltip>
+      ) : (
+        <Tooltip title="Reaktivieren">
+          <IconButton size="small" onClick={() => reactivateUser(user.id)}>
+            <LockOpenIcon fontSize="small" color="success"/>
+          </IconButton>
+        </Tooltip>
+      )}
+      <Tooltip title="Löschen">
+        <span>
+          <IconButton size="small" disabled={isSelf} onClick={() => deleteUser(user)}>
+            <DeleteIcon fontSize="small"/>
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Box>
+  );
+};
+
+const UserRow = ({user, self}) => (
+  <ListItem disableGutters sx={{pl: 2, gap: 1}}>
+    <ListItemText
+      primary={
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+          {user.name}
+          {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+        </Box>
+      }
+      secondary={user.email}
+      primaryTypographyProps={{variant: 'body2'}}
+      secondaryTypographyProps={{variant: 'caption'}}
+    />
+    <UserActions user={user} self={self}/>
+  </ListItem>
+);
+
 export const Invitations = () => {
   const {data: invitations = []} = api.endpoints.getInvitations.useQuery();
+  const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
+  const {data: self} = api.endpoints.getSelf.useQuery();
   const [deactivateInvitation] = api.endpoints.deactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
   const [showNew, setShowNew] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState({});
+
+  const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 
   const copyLink = (token) => {
     const url = `${window.location.origin}/register?token=${token}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-    });
+    navigator.clipboard.writeText(url).then(() => setCopied(true));
   };
+
+  // User-IDs die über einen Einladungslink registriert wurden
+  const invitedUserIds = new Set(invitations.flatMap(inv => (inv.registeredUsers || []).map(u => u.id)));
+  const manualUsers = allUsers.filter(u => !invitedUserIds.has(u.id));
 
   return (
     <Layout>
@@ -70,67 +131,117 @@ export const Invitations = () => {
         <Paper sx={{p: 2}}>
           <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
             <Typography component="h2" variant="h6" color="primary">
-              Einladungslinks
+              Benutzer &amp; Einladungslinks
             </Typography>
             <Button startIcon={<AddIcon/>} variant="contained" size="small"
               onClick={() => setShowNew(true)}>
               Neuer Link
             </Button>
           </Box>
+
           <Table size="small">
             <TableHead>
               <TableRow>
+                <TableCell/>
                 <TableCell>Label</TableCell>
                 <TableCell>Rolle</TableCell>
                 <TableCell>Läuft ab</TableCell>
-                <TableCell>Zuletzt genutzt</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell/>
               </TableRow>
             </TableHead>
             <TableBody>
-              {invitations.map(inv => (
-                <TableRow key={inv.id}>
-                  <TableCell>{inv.label || '—'}</TableCell>
-                  <TableCell>{inv.role}</TableCell>
-                  <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {inv.lastUsedAt ? new Date(inv.lastUsedAt).toLocaleString() : '—'}
-                  </TableCell>
-                  <TableCell>
-                    {inv.active
-                      ? <Chip label="Aktiv" color="success" size="small"/>
-                      : <Chip label="Inaktiv" size="small"/>}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Link kopieren">
-                      <span>
-                        <IconButton size="small" disabled={!inv.active}
-                          onClick={() => copyLink(inv.token)}>
-                          <ContentCopyIcon fontSize="small"/>
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Deaktivieren">
-                      <span>
-                        <IconButton size="small" disabled={!inv.active}
-                          onClick={() => deactivateInvitation(inv.id)}>
-                          <BlockIcon fontSize="small"/>
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Löschen">
-                      <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
-                        <DeleteIcon fontSize="small"/>
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {invitations.map(inv => {
+                const users = inv.registeredUsers || [];
+                const open = !!expanded[inv.id];
+                return (
+                  <React.Fragment key={inv.id}>
+                    <TableRow sx={{'& td': {borderBottom: open && users.length ? 'none' : undefined}}}>
+                      <TableCell sx={{width: 40, pr: 0}}>
+                        {users.length > 0 && (
+                          <IconButton size="small" onClick={() => toggleExpanded(inv.id)}>
+                            {open ? <ExpandLessIcon fontSize="small"/> : <ExpandMoreIcon fontSize="small"/>}
+                          </IconButton>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                          {inv.label || '—'}
+                          {users.length > 0 && (
+                            <Chip label={users.length} size="small" variant="outlined"/>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{inv.role}</TableCell>
+                      <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        {inv.active
+                          ? <Chip label="Aktiv" color="success" size="small"/>
+                          : <Chip label="Inaktiv" size="small"/>}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Link kopieren">
+                          <span>
+                            <IconButton size="small" disabled={!inv.active}
+                              onClick={() => copyLink(inv.token)}>
+                              <ContentCopyIcon fontSize="small"/>
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Deaktivieren">
+                          <span>
+                            <IconButton size="small" disabled={!inv.active}
+                              onClick={() => deactivateInvitation(inv.id)}>
+                              <BlockIcon fontSize="small"/>
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Löschen">
+                          <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
+                            <DeleteIcon fontSize="small"/>
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                    {users.length > 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} sx={{py: 0}}>
+                          <Collapse in={open} unmountOnExit>
+                            <List dense disablePadding sx={{pb: 1}}>
+                              {users.map(u => <UserRow key={u.id} user={u} self={self}/>)}
+                            </List>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </TableBody>
           </Table>
+
+          {manualUsers.length > 0 && (
+            <>
+              <Divider sx={{my: 2}}/>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1, cursor: 'pointer'}}
+                onClick={() => toggleExpanded('manual')}>
+                {expanded['manual']
+                  ? <ExpandLessIcon fontSize="small" color="action"/>
+                  : <ExpandMoreIcon fontSize="small" color="action"/>}
+                <Typography variant="subtitle2" color="text.secondary">
+                  Manuell angelegt ({manualUsers.length})
+                </Typography>
+              </Box>
+              <Collapse in={!!expanded['manual']} unmountOnExit>
+                <List dense disablePadding>
+                  {manualUsers.map(u => <UserRow key={u.id} user={u} self={self}/>)}
+                </List>
+              </Collapse>
+            </>
+          )}
         </Paper>
       </Container>
+
       {showNew && <NewInvitationDialog onClose={() => setShowNew(false)}/>}
       <Snackbar open={copied} message="Link in Zwischenablage kopiert"
         autoHideDuration={3000} onClose={() => setCopied(false)}/>

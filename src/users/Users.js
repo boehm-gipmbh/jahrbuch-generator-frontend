@@ -18,6 +18,7 @@ export const Users = () => {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
+              <TableCell>E-Mail</TableCell>
               <TableCell>Created</TableCell>
               <TableCell>Roles</TableCell>
               <TableCell/>
@@ -27,6 +28,7 @@ export const Users = () => {
             {allUsers && allUsers.map(user =>
               <TableRow key={user.id}>
                 <TableCell>{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
                 <TableCell>{new Date(user.created).toLocaleDateString()}</TableCell>
                 <TableCell>{user.roles.join(', ')}</TableCell>
                 <TableCell align='right'>

@@ -21,6 +21,14 @@ export const api = createApi({
       }),
       invalidatesTags: ['User']
     }),
+    deactivateUser: builder.mutation({
+      query: id => ({url: `/${id}/deactivate`, method: 'PUT'}),
+      invalidatesTags: ['User', 'Invitation']
+    }),
+    reactivateUser: builder.mutation({
+      query: id => ({url: `/${id}/reactivate`, method: 'PUT'}),
+      invalidatesTags: ['User', 'Invitation']
+    }),
     getSelf: builder.query({
       query: () => '/self',
       providesTags: ['User']
