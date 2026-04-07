@@ -7,7 +7,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 export const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const [state, setState] = useState('loading'); // loading | success | error
+  const [state, setState] = useState('loading'); // loading | success | expired | error
 
   useEffect(() => {
     if (!token) {
@@ -15,7 +15,11 @@ export const VerifyEmail = () => {
       return;
     }
     fetch(`${process.env.REACT_APP_API_URL}/auth/verify-email?token=${token}`)
-      .then(res => setState(res.ok ? 'success' : 'error'))
+      .then(res => {
+        if (res.ok) setState('success');
+        else if (res.status === 410) setState('expired');
+        else setState('error');
+      })
       .catch(() => setState('error'));
   }, [token]);
 
@@ -40,12 +44,22 @@ export const VerifyEmail = () => {
             </Button>
           </>
         )}
+        {state === 'expired' && (
+          <>
+            <ErrorOutlineIcon sx={{fontSize: 64, color: 'warning.main'}}/>
+            <Typography component="h1" variant="h5">Link abgelaufen</Typography>
+            <Alert severity="warning">
+              Der Bestätigungslink ist abgelaufen (gültig 24 Stunden).
+              Bitte registriere dich erneut.
+            </Alert>
+          </>
+        )}
         {state === 'error' && (
           <>
             <ErrorOutlineIcon sx={{fontSize: 64, color: 'error.main'}}/>
             <Typography component="h1" variant="h5">Link ungültig</Typography>
             <Alert severity="error">
-              Der Bestätigungslink ist ungültig oder bereits abgelaufen.
+              Der Bestätigungslink ist ungültig.
             </Alert>
           </>
         )}
