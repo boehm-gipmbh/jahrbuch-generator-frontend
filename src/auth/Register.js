@@ -35,8 +35,10 @@ export const Register = () => {
       .then(({meta, payload}) => {
         if (meta.requestStatus === 'fulfilled') {
           setRegistered(true);
+        } else if (payload?.status === 400) {
+          setError('Ungültiger Username (3–30 Zeichen, nur Buchstaben, Ziffern, - und _)');
         } else if (payload?.status === 409) {
-          setError('Name oder E-Mail bereits vergeben');
+          setError('Username oder E-Mail bereits vergeben');
         } else if (payload?.status === 410) {
           setError('Einladungslink ist nicht mehr gültig');
         } else {
@@ -95,9 +97,10 @@ export const Register = () => {
         <Box noValidate sx={{mt: 1}}>
           <TextField margin="normal" required fullWidth autoFocus
             label="Username" name="name"
-            onChange={e => onChange({target: {name: 'name', value: e.target.value.replace(/\s/g, '')}})}
+            onChange={e => onChange({target: {name: 'name', value: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '')}})}
             value={values.name}
-            helperText="Keine Leerzeichen erlaubt"
+            inputProps={{maxLength: 30}}
+            helperText="3–30 Zeichen, nur Buchstaben, Ziffern, - und _"
           />
           <TextField margin="normal" required fullWidth
             label="E-Mail" name="email" type="email" onChange={onChange} value={values.email}
