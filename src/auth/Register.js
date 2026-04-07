@@ -94,7 +94,10 @@ export const Register = () => {
         </Typography>
         <Box noValidate sx={{mt: 1}}>
           <TextField margin="normal" required fullWidth autoFocus
-            label="Name" name="name" onChange={onChange} value={values.name}
+            label="Username" name="name"
+            onChange={e => onChange({target: {name: 'name', value: e.target.value.replace(/\s/g, '')}})}
+            value={values.name}
+            helperText="Keine Leerzeichen erlaubt"
           />
           <TextField margin="normal" required fullWidth
             label="E-Mail" name="email" type="email" onChange={onChange} value={values.email}
