@@ -15,7 +15,7 @@ export const register = createAsyncThunk(
     if (!response.ok) {
       return thunkAPI.rejectWithValue({status: response.status});
     }
-    return response.text();
+    return 'created';
   }
 );
 

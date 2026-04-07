@@ -11,7 +11,7 @@ export const Register = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const dispatch = useDispatch();
-  const {values, isValid, error, setError, onChange} = useForm({
+  const {values, setValue, isValid, error, setError, onChange} = useForm({
     initialValues: {name: '', email: '', password: ''}
   });
   const [tokenState, setTokenState] = useState('loading'); // loading | valid | invalid
@@ -41,13 +41,13 @@ export const Register = () => {
   })();
 
   const sendRegister = () => {
-    if (!isValid || passwordError) return;
+    if (!isValid) return;
     dispatch(register({token, name: values.name, email: values.email, password: values.password}))
       .then(({meta, payload}) => {
         if (meta.requestStatus === 'fulfilled') {
           setRegistered(true);
         } else if (payload?.status === 400) {
-          setError('Ungültiger Username (3–30 Zeichen, nur Buchstaben, Ziffern, - und _)');
+          setError('Ungültiger Username oder Passwort entspricht nicht den Anforderungen');
         } else if (payload?.status === 409) {
           setError('Username oder E-Mail bereits vergeben');
         } else if (payload?.status === 410) {
@@ -108,7 +108,7 @@ export const Register = () => {
         <Box noValidate sx={{mt: 1}}>
           <TextField margin="normal" required fullWidth autoFocus
             label="Username" name="name"
-            onChange={e => onChange({target: {name: 'name', value: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '')}})}
+            onChange={e => setValue('name', e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
             value={values.name}
             inputProps={{maxLength: 30}}
             helperText="3–30 Zeichen, nur Buchstaben, Ziffern, - und _"
