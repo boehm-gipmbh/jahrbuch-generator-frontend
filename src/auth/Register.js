@@ -29,8 +29,19 @@ export const Register = () => {
       .catch(() => setTokenState('invalid'));
   }, [token]);
 
+  const passwordError = (() => {
+    const p = values.password;
+    if (!p) return null;
+    if (p.length < 8) return 'Mindestens 8 Zeichen';
+    if (!/[A-Z]/.test(p)) return 'Mindestens 1 Großbuchstabe';
+    if (!/[a-z]/.test(p)) return 'Mindestens 1 Kleinbuchstabe';
+    if (!/[0-9]/.test(p)) return 'Mindestens 1 Zahl';
+    if (!/[^a-zA-Z0-9]/.test(p)) return 'Mindestens 1 Sonderzeichen';
+    return null;
+  })();
+
   const sendRegister = () => {
-    if (!isValid) return;
+    if (!isValid || passwordError) return;
     dispatch(register({token, name: values.name, email: values.email, password: values.password}))
       .then(({meta, payload}) => {
         if (meta.requestStatus === 'fulfilled') {
@@ -108,6 +119,8 @@ export const Register = () => {
           <TextField margin="normal" required fullWidth
             label="Passwort" name="password" type="password" onChange={onChange} value={values.password}
             onKeyDown={e => e.key === 'Enter' && sendRegister()}
+            error={Boolean(values.password && passwordError)}
+            helperText={(values.password && passwordError) || '8+ Zeichen, Groß-/Kleinbuchstabe, Zahl, Sonderzeichen'}
           />
           <Button fullWidth variant="contained" onClick={sendRegister} sx={{mt: 3, mb: 2}}>
             Konto erstellen
