@@ -72,6 +72,20 @@ export const api = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['Invitation']
+    }),
+    setActiveGroup: builder.mutation({
+      query: groupId => ({
+        url: `/self/active-group/${groupId}`,
+        method: 'PUT'
+      }),
+      invalidatesTags: ['User']
+    }),
+    clearActiveGroup: builder.mutation({
+      query: () => ({
+        url: `/self/active-group`,
+        method: 'DELETE'
+      }),
+      invalidatesTags: ['User']
     })
   })
 });

@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {Alert, Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
+import GroupsIcon from '@mui/icons-material/Groups';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {register} from './redux';
 import {useForm} from '../useForm';
 
@@ -11,11 +12,14 @@ export const Register = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const dispatch = useDispatch();
+  const jwt = useSelector(state => state.auth.jwt);
   const {values, setValue, isValid, error, setError, onChange} = useForm({
     initialValues: {name: '', email: '', password: ''}
   });
   const [tokenState, setTokenState] = useState('loading'); // loading | valid | invalid
+  const [tokenData, setTokenData] = useState(null);
   const [registered, setRegistered] = useState(false);
+  const [joined, setJoined] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -24,7 +28,10 @@ export const Register = () => {
     }
     fetch(`${process.env.REACT_APP_API_URL}/auth/validate-token?token=${token}`)
       .then(res => {
-        setTokenState(res.ok ? 'valid' : 'invalid');
+        if (res.ok) {
+          return res.json().then(data => { setTokenData(data); setTokenState('valid'); });
+        }
+        setTokenState('invalid');
       })
       .catch(() => setTokenState('invalid'));
   }, [token]);
@@ -49,13 +56,26 @@ export const Register = () => {
         } else if (payload?.status === 400) {
           setError('Ungültiger Username oder Passwort entspricht nicht den Anforderungen');
         } else if (payload?.status === 409) {
-          setError('Username oder E-Mail bereits vergeben');
+          setError('Username oder E-Mail bereits vergeben. Falls du schon ein Konto hast, melde dich an und öffne den Einladungslink erneut.');
         } else if (payload?.status === 410) {
           setError('Einladungslink ist nicht mehr gültig');
         } else {
           setError('Fehler bei der Registrierung');
         }
       });
+  };
+
+  const joinGroup = () => {
+    fetch(`${process.env.REACT_APP_API_URL}/auth/join-group?token=${token}`, {
+      method: 'POST',
+      headers: {Authorization: `Bearer ${jwt}`}
+    }).then(res => {
+      if (res.ok) {
+        setJoined(true);
+      } else {
+        setError('Fehler beim Beitreten der Gruppe');
+      }
+    }).catch(() => setError('Fehler beim Beitreten der Gruppe'));
   };
 
   if (registered) {
@@ -68,6 +88,44 @@ export const Register = () => {
             Wir haben dir eine E-Mail an <strong>{values.email}</strong> geschickt.
             Bitte klicke auf den Link darin, um dein Konto zu aktivieren.
           </Alert>
+        </Box>
+      </Container>
+    );
+  }
+
+  if (joined) {
+    return (
+      <Container maxWidth="xs">
+        <Box sx={{mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2}}>
+          <GroupsIcon sx={{fontSize: 64, color: 'success.main'}}/>
+          <Typography component="h1" variant="h5">Gruppe beigetreten!</Typography>
+          <Alert severity="success">
+            Du bist jetzt Mitglied der Gruppe <strong>{tokenData?.group?.name}</strong>.
+            Wechsle in der App oben rechts zur Gruppenansicht.
+          </Alert>
+          <Button variant="contained" href="/bilder">Zur App</Button>
+        </Box>
+      </Container>
+    );
+  }
+
+  // Eingeloggter User mit Gruppen-Einladung → direkt beitreten
+  if (jwt && tokenState === 'valid' && tokenData?.group) {
+    return (
+      <Container maxWidth="xs">
+        <Box sx={{mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2}}>
+          <Avatar sx={{m: 1}}><GroupsIcon/></Avatar>
+          <Typography component="h1" variant="h5">Gruppe beitreten</Typography>
+          <Alert severity="info">
+            Du bist eingeladen, der Gruppe <strong>{tokenData.group.name}</strong> beizutreten.
+          </Alert>
+          <Button fullWidth variant="contained" onClick={joinGroup} sx={{mt: 2}}>
+            Gruppe beitreten
+          </Button>
+          <Snackbar
+            open={Boolean(error)} message={error}
+            autoHideDuration={6000} onClose={() => setError(null)}
+          />
         </Box>
       </Container>
     );
