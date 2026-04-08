@@ -1,5 +1,5 @@
 import React from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
 import {useDispatch} from 'react-redux';
 import {login} from './redux';
@@ -9,6 +9,8 @@ import {AccountCircle} from "@mui/icons-material";
 export const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = searchParams.get('next') || '/';
   const {values, isValid, error, setError, onChange} = useForm({
     initialValues: {username: '', password: ''}
   });
@@ -17,7 +19,7 @@ export const Login = () => {
       dispatch(login({name: values.username, password: values.password}))
         .then(({meta, payload}) => {
           if (meta.requestStatus === 'fulfilled') {
-            navigate('/');
+            navigate(next);
           } else if (payload?.body?.includes('Email not verified')) {
             setError('E-Mail noch nicht bestätigt. Bitte prüfe deinen Posteingang.');
           } else if (payload?.body?.includes('Account deactivated')) {

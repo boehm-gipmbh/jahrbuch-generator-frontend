@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useSearchParams} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 import {Alert, Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
 import GroupsIcon from '@mui/icons-material/Groups';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
@@ -11,6 +11,7 @@ import {useForm} from '../useForm';
 export const Register = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const jwt = useSelector(state => state.auth.jwt);
   const {values, setValue, isValid, error, setError, onChange} = useForm({
@@ -56,7 +57,7 @@ export const Register = () => {
         } else if (payload?.status === 400) {
           setError('Ungültiger Username oder Passwort entspricht nicht den Anforderungen');
         } else if (payload?.status === 409) {
-          setError('Username oder E-Mail bereits vergeben. Falls du schon ein Konto hast, melde dich an und öffne den Einladungslink erneut.');
+          navigate(`/login?next=${encodeURIComponent(`/register?token=${token}`)}`);
         } else if (payload?.status === 410) {
           setError('Einladungslink ist nicht mehr gültig');
         } else {
