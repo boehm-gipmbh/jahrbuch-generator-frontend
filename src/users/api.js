@@ -59,6 +59,13 @@ export const api = createApi({
       }),
       invalidatesTags: ['Invitation']
     }),
+    reactivateInvitation: builder.mutation({
+      query: id => ({
+        url: `/invitations/${id}/reactivate`,
+        method: 'PUT'
+      }),
+      invalidatesTags: ['Invitation']
+    }),
     deleteInvitation: builder.mutation({
       query: id => ({
         url: `/invitations/${id}`,

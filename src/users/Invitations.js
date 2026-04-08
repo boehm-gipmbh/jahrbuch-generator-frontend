@@ -7,6 +7,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockIcon from '@mui/icons-material/Block';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -109,6 +110,7 @@ export const Invitations = () => {
   const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
   const {data: self} = api.endpoints.getSelf.useQuery();
   const [deactivateInvitation] = api.endpoints.deactivateInvitation.useMutation();
+  const [reactivateInvitation] = api.endpoints.reactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
   const [showNew, setShowNew] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -188,14 +190,19 @@ export const Invitations = () => {
                             </IconButton>
                           </span>
                         </Tooltip>
-                        <Tooltip title="Deaktivieren">
-                          <span>
-                            <IconButton size="small" disabled={!inv.active}
-                              onClick={() => deactivateInvitation(inv.id)}>
+                        {inv.active ? (
+                          <Tooltip title="Deaktivieren">
+                            <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
                               <BlockIcon fontSize="small"/>
                             </IconButton>
-                          </span>
-                        </Tooltip>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Reaktivieren">
+                            <IconButton size="small" onClick={() => reactivateInvitation(inv.id)}>
+                              <CheckCircleOutlineIcon fontSize="small"/>
+                            </IconButton>
+                          </Tooltip>
+                        )}
                         <Tooltip title="Löschen">
                           <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
                             <DeleteIcon fontSize="small"/>
