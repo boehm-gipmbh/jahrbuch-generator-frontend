@@ -1,5 +1,5 @@
-import React from 'react';
-import {Container, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Typography} from '@mui/material';
+import React, {useState} from 'react';
+import {Alert, Container, IconButton, Paper, Snackbar, Table, TableBody, TableCell, TableHead, TableRow, Typography} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {api} from './api';
 import {Layout} from '../layout';
@@ -8,6 +8,16 @@ export const Users = () => {
   const {data: allUsers} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
   const {data: self} = api.endpoints.getSelf.useQuery();
   const [deleteUser] = api.endpoints.deleteUser.useMutation();
+  const [error, setError] = useState(null);
+
+  const handleDelete = (user) => {
+    deleteUser(user).unwrap()
+      .catch(err => {
+        const msg = err?.data || err?.error || 'Löschen fehlgeschlagen';
+        setError(typeof msg === 'string' ? msg : 'User hat noch Inhalte — bitte zuerst deaktivieren.');
+      });
+  };
+
   return <Layout>
     <Container sx={{mt: theme => theme.spacing(2)}}>
       <Paper sx={{p: 2}}>
@@ -33,7 +43,7 @@ export const Users = () => {
                 <TableCell>{user.roles.join(', ')}</TableCell>
                 <TableCell align='right'>
                   <IconButton
-                    disabled={user.id === self?.id} onClick={() => deleteUser(user)}
+                    disabled={user.id === self?.id} onClick={() => handleDelete(user)}
                   >
                     <DeleteIcon/>
                   </IconButton>
@@ -44,5 +54,8 @@ export const Users = () => {
         </Table>
       </Paper>
     </Container>
+    <Snackbar open={Boolean(error)} autoHideDuration={8000} onClose={() => setError(null)}>
+      <Alert severity="warning" onClose={() => setError(null)}>{error}</Alert>
+    </Snackbar>
   </Layout>;
 };
