@@ -123,8 +123,12 @@ export const Invitations = () => {
     navigator.clipboard.writeText(url).then(() => setCopied(true));
   };
 
-  // User-IDs die über einen Einladungslink registriert wurden
-  const invitedUserIds = new Set(invitations.flatMap(inv => (inv.registeredUsers || []).map(u => u.id)));
+  // Effektive Mitglieder: vom Backend als 'members' geliefert
+  // (Gruppen-Einladungen → Gruppen-Mitglieder, sonst registeredUsers)
+  const effectiveMembers = (inv) => inv.members || [];
+
+  // User-IDs die einem Einladungslink zugeordnet sind
+  const invitedUserIds = new Set(invitations.flatMap(inv => effectiveMembers(inv).map(u => u.id)));
   const manualUsers = allUsers.filter(u => !invitedUserIds.has(u.id));
 
   return (
@@ -154,7 +158,7 @@ export const Invitations = () => {
             </TableHead>
             <TableBody>
               {invitations.map(inv => {
-                const users = inv.registeredUsers || [];
+                const users = effectiveMembers(inv);
                 const open = !!expanded[inv.id];
                 return (
                   <React.Fragment key={inv.id}>
