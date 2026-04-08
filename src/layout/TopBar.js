@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import {UserIcon} from "./UserIcon";
+import {GroupSwitcher} from "./GroupSwitcher";
 
 export const TopBar = ({goHome, newText, toggleDrawer}) => (
   <AppBar
@@ -33,6 +34,7 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => (
       <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
       Jahrbuch-Generator - OHG Jahrgang 1985 - 40 Jahre ABI - Feier
       </Typography>
+      <GroupSwitcher />
       <Tooltip title='Quick Add'>
         <IconButton
           color='inherit'
