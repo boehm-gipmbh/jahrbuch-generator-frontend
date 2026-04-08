@@ -21,6 +21,7 @@ export const Register = () => {
   const [tokenData, setTokenData] = useState(null);
   const [registered, setRegistered] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -57,7 +58,7 @@ export const Register = () => {
         } else if (payload?.status === 400) {
           setError('Ungültiger Username oder Passwort entspricht nicht den Anforderungen');
         } else if (payload?.status === 409) {
-          navigate(`/login?next=${encodeURIComponent(`/register?token=${token}`)}`);
+          setEmailTaken(true);
         } else if (payload?.status === 410) {
           setError('Einladungslink ist nicht mehr gültig');
         } else {
@@ -108,6 +109,12 @@ export const Register = () => {
         </Box>
       </Container>
     );
+  }
+
+  // Eingeloggter User ohne Gruppen-Einladung → hat hier nichts zu tun
+  if (jwt && tokenState === 'valid' && !tokenData?.group) {
+    navigate('/bilder');
+    return null;
   }
 
   // Eingeloggter User mit Gruppen-Einladung → direkt beitreten
@@ -184,6 +191,14 @@ export const Register = () => {
           <Button fullWidth variant="contained" onClick={sendRegister} sx={{mt: 3, mb: 2}}>
             Konto erstellen
           </Button>
+          {emailTaken && (
+            <Alert severity="warning" sx={{mt: 1}}>
+              Username oder E-Mail bereits vergeben.{' '}
+              <Button size="small" onClick={() => navigate(`/login?next=${encodeURIComponent(`/register?token=${token}`)}`)}>
+                Jetzt anmelden
+              </Button>
+            </Alert>
+          )}
         </Box>
       </Box>
       <Snackbar
