@@ -12,22 +12,29 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
 import {Layout} from '../layout';
 
-const NewInvitationDialog = ({onClose}) => {
+const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
   const [createInvitation] = api.endpoints.createInvitation.useMutation();
-  const [label, setLabel] = useState('');
+  const [label, setLabel] = useState(isAdmin ? '' : (groupName || ''));
   const [role, setRole] = useState('user');
   const [expiresAt, setExpiresAt] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 30);
     return d.toISOString().slice(0, 10);
   });
+  const [recipientEmail, setRecipientEmail] = useState('');
 
   const handleCreate = () => {
-    createInvitation({label, role, expiresAt: new Date(expiresAt).toISOString()})
+    const body = {role, expiresAt: new Date(expiresAt).toISOString()};
+    if (isAdmin) {
+      if (label) body.label = label;
+      if (recipientEmail) body.recipientEmail = recipientEmail;
+    }
+    createInvitation(body)
       .unwrap()
       .then(onClose)
       .catch(() => {});
@@ -37,15 +44,31 @@ const NewInvitationDialog = ({onClose}) => {
     <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Neuen Einladungslink erstellen</DialogTitle>
       <DialogContent sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 1}}>
-        <TextField label="Label (z.B. Klasse 2026)" value={label}
-          onChange={e => setLabel(e.target.value)} fullWidth/>
-        <TextField label="Ablaufdatum" type="date" value={expiresAt}
-          onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
-        <TextField label="Rolle" value={role} onChange={e => setRole(e.target.value)}
-          select SelectProps={{native: true}} fullWidth>
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </TextField>
+        {isAdmin ? (
+          <>
+            <TextField label="Label / Gruppe (optional)" value={label}
+              onChange={e => setLabel(e.target.value)} fullWidth/>
+            <TextField label="Ablaufdatum" type="date" value={expiresAt}
+              onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
+            <TextField label="Rolle" value={role} onChange={e => setRole(e.target.value)}
+              select SelectProps={{native: true}} fullWidth>
+              <option value="user">user</option>
+              <option value="group-admin">group-admin</option>
+              <option value="admin">admin</option>
+            </TextField>
+            <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
+              onChange={e => setRecipientEmail(e.target.value)} fullWidth type="email"
+              helperText="Wird ausgefüllt, sendet das System direkt eine Einladungsmail"/>
+          </>
+        ) : (
+          <>
+            <Typography variant="body2" color="text.secondary">
+              Gruppe: <strong>{groupName}</strong>
+            </Typography>
+            <TextField label="Ablaufdatum" type="date" value={expiresAt}
+              onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
+          </>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Abbrechen</Button>
@@ -55,11 +78,12 @@ const NewInvitationDialog = ({onClose}) => {
   );
 };
 
-const UserActions = ({user, self}) => {
+const UserActions = ({user, self, isAdmin}) => {
   const [deleteUser] = api.endpoints.deleteUser.useMutation();
   const [deactivateUser] = api.endpoints.deactivateUser.useMutation();
   const [reactivateUser] = api.endpoints.reactivateUser.useMutation();
   const isSelf = user.id === self?.id;
+  if (!isAdmin) return null;
   return (
     <Box sx={{display: 'flex', gap: 0.5}}>
       {user.active ? (
@@ -88,7 +112,7 @@ const UserActions = ({user, self}) => {
   );
 };
 
-const UserRow = ({user, self}) => (
+const UserRow = ({user, self, isAdmin}) => (
   <ListItem disableGutters sx={{pl: 2, gap: 1}}>
     <ListItemText
       primary={
@@ -101,7 +125,7 @@ const UserRow = ({user, self}) => (
       primaryTypographyProps={{variant: 'body2'}}
       secondaryTypographyProps={{variant: 'caption'}}
     />
-    <UserActions user={user} self={self}/>
+    <UserActions user={user} self={self} isAdmin={isAdmin}/>
   </ListItem>
 );
 
@@ -116,6 +140,10 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
+  const isAdmin = self?.roles?.includes('admin');
+  const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
+  const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
+
   const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 
   const copyLink = (token) => {
@@ -123,11 +151,8 @@ export const Invitations = () => {
     navigator.clipboard.writeText(url).then(() => setCopied(true));
   };
 
-  // Effektive Mitglieder: vom Backend als 'members' geliefert
-  // (Gruppen-Einladungen → Gruppen-Mitglieder, sonst registeredUsers)
   const effectiveMembers = (inv) => inv.members || [];
 
-  // User-IDs die einem Einladungslink zugeordnet sind
   const invitedUserIds = new Set(invitations.flatMap(inv => effectiveMembers(inv).map(u => u.id)));
   const manualUsers = allUsers.filter(u => !invitedUserIds.has(u.id));
 
@@ -137,7 +162,7 @@ export const Invitations = () => {
         <Paper sx={{p: 2}}>
           <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
             <Typography component="h2" variant="h6" color="primary">
-              Benutzer &amp; Einladungslinks
+              {isGroupAdmin ? `Einladungen — ${groupName}` : 'Benutzer & Einladungslinks'}
             </Typography>
             <Button startIcon={<AddIcon/>} variant="contained" size="small"
               onClick={() => setShowNew(true)}>
@@ -153,6 +178,7 @@ export const Invitations = () => {
                 <TableCell>Rolle</TableCell>
                 <TableCell>Läuft ab</TableCell>
                 <TableCell>Status</TableCell>
+                {isAdmin && <TableCell>Gesendet an</TableCell>}
                 <TableCell/>
               </TableRow>
             </TableHead>
@@ -185,6 +211,20 @@ export const Invitations = () => {
                           ? <Chip label="Aktiv" color="success" size="small"/>
                           : <Chip label="Inaktiv" size="small"/>}
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          {inv.recipientEmail ? (
+                            <Tooltip title={inv.recipientEmail}>
+                              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                                <MailOutlineIcon fontSize="small" color="action"/>
+                                <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
+                                  {inv.recipientEmail}
+                                </Typography>
+                              </Box>
+                            </Tooltip>
+                          ) : '—'}
+                        </TableCell>
+                      )}
                       <TableCell align="right">
                         <Tooltip title="Link kopieren">
                           <span>
@@ -194,7 +234,7 @@ export const Invitations = () => {
                             </IconButton>
                           </span>
                         </Tooltip>
-                        {inv.active ? (
+                        {isAdmin && (inv.active ? (
                           <Tooltip title="Deaktivieren">
                             <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
                               <BlockIcon fontSize="small"/>
@@ -206,20 +246,22 @@ export const Invitations = () => {
                               <CheckCircleOutlineIcon fontSize="small"/>
                             </IconButton>
                           </Tooltip>
+                        ))}
+                        {isAdmin && (
+                          <Tooltip title="Löschen">
+                            <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
+                              <DeleteIcon fontSize="small"/>
+                            </IconButton>
+                          </Tooltip>
                         )}
-                        <Tooltip title="Löschen">
-                          <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
-                            <DeleteIcon fontSize="small"/>
-                          </IconButton>
-                        </Tooltip>
                       </TableCell>
                     </TableRow>
                     {users.length > 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} sx={{py: 0}}>
+                        <TableCell colSpan={isAdmin ? 7 : 6} sx={{py: 0}}>
                           <Collapse in={open} unmountOnExit>
                             <List dense disablePadding sx={{pb: 1}}>
-                              {users.map(u => <UserRow key={u.id} user={u} self={self}/>)}
+                              {users.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin}/>)}
                             </List>
                           </Collapse>
                         </TableCell>
@@ -231,7 +273,7 @@ export const Invitations = () => {
             </TableBody>
           </Table>
 
-          {manualUsers.length > 0 && (
+          {isAdmin && manualUsers.length > 0 && (
             <>
               <Divider sx={{my: 2}}/>
               <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1, cursor: 'pointer'}}
@@ -245,7 +287,7 @@ export const Invitations = () => {
               </Box>
               <Collapse in={!!expanded['manual']} unmountOnExit>
                 <List dense disablePadding>
-                  {manualUsers.map(u => <UserRow key={u.id} user={u} self={self}/>)}
+                  {manualUsers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin}/>)}
                 </List>
               </Collapse>
             </>
@@ -253,7 +295,13 @@ export const Invitations = () => {
         </Paper>
       </Container>
 
-      {showNew && <NewInvitationDialog onClose={() => setShowNew(false)}/>}
+      {showNew && (
+        <NewInvitationDialog
+          onClose={() => setShowNew(false)}
+          isAdmin={isAdmin}
+          groupName={groupName}
+        />
+      )}
       <Snackbar open={copied} message="Link in Zwischenablage kopiert"
         autoHideDuration={3000} onClose={() => setCopied(false)}/>
     </Layout>
