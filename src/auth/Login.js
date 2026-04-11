@@ -1,5 +1,5 @@
 import React from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
+import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
 import {useDispatch} from 'react-redux';
 import {login} from './redux';
@@ -52,6 +52,13 @@ export const Login = () => {
           <Button fullWidth variant='contained' onClick={sendLogin} sx={{ mt: 3, mb: 2 }}>
             Sign In
           </Button>
+          <Box sx={{textAlign: 'center'}}>
+            <Link to="/forgot-password" style={{textDecoration: 'none'}}>
+              <Typography variant="body2" color="primary">
+                Passwort vergessen?
+              </Typography>
+            </Link>
+          </Box>
         </Box>
       </Box>
       <Snackbar
