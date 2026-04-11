@@ -58,7 +58,7 @@ const ItemRow = ({type, item, onRestore, onHardDelete}) => (
     </ListItem>
 );
 
-const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestoreStory}) => {
+const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestoreStory, storyDeleted}) => {
     const [open, setOpen] = useState(true);
     const count = bilder.length + texte.length;
     const isReal = storyName !== KEIN_STORY;
@@ -75,7 +75,7 @@ const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestor
                     secondary={`${count} Einträge`}
                     primaryTypographyProps={{fontWeight: 'medium'}}
                 />
-                {isReal && (
+                {isReal && storyDeleted && (
                     <Box sx={{display: 'flex', gap: 0.5, mr: 1}} onClick={e => e.stopPropagation()}>
                         <Tooltip title="Story + Inhalt wiederherstellen">
                             <Button size="small" startIcon={<RestoreIcon/>}
@@ -117,6 +117,8 @@ export const Papierkorb = () => {
     const dispatch = useDispatch();
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
     const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
+    const {data: stories = []} = storyApi.endpoints.getStories.useQuery();
+    const activeStoryNames = new Set(stories.map(s => s.name));
     const [restoreBild] = bilderApi.endpoints.restoreBild.useMutation();
     const [hardDeleteBild] = bilderApi.endpoints.hardDeleteBild.useMutation();
     const [restoreText] = texteApi.endpoints.restoreText.useMutation();
@@ -207,6 +209,7 @@ export const Papierkorb = () => {
                                     onRestore={handleRestore}
                                     onHardDelete={(type, item) => setConfirmItem({type, item})}
                                     onRestoreStory={handleRestoreStory}
+                                    storyDeleted={!activeStoryNames.has(key)}
                                 />
                             ))}
                         </List>
