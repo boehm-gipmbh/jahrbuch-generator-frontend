@@ -1,6 +1,6 @@
 import React from 'react';
 import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
-import {Login, Register, VerifyEmail, ForgotPassword, ResetPassword} from './auth';
+import {Login, Register, VerifyEmail, ForgotPassword, ResetPassword, ForgotUsername} from './auth';
 
 import {Bilder} from './bilder';
 import {Texte} from './texte';
@@ -17,6 +17,7 @@ export const App = () => (
             <Route exact path='/login' element={<Login />} />
             <Route exact path='/register' element={<Register />} />
             <Route exact path='/verify-email' element={<VerifyEmail />} />
+            <Route exact path='/forgot-username' element={<ForgotUsername />} />
             <Route exact path='/forgot-password' element={<ForgotPassword />} />
             <Route exact path='/reset-password' element={<ResetPassword />} />
 

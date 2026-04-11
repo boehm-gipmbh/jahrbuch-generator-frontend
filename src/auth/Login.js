@@ -52,7 +52,12 @@ export const Login = () => {
           <Button fullWidth variant='contained' onClick={sendLogin} sx={{ mt: 3, mb: 2 }}>
             Sign In
           </Button>
-          <Box sx={{textAlign: 'center'}}>
+          <Box sx={{display: 'flex', justifyContent: 'space-between', mt: 1}}>
+            <Link to="/forgot-username" style={{textDecoration: 'none'}}>
+              <Typography variant="body2" color="primary">
+                Benutzername vergessen?
+              </Typography>
+            </Link>
             <Link to="/forgot-password" style={{textDecoration: 'none'}}>
               <Typography variant="body2" color="primary">
                 Passwort vergessen?
