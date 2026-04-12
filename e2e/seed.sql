@@ -15,12 +15,14 @@ DELETE FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801;
 
 -- Test-User e2etestuser: Passwort auf Testwert setzen (egal welche ID er hat).
 -- Falls er noch nicht existiert, wird er mit ID 100 angelegt.
-INSERT INTO users (id, name, email, password, created, version)
+INSERT INTO users (id, name, email, password, created, version, email_verified, active)
 VALUES (100, 'e2etestuser', 'e2etestuser@test.local',
         '$2a$10$KA0mDcXVe/3EOm1akkXQFeva9HNJ1lWigbQn5Xwv2AYshdLGMy.H.',
-        NOW(), 0)
+        NOW(), 0, TRUE, TRUE)
 ON CONFLICT (name) DO UPDATE
-    SET password = EXCLUDED.password;
+    SET password       = EXCLUDED.password,
+        email_verified = TRUE,
+        active         = TRUE;
 
 INSERT INTO user_roles (id, role)
 SELECT id, 'user' FROM users WHERE name = 'e2etestuser'
