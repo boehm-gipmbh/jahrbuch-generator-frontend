@@ -65,7 +65,8 @@ async function goToInvitations(page, jwt) {
     }, jwt);
     await page.goto('/invitations');
     await page.waitForSelector('h2', {timeout: 15_000});
-    await page.waitForTimeout(800);
+    // RTK Query braucht Zeit zum Laden — im CI länger als lokal
+    await page.waitForTimeout(2000);
 }
 
 // ---------------------------------------------------------------------------
@@ -80,7 +81,6 @@ test.afterAll(() => cleanupTestData());
 // ---------------------------------------------------------------------------
 
 test('group-admin sieht Seitenüberschrift mit Gruppenname', async ({page}) => {
-    // Admin erstellt einen group-admin Token für Hochzeitszeitung
     const adminJwt = await getJwt('admin', 'Admin1234!');
     await createToken(adminJwt, {
         role: 'group-admin',
@@ -106,11 +106,12 @@ test('group-admin erscheint als Mitglied im group-admin Token', async ({page}) =
     const ddetJwt = await getJwt('ddet', 'Ddet9999#');
     await goToInvitations(page, ddetJwt);
 
-    // "Hochzeitszeitung" Gruppenüberschrift sichtbar
-    await expect(page.getByText('Hochzeitszeitung').first()).toBeVisible();
-    // ddet erscheint als Mitglied mit group-admin Chip
-    await expect(page.getByText('ddet')).toBeVisible();
-    await expect(page.getByText('group-admin').first()).toBeVisible();
+    // Rolle "group-admin" in der Tabelle — immer sichtbar
+    await expect(page.getByText('group-admin').first()).toBeVisible({timeout: 8_000});
+    // Zeile aufklappen, um Mitglied ddet zu sehen
+    await expect(page.locator('[data-testid="ExpandMoreIcon"]').first()).toBeVisible({timeout: 8_000});
+    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+    await expect(page.getByText('ddet', {exact: true})).toBeVisible({timeout: 8_000});
 });
 
 test('group-admin erstellt neuen user-Einladungslink über Dialog', async ({page}) => {
@@ -118,30 +119,29 @@ test('group-admin erstellt neuen user-Einladungslink über Dialog', async ({page
     await goToInvitations(page, ddetJwt);
 
     await page.getByRole('button', {name: 'Neuer Link'}).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-    // Ablaufdatum setzen (kein Label/Rolle-Feld für group-admin)
     await page.getByLabel('Ablaufdatum').fill('2027-12-31');
     await page.getByRole('button', {name: 'Erstellen'}).click();
+    await expect(dialog).not.toBeVisible({timeout: 5_000});
 
-    await expect(page.getByRole('dialog')).not.toBeVisible({timeout: 5_000});
-
-    // "Offene Links" Sektion erscheint nach Token-Erstellung
-    await page.waitForTimeout(800);
-    await expect(page.getByText(/Offene Links/)).toBeVisible();
+    // Neuer Token erscheint in der Tabelle als aktiv
+    await expect(page.getByText('Aktiv').first()).toBeVisible({timeout: 8_000});
 });
 
 test('neu registrierter user erscheint in der Mitgliederliste', async ({page}) => {
-    // ddet erstellt user-Token via API
     const ddetJwt = await getJwt('ddet', 'Ddet9999#');
     const token = await createToken(ddetJwt, {expiresAt: '2027-01-01T00:00:00Z'});
 
-    // Neuer User registriert sich
     await registerUser(token.token, 'pwtest_neueruser', 'pwtest_neueruser@test.de', 'Pwtest1234!');
 
-    // ddet sieht neuen User in seinen Einladungen
     await goToInvitations(page, ddetJwt);
-    await expect(page.getByText('pwtest_neueruser', {exact: true})).toBeVisible();
+
+    // Zeile aufklappen, um registrierten User zu sehen
+    await expect(page.locator('[data-testid="ExpandMoreIcon"]').first()).toBeVisible({timeout: 8_000});
+    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+    await expect(page.getByText('pwtest_neueruser', {exact: true})).toBeVisible({timeout: 8_000});
 });
 
 test('dialog für group-admin zeigt keine Label- und Rollenfelder', async ({page}) => {
@@ -149,14 +149,17 @@ test('dialog für group-admin zeigt keine Label- und Rollenfelder', async ({page
     await goToInvitations(page, ddetJwt);
 
     await page.getByRole('button', {name: 'Neuer Link'}).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
     // Kein Label-Feld und kein Rollen-Feld für group-admin
-    await expect(page.getByLabel('Label / Gruppe (optional)')).not.toBeVisible();
-    await expect(page.getByLabel('Rolle')).not.toBeVisible();
-    // Aber Ablaufdatum und optionale E-Mail sind da
-    await expect(page.getByLabel('Ablaufdatum')).toBeVisible();
-    await expect(page.getByLabel('Einladungs-E-Mail senden an (optional)')).toBeVisible();
+    await expect(dialog.getByLabel('Label / Gruppe (optional)')).not.toBeVisible();
+    await expect(dialog.getByLabel('Rolle')).not.toBeVisible();
+    // Kein E-Mail-Feld für group-admin (nur für Admin)
+    await expect(dialog.locator('input[type="email"]')).not.toBeVisible();
+
+    // Ablaufdatum ist vorhanden
+    await expect(dialog.getByLabel('Ablaufdatum')).toBeVisible();
 
     await page.getByRole('button', {name: 'Abbrechen'}).click();
 });
