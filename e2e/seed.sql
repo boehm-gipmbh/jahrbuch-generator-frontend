@@ -97,3 +97,54 @@ SELECT setval('bilder_seq',  GREATEST((SELECT MAX(id) FROM bilder)  + 1, 5000), 
 SELECT setval('texte_seq',   GREATEST((SELECT MAX(id) FROM texte)   + 1, 1000), false);
 SELECT setval('stories_seq', GREATEST((SELECT MAX(id) FROM stories) + 1, 2000), false);
 SELECT setval('users_seq',   GREATEST((SELECT MAX(id) FROM users)   + 1, 200),  false);
+
+-- =============================================================================
+-- Group-Admin Invitation Flow Test Data
+-- =============================================================================
+
+-- Gruppe "Hochzeitszeitung" (id=1) sicherstellen
+INSERT INTO gruppen (id, name)
+VALUES (1, 'Hochzeitszeitung')
+ON CONFLICT (id) DO NOTHING;
+
+-- User "admin" sicherstellen (Passwort: Admin1234!)
+INSERT INTO users (id, name, email, password, created, version, email_verified, active)
+VALUES (0, 'admin', 'admin@jamsintown.de',
+        '$2a$10$geBz3tkQfSME.ZCPpbPZ4.45.JSNOdcpwbah6lsaZUz4oGf3Ca19K',
+        NOW(), 0, TRUE, TRUE)
+ON CONFLICT (name) DO UPDATE
+    SET password = '$2a$10$geBz3tkQfSME.ZCPpbPZ4.45.JSNOdcpwbah6lsaZUz4oGf3Ca19K',
+        email_verified = TRUE, active = TRUE;
+INSERT INTO user_roles (id, role)
+SELECT id, 'admin' FROM users WHERE name = 'admin' ON CONFLICT DO NOTHING;
+INSERT INTO user_roles (id, role)
+SELECT id, 'user' FROM users WHERE name = 'admin' ON CONFLICT DO NOTHING;
+
+-- User "ddet" als group-admin für Hochzeitszeitung (Passwort: Ddet9999#)
+-- active_group_id = 1 damit /invitations nicht nach /bilder weiterleitet
+INSERT INTO users (id, name, email, password, created, version, email_verified, active,
+                   managed_group_id, active_group_id)
+VALUES (3, 'ddet', 'dboehm@arcor.de',
+        '$2a$10$IPSNwwU5ehCTd4XBXARvkOqCXayHNfs5TFLUMs5xghl0GcuP5z2ou',
+        NOW(), 0, TRUE, TRUE, 1, 1)
+ON CONFLICT (name) DO UPDATE
+    SET password         = '$2a$10$IPSNwwU5ehCTd4XBXARvkOqCXayHNfs5TFLUMs5xghl0GcuP5z2ou',
+        email_verified   = TRUE,
+        active           = TRUE,
+        managed_group_id = 1,
+        active_group_id  = 1;
+INSERT INTO user_roles (id, role)
+SELECT id, 'group-admin' FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
+INSERT INTO user_roles (id, role)
+SELECT id, 'user' FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
+INSERT INTO user_groups (user_id, group_id)
+SELECT id, 1 FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
+
+-- Playwright-Einladungs-Testdaten aus Vorläufen bereinigen
+DELETE FROM user_groups WHERE user_id IN (SELECT id FROM users WHERE name LIKE 'pwtest%');
+DELETE FROM user_roles  WHERE id      IN (SELECT id FROM users WHERE name LIKE 'pwtest%');
+UPDATE users SET managed_group_id = NULL WHERE name LIKE 'pwtest%';
+DELETE FROM users WHERE name LIKE 'pwtest%';
+DELETE FROM invitation_tokens
+  WHERE created_by IN (SELECT id FROM users WHERE name IN ('ddet', 'admin'))
+    AND label = 'Hochzeitszeitung';
