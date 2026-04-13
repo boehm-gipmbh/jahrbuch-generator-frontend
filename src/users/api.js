@@ -110,6 +110,12 @@ export const api = createApi({
         body: {recipientEmail}
       }),
       invalidatesTags: ['Invitation']
+    }),
+    sendReminder: builder.mutation({
+      query: id => ({
+        url: `/${id}/remind`,
+        method: 'POST'
+      })
     })
   })
 });
