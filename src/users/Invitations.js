@@ -34,8 +34,8 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
     const body = {role, expiresAt: new Date(expiresAt).toISOString()};
     if (isAdmin) {
       if (label) body.label = label;
-      if (recipientEmail) body.recipientEmail = recipientEmail;
     }
+    if (recipientEmail) body.recipientEmail = recipientEmail;
     createInvitation(body)
       .unwrap()
       .then(onClose)
@@ -58,9 +58,6 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
               <option value="group-admin">group-admin</option>
               <option value="admin">admin</option>
             </TextField>
-            <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
-              onChange={e => setRecipientEmail(e.target.value)} fullWidth type="email"
-              helperText="Wird ausgefüllt, sendet das System direkt eine Einladungsmail"/>
           </>
         ) : (
           <>
@@ -71,6 +68,9 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
               onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
           </>
         )}
+        <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
+          onChange={e => setRecipientEmail(e.target.value)} fullWidth type="email"
+          helperText="Wird ausgefüllt, sendet das System direkt eine Einladungsmail"/>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Abbrechen</Button>
