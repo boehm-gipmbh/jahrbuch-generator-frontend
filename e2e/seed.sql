@@ -14,10 +14,10 @@ UPDATE texte SET story_id = NULL
 DELETE FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801;
 
 -- Test-User e2etestuser: Passwort auf Testwert setzen (egal welche ID er hat).
--- Falls er noch nicht existiert, wird er mit ID 100 angelegt.
+-- Keine feste ID — Sequenz wird genutzt, um PK-Konflikte mit anderen Usern zu vermeiden.
 -- email_verified=TRUE und active=TRUE damit Login nach V12/V13-Migrationen funktioniert.
-INSERT INTO users (id, name, email, password, created, version, email_verified, active)
-VALUES (100, 'e2etestuser', 'e2etestuser@test.local',
+INSERT INTO users (name, email, password, created, version, email_verified, active)
+VALUES ('e2etestuser', 'e2etestuser@test.local',
         '$2a$10$KA0mDcXVe/3EOm1akkXQFeva9HNJ1lWigbQn5Xwv2AYshdLGMy.H.',
         NOW(), 0, TRUE, TRUE)
 ON CONFLICT (name) DO UPDATE
