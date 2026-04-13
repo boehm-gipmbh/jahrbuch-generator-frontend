@@ -102,6 +102,14 @@ export const api = createApi({
         body: {expiresAt}
       }),
       invalidatesTags: ['Invitation']
+    }),
+    resendInvitation: builder.mutation({
+      query: ({id, recipientEmail}) => ({
+        url: `/invitations/${id}/resend`,
+        method: 'POST',
+        body: {recipientEmail}
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });
