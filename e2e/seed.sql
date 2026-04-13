@@ -14,16 +14,21 @@ UPDATE texte SET story_id = NULL
 DELETE FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801;
 
 -- Test-User e2etestuser: Passwort auf Testwert setzen (egal welche ID er hat).
--- Keine feste ID — Sequenz wird genutzt, um PK-Konflikte mit anderen Usern zu vermeiden.
+-- id-Spalte hat kein DEFAULT → INSERT ohne ID schlägt fehl.
+-- Strategie: erst UPDATE (wenn vorhanden), dann INSERT mit MAX(id)+100 (wenn nicht vorhanden).
 -- email_verified=TRUE und active=TRUE damit Login nach V12/V13-Migrationen funktioniert.
-INSERT INTO users (name, email, password, created, version, email_verified, active)
-VALUES ('e2etestuser', 'e2etestuser@test.local',
-        '$2a$10$KA0mDcXVe/3EOm1akkXQFeva9HNJ1lWigbQn5Xwv2AYshdLGMy.H.',
-        NOW(), 0, TRUE, TRUE)
-ON CONFLICT (name) DO UPDATE
-    SET password = EXCLUDED.password,
+UPDATE users
+    SET password      = '$2a$10$KA0mDcXVe/3EOm1akkXQFeva9HNJ1lWigbQn5Xwv2AYshdLGMy.H.',
         email_verified = TRUE,
-        active = TRUE;
+        active         = TRUE
+    WHERE name = 'e2etestuser';
+
+INSERT INTO users (id, name, email, password, created, version, email_verified, active)
+SELECT (SELECT COALESCE(MAX(id), 0) + 100 FROM users),
+       'e2etestuser', 'e2etestuser@test.local',
+       '$2a$10$KA0mDcXVe/3EOm1akkXQFeva9HNJ1lWigbQn5Xwv2AYshdLGMy.H.',
+       NOW(), 0, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE name = 'e2etestuser');
 
 INSERT INTO user_roles (id, role)
 SELECT id, 'user' FROM users WHERE name = 'e2etestuser'
