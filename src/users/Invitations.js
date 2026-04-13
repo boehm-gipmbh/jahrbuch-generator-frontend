@@ -96,9 +96,11 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
 
   if (!isAdmin && !isGroupAdmin) return null;
 
+  const canAct = isAdmin || isGroupAdmin;
+
   return (
     <Box sx={{display: 'flex', gap: 0.5}}>
-      {isGroupAdmin && !isSelf && (
+      {canAct && !isSelf && (
         isGroupAdminRole ? (
           <Tooltip title="Zu user degradieren">
             <IconButton size="small" onClick={() => demoteUser(user.id)}>
@@ -113,7 +115,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
           </Tooltip>
         )
       )}
-      {isAdmin && (user.active ? (
+      {canAct && (user.active ? (
         <Tooltip title="Deaktivieren (Login sperren)">
           <span>
             <IconButton size="small" disabled={isSelf} onClick={() => deactivateUser(user.id)}>
@@ -128,7 +130,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
           </IconButton>
         </Tooltip>
       ))}
-      {isAdmin && (
+      {canAct && (
         <Tooltip title="Löschen">
           <span>
             <IconButton size="small" disabled={isSelf} onClick={() => deleteUser(user)}>
