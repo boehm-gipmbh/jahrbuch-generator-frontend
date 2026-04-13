@@ -235,13 +235,23 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
 const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailValue, setEmailValue] = useState('');
+  const [extending, setExtending] = useState(false);
+  const [newDate, setNewDate] = useState('');
   const [resendInvitation] = api.endpoints.resendInvitation.useMutation();
+  const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
   const canAct = isAdmin || isGroupAdmin;
 
   const handleSendEmail = () => {
     resendInvitation({id: inv.id, recipientEmail: emailValue})
       .unwrap()
       .then(() => setSendingEmail(false))
+      .catch(() => {});
+  };
+
+  const handleExtend = () => {
+    extendInvitation({id: inv.id, expiresAt: new Date(newDate).toISOString()})
+      .unwrap()
+      .then(() => setExtending(false))
       .catch(() => {});
   };
 
@@ -255,7 +265,17 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
     <>
       <TableRow>
         <TableCell>{inv.role}</TableCell>
-        <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
+        <TableCell>
+          <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+            {new Date(inv.expiresAt).toLocaleDateString()}
+            {canAct && (
+              <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
+                onClick={() => { setNewDate(new Date(inv.expiresAt).toISOString().slice(0, 10)); setSendingEmail(false); setExtending(v => !v); }}>
+                Verlängern
+              </Button>
+            )}
+          </Box>
+        </TableCell>
         <TableCell>
           {(() => {
             if (!inv.active) return <Chip label="Inaktiv" size="small"/>;
@@ -336,6 +356,19 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
                 sx={{flexGrow: 1}} InputLabelProps={{shrink: true}}/>
               <Button size="small" variant="contained" onClick={handleSendEmail}>Senden</Button>
               <Button size="small" onClick={() => setSendingEmail(false)}>Abbrechen</Button>
+            </Box>
+          </TableCell>
+        </TableRow>
+      )}
+      {extending && (
+        <TableRow>
+          <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              <TextField size="small" label="Neues Ablaufdatum" type="date" value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+                sx={{flexGrow: 1}} InputLabelProps={{shrink: true}}/>
+              <Button size="small" variant="contained" onClick={handleExtend}>OK</Button>
+              <Button size="small" onClick={() => setExtending(false)}>Abbrechen</Button>
             </Box>
           </TableCell>
         </TableRow>
