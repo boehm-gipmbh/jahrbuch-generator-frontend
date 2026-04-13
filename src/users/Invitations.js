@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
-  Divider, IconButton, List, ListItem, ListItemText, Paper, Snackbar, Table, TableBody,
+  Divider, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, Snackbar, Table, TableBody,
   TableCell, TableHead, TableRow, TextField, Tooltip, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -18,6 +19,11 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
 import {Layout} from '../layout';
+
+const daysUntil = (dateStr) => {
+  if (!dateStr) return null;
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+};
 
 const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
   const [createInvitation] = api.endpoints.createInvitation.useMutation();
@@ -66,6 +72,11 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
             </Typography>
             <TextField label="Ablaufdatum" type="date" value={expiresAt}
               onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
+            <TextField label="Rolle" value={role} onChange={e => setRole(e.target.value)}
+              select SelectProps={{native: true}} fullWidth>
+              <option value="user">user</option>
+              <option value="group-admin">group-admin</option>
+            </TextField>
           </>
         )}
         <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
@@ -91,9 +102,11 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
 
   if (!isAdmin && !isGroupAdmin) return null;
 
+  const canAct = isAdmin || isGroupAdmin;
+
   return (
     <Box sx={{display: 'flex', gap: 0.5}}>
-      {isGroupAdmin && !isSelf && (
+      {canAct && !isSelf && (
         isGroupAdminRole ? (
           <Tooltip title="Zu user degradieren">
             <IconButton size="small" onClick={() => demoteUser(user.id)}>
@@ -108,7 +121,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
           </Tooltip>
         )
       )}
-      {isAdmin && (user.active ? (
+      {canAct && (user.active ? (
         <Tooltip title="Deaktivieren (Login sperren)">
           <span>
             <IconButton size="small" disabled={isSelf} onClick={() => deactivateUser(user.id)}>
@@ -123,7 +136,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
           </IconButton>
         </Tooltip>
       ))}
-      {isAdmin && (
+      {canAct && (
         <Tooltip title="Löschen">
           <span>
             <IconButton size="small" disabled={isSelf} onClick={() => deleteUser(user)}>
@@ -136,23 +149,233 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   );
 };
 
-const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => (
-  <ListItem disableGutters sx={{pl: 2, gap: 1}}>
-    <ListItemText
-      primary={
-        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-          {user.name}
-          {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
-          {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
+  const [open, setOpen] = useState(false);
+  const [extending, setExtending] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+
+  const handleExtend = () => {
+    extendInvitation({id: user.usedInvitationId, expiresAt: new Date(newDate).toISOString()})
+      .unwrap()
+      .then(() => setExtending(false))
+      .catch(() => {});
+  };
+
+  return (
+    <>
+      <ListItem disableGutters sx={{pl: 2, cursor: 'pointer'}} onClick={() => setOpen(v => !v)}>
+        <ListItemIcon sx={{minWidth: 28}}>
+          {open ? <ExpandLessIcon fontSize="small" color="action"/> : <ExpandMoreIcon fontSize="small" color="action"/>}
+        </ListItemIcon>
+        <ListItemText
+          primary={
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              {user.name}
+              {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
+              {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+              {user.invitationExpiresAt && (() => {
+                const days = daysUntil(user.invitationExpiresAt);
+                if (days === null || days > 14) return null;
+                return (
+                  <Tooltip title={days <= 0 ? 'Einladung abgelaufen' : `Einladung läuft in ${days} Tag${days === 1 ? '' : 'en'} ab`}>
+                    <WarningAmberIcon fontSize="small" color={days <= 0 ? 'error' : 'warning'}/>
+                  </Tooltip>
+                );
+              })()}
+            </Box>
+          }
+          primaryTypographyProps={{variant: 'body2'}}
+        />
+      </ListItem>
+      <Collapse in={open} unmountOnExit>
+        <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
+            {user.invitationExpiresAt && !extending && (() => {
+              const days = daysUntil(user.invitationExpiresAt);
+              const isExpired = days !== null && days <= 0;
+              const isWarning = days !== null && days > 0 && days <= 14;
+              return (
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                  {(isExpired || isWarning) && (
+                    <WarningAmberIcon fontSize="small" color={isExpired ? 'error' : 'warning'}/>
+                  )}
+                  <Typography variant="caption"
+                    color={isExpired ? 'error' : isWarning ? 'warning.main' : 'text.secondary'}>
+                    Einladung {isExpired ? 'abgelaufen' : `läuft ab`}: {new Date(user.invitationExpiresAt).toLocaleDateString()}
+                    {isWarning && ` (${days}d)`}
+                  </Typography>
+                  {(isAdmin || isGroupAdmin) && user.usedInvitationId && (
+                    <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
+                      onClick={() => { setNewDate(new Date(user.invitationExpiresAt).toISOString().slice(0,10)); setExtending(true); }}>
+                      Verlängern
+                    </Button>
+                  )}
+                </Box>
+              );
+            })()}
+            {extending && (
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5}}>
+                <TextField size="small" type="date" value={newDate}
+                  onChange={e => setNewDate(e.target.value)}
+                  InputLabelProps={{shrink: true}} sx={{'& input': {py: 0.5, fontSize: '0.75rem'}}}/>
+                <Button size="small" variant="contained" onClick={handleExtend}>OK</Button>
+                <Button size="small" onClick={() => setExtending(false)}>Abbrechen</Button>
+              </Box>
+            )}
+          </Box>
+          <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
         </Box>
-      }
-      secondary={user.email}
-      primaryTypographyProps={{variant: 'body2'}}
-      secondaryTypographyProps={{variant: 'caption'}}
-    />
-    <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
-  </ListItem>
-);
+      </Collapse>
+    </>
+  );
+};
+
+const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const [extending, setExtending] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [resendInvitation] = api.endpoints.resendInvitation.useMutation();
+  const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+  const canAct = isAdmin || isGroupAdmin;
+
+  const handleSendEmail = () => {
+    resendInvitation({id: inv.id, recipientEmail: emailValue})
+      .unwrap()
+      .then(() => setSendingEmail(false))
+      .catch(() => {});
+  };
+
+  const handleExtend = () => {
+    extendInvitation({id: inv.id, expiresAt: new Date(newDate).toISOString()})
+      .unwrap()
+      .then(() => setExtending(false))
+      .catch(() => {});
+  };
+
+  const registeredUsers = inv.registeredUsers || [];
+  const registrationCount = registeredUsers.length;
+  const registeredEmails = registeredUsers.map(u => u.email).join('\n');
+
+  const colSpan = canAct ? 6 : 5;
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>{inv.role}</TableCell>
+        <TableCell>
+          <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+            {new Date(inv.expiresAt).toLocaleDateString()}
+            {canAct && (
+              <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
+                onClick={() => { setNewDate(new Date(inv.expiresAt).toISOString().slice(0, 10)); setSendingEmail(false); setExtending(v => !v); }}>
+                Verlängern
+              </Button>
+            )}
+          </Box>
+        </TableCell>
+        <TableCell>
+          {(() => {
+            if (!inv.active) return <Chip label="Inaktiv" size="small"/>;
+            const days = daysUntil(inv.expiresAt);
+            if (days !== null && days <= 0) return <Chip label="Abgelaufen" color="error" size="small"/>;
+            if (days !== null && days <= 14)
+              return <Chip label={`Läuft ab (${days}d)`} color="warning" size="small"
+                icon={<WarningAmberIcon/>}/>;
+            return <Chip label="Aktiv" color="success" size="small"/>;
+          })()}
+        </TableCell>
+        <TableCell>
+          {registrationCount > 0 ? (
+            <Tooltip title={<span style={{whiteSpace: 'pre-line'}}>{registeredEmails}</span>} arrow>
+              <Chip label={registrationCount} size="small" variant="outlined" color="primary" sx={{cursor: 'help'}}/>
+            </Tooltip>
+          ) : (
+            <Typography variant="caption" color="text.secondary">—</Typography>
+          )}
+        </TableCell>
+        {canAct && (
+          <TableCell>
+            {inv.recipientEmail ? (
+              <Tooltip title={inv.recipientEmail}>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                  <MailOutlineIcon fontSize="small" color="action"/>
+                  <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
+                    {inv.recipientEmail}
+                  </Typography>
+                </Box>
+              </Tooltip>
+            ) : '—'}
+          </TableCell>
+        )}
+        <TableCell align="right" sx={{whiteSpace: 'nowrap'}}>
+          <Tooltip title="Link kopieren">
+            <span>
+              <IconButton size="small" disabled={!inv.active} onClick={() => copyLink(inv.token)}>
+                <ContentCopyIcon fontSize="small"/>
+              </IconButton>
+            </span>
+          </Tooltip>
+          {canAct && (
+            <Tooltip title="Einladungsmail senden">
+              <IconButton size="small" onClick={() => { setEmailValue(inv.recipientEmail || ''); setSendingEmail(v => !v); }}>
+                <MailOutlineIcon fontSize="small" color={sendingEmail ? 'primary' : 'action'}/>
+              </IconButton>
+            </Tooltip>
+          )}
+          {canAct && (inv.active ? (
+            <Tooltip title="Deaktivieren">
+              <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
+                <BlockIcon fontSize="small"/>
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Reaktivieren">
+              <IconButton size="small" onClick={() => reactivateInvitation(inv.id)}>
+                <CheckCircleOutlineIcon fontSize="small"/>
+              </IconButton>
+            </Tooltip>
+          ))}
+          {canAct && (
+            <Tooltip title="Löschen">
+              <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
+                <DeleteIcon fontSize="small"/>
+              </IconButton>
+            </Tooltip>
+          )}
+        </TableCell>
+      </TableRow>
+      {sendingEmail && (
+        <TableRow>
+          <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              <TextField size="small" label="E-Mail-Adresse" type="email" value={emailValue}
+                onChange={e => setEmailValue(e.target.value)}
+                sx={{flexGrow: 1}} InputLabelProps={{shrink: true}}/>
+              <Button size="small" variant="contained" onClick={handleSendEmail}>Senden</Button>
+              <Button size="small" onClick={() => setSendingEmail(false)}>Abbrechen</Button>
+            </Box>
+          </TableCell>
+        </TableRow>
+      )}
+      {extending && (
+        <TableRow>
+          <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              <TextField size="small" label="Neues Ablaufdatum" type="date" value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+                sx={{flexGrow: 1}} InputLabelProps={{shrink: true}}/>
+              <Button size="small" variant="contained" onClick={handleExtend}>OK</Button>
+              <Button size="small" onClick={() => setExtending(false)}>Abbrechen</Button>
+            </Box>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+};
 
 const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
@@ -161,6 +384,7 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
   const uniqueMembers = [...memberMap.values()];
   const groupKey = `group_${label}`;
   const isOpen = expanded[groupKey] !== false;
+  const canAct = isAdmin || isGroupAdmin;
 
   return (
     <Box sx={{mb: 2}}>
@@ -178,70 +402,25 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
             {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>)}
           </List>
         )}
+        <Typography variant="caption" color="text.secondary" sx={{display: 'block', mt: 1, mb: 0.5, pl: 0.5}}>
+          Einladungslinks
+        </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>Rolle</TableCell>
               <TableCell>Läuft ab</TableCell>
               <TableCell>Status</TableCell>
-              {isAdmin && <TableCell>Gesendet an</TableCell>}
+              <TableCell>Registrierungen</TableCell>
+              {canAct && <TableCell>Gesendet an</TableCell>}
               <TableCell/>
             </TableRow>
           </TableHead>
           <TableBody>
             {invs.map(inv => (
-              <TableRow key={inv.id}>
-                <TableCell>{inv.role}</TableCell>
-                <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {inv.active
-                    ? <Chip label="Aktiv" color="success" size="small"/>
-                    : <Chip label="Inaktiv" size="small"/>}
-                </TableCell>
-                {isAdmin && (
-                  <TableCell>
-                    {inv.recipientEmail ? (
-                      <Tooltip title={inv.recipientEmail}>
-                        <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                          <MailOutlineIcon fontSize="small" color="action"/>
-                          <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
-                            {inv.recipientEmail}
-                          </Typography>
-                        </Box>
-                      </Tooltip>
-                    ) : '—'}
-                  </TableCell>
-                )}
-                <TableCell align="right">
-                  <Tooltip title="Link kopieren">
-                    <span>
-                      <IconButton size="small" disabled={!inv.active} onClick={() => copyLink(inv.token)}>
-                        <ContentCopyIcon fontSize="small"/>
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  {isAdmin && (inv.active ? (
-                    <Tooltip title="Deaktivieren">
-                      <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
-                        <BlockIcon fontSize="small"/>
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="Reaktivieren">
-                      <IconButton size="small" onClick={() => reactivateInvitation(inv.id)}>
-                        <CheckCircleOutlineIcon fontSize="small"/>
-                      </IconButton>
-                    </Tooltip>
-                  ))}
-                  {isAdmin && (
-                    <Tooltip title="Löschen">
-                      <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
-                        <DeleteIcon fontSize="small"/>
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              </TableRow>
+              <TokenRow key={inv.id} inv={inv} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin}
+                copyLink={copyLink} deactivateInvitation={deactivateInvitation}
+                reactivateInvitation={reactivateInvitation} deleteInvitation={deleteInvitation}/>
             ))}
           </TableBody>
         </Table>

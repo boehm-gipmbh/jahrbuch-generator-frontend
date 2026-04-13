@@ -94,6 +94,22 @@ export const api = createApi({
     demoteUser: builder.mutation({
       query: id => ({url: `/${id}/demote`, method: 'PUT'}),
       invalidatesTags: ['User', 'Invitation']
+    }),
+    extendInvitation: builder.mutation({
+      query: ({id, expiresAt}) => ({
+        url: `/invitations/${id}/extend`,
+        method: 'PUT',
+        body: {expiresAt}
+      }),
+      invalidatesTags: ['Invitation']
+    }),
+    resendInvitation: builder.mutation({
+      query: ({id, recipientEmail}) => ({
+        url: `/invitations/${id}/resend`,
+        method: 'POST',
+        body: {recipientEmail}
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });
