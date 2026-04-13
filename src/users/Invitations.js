@@ -5,6 +5,8 @@ import {
   TableCell, TableHead, TableRow, TextField, Tooltip, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -78,15 +80,35 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
   );
 };
 
-const UserActions = ({user, self, isAdmin}) => {
+const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const [deleteUser] = api.endpoints.deleteUser.useMutation();
   const [deactivateUser] = api.endpoints.deactivateUser.useMutation();
   const [reactivateUser] = api.endpoints.reactivateUser.useMutation();
+  const [promoteUser] = api.endpoints.promoteUser.useMutation();
+  const [demoteUser] = api.endpoints.demoteUser.useMutation();
   const isSelf = user.id === self?.id;
-  if (!isAdmin) return null;
+  const isGroupAdminRole = (user.roles || []).includes('group-admin');
+
+  if (!isAdmin && !isGroupAdmin) return null;
+
   return (
     <Box sx={{display: 'flex', gap: 0.5}}>
-      {user.active ? (
+      {isGroupAdmin && !isSelf && (
+        isGroupAdminRole ? (
+          <Tooltip title="Zu user degradieren">
+            <IconButton size="small" onClick={() => demoteUser(user.id)}>
+              <ArrowDownwardIcon fontSize="small" color="warning"/>
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <Tooltip title="Zum group-admin befördern">
+            <IconButton size="small" onClick={() => promoteUser({id: user.id, groupId})}>
+              <ArrowUpwardIcon fontSize="small" color="primary"/>
+            </IconButton>
+          </Tooltip>
+        )
+      )}
+      {isAdmin && (user.active ? (
         <Tooltip title="Deaktivieren (Login sperren)">
           <span>
             <IconButton size="small" disabled={isSelf} onClick={() => deactivateUser(user.id)}>
@@ -100,24 +122,27 @@ const UserActions = ({user, self, isAdmin}) => {
             <LockOpenIcon fontSize="small" color="success"/>
           </IconButton>
         </Tooltip>
+      ))}
+      {isAdmin && (
+        <Tooltip title="Löschen">
+          <span>
+            <IconButton size="small" disabled={isSelf} onClick={() => deleteUser(user)}>
+              <DeleteIcon fontSize="small"/>
+            </IconButton>
+          </span>
+        </Tooltip>
       )}
-      <Tooltip title="Löschen">
-        <span>
-          <IconButton size="small" disabled={isSelf} onClick={() => deleteUser(user)}>
-            <DeleteIcon fontSize="small"/>
-          </IconButton>
-        </span>
-      </Tooltip>
     </Box>
   );
 };
 
-const UserRow = ({user, self, isAdmin}) => (
+const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => (
   <ListItem disableGutters sx={{pl: 2, gap: 1}}>
     <ListItemText
       primary={
         <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
           {user.name}
+          {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
           {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
         </Box>
       }
@@ -125,11 +150,11 @@ const UserRow = ({user, self, isAdmin}) => (
       primaryTypographyProps={{variant: 'body2'}}
       secondaryTypographyProps={{variant: 'caption'}}
     />
-    <UserActions user={user} self={self} isAdmin={isAdmin}/>
+    <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
   </ListItem>
 );
 
-const GroupSection = ({label, invs, self, isAdmin, expanded, toggleExpanded, copyLink,
+const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const memberMap = new Map();
   invs.forEach(inv => (inv.members || []).forEach(u => memberMap.set(u.id, u)));
@@ -150,7 +175,7 @@ const GroupSection = ({label, invs, self, isAdmin, expanded, toggleExpanded, cop
       <Collapse in={isOpen} unmountOnExit>
         {uniqueMembers.length > 0 && (
           <List dense disablePadding sx={{mb: 1}}>
-            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin}/>)}
+            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>)}
           </List>
         )}
         <Table size="small">
@@ -239,6 +264,7 @@ export const Invitations = () => {
   const isAdmin = self?.roles?.includes('admin');
   const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
   const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
+  const groupId = isGroupAdmin ? self?.groups?.[0]?.id : null;
 
   const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 
@@ -247,7 +273,7 @@ export const Invitations = () => {
     navigator.clipboard.writeText(url).then(() => setCopied(true));
   };
 
-  const sectionProps = {self, isAdmin, expanded, toggleExpanded, copyLink,
+  const sectionProps = {self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation};
 
   const groupedInvitations = Object.entries(

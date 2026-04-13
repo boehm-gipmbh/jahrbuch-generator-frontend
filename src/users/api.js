@@ -86,6 +86,14 @@ export const api = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['User']
+    }),
+    promoteUser: builder.mutation({
+      query: ({id, groupId}) => ({url: `/${id}/promote/${groupId}`, method: 'PUT'}),
+      invalidatesTags: ['User', 'Invitation']
+    }),
+    demoteUser: builder.mutation({
+      query: id => ({url: `/${id}/demote`, method: 'PUT'}),
+      invalidatesTags: ['User', 'Invitation']
     })
   })
 });
