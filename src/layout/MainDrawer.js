@@ -200,6 +200,10 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
                     <Divider/>
                     <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Benutzer &amp; Einladungen' to='/invitations'/>
                 </HasRole>
+                <HasRole role='group-admin'>
+                    <Divider/>
+                    <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Einladungen' to='/invitations'/>
+                </HasRole>
             </List>
         </Box>
         {drawerOpen && process.env.REACT_APP_VERSION && (
