@@ -145,6 +145,17 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
 
 const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const [open, setOpen] = useState(false);
+  const [extending, setExtending] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+
+  const handleExtend = () => {
+    extendInvitation({id: user.usedInvitationId, expiresAt: new Date(newDate).toISOString()})
+      .unwrap()
+      .then(() => setExtending(false))
+      .catch(() => {});
+  };
+
   return (
     <>
       <ListItem disableGutters sx={{pl: 2, cursor: 'pointer'}} onClick={() => setOpen(v => !v)}>
@@ -166,10 +177,27 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
         <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
           <Box>
             <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
-            {user.invitationExpiresAt && (
-              <Typography variant="caption" color="text.secondary">
-                Einladung läuft ab: {new Date(user.invitationExpiresAt).toLocaleDateString()}
-              </Typography>
+            {user.invitationExpiresAt && !extending && (
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                <Typography variant="caption" color="text.secondary">
+                  Einladung läuft ab: {new Date(user.invitationExpiresAt).toLocaleDateString()}
+                </Typography>
+                {(isAdmin || isGroupAdmin) && user.usedInvitationId && (
+                  <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
+                    onClick={() => { setNewDate(new Date(user.invitationExpiresAt).toISOString().slice(0,10)); setExtending(true); }}>
+                    Verlängern
+                  </Button>
+                )}
+              </Box>
+            )}
+            {extending && (
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5}}>
+                <TextField size="small" type="date" value={newDate}
+                  onChange={e => setNewDate(e.target.value)}
+                  InputLabelProps={{shrink: true}} sx={{'& input': {py: 0.5, fontSize: '0.75rem'}}}/>
+                <Button size="small" variant="contained" onClick={handleExtend}>OK</Button>
+                <Button size="small" onClick={() => setExtending(false)}>Abbrechen</Button>
+              </Box>
             )}
           </Box>
           <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
