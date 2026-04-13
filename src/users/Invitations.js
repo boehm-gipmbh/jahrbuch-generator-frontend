@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
   Divider, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, Snackbar, Table, TableBody,
@@ -18,6 +19,11 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
 import {Layout} from '../layout';
+
+const daysUntil = (dateStr) => {
+  if (!dateStr) return null;
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+};
 
 const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
   const [createInvitation] = api.endpoints.createInvitation.useMutation();
@@ -168,6 +174,15 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
               {user.name}
               {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
               {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+              {user.invitationExpiresAt && (() => {
+                const days = daysUntil(user.invitationExpiresAt);
+                if (days === null || days > 14) return null;
+                return (
+                  <Tooltip title={days <= 0 ? 'Einladung abgelaufen' : `Einladung läuft in ${days} Tag${days === 1 ? '' : 'en'} ab`}>
+                    <WarningAmberIcon fontSize="small" color={days <= 0 ? 'error' : 'warning'}/>
+                  </Tooltip>
+                );
+              })()}
             </Box>
           }
           primaryTypographyProps={{variant: 'body2'}}
@@ -177,19 +192,29 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
         <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
           <Box>
             <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
-            {user.invitationExpiresAt && !extending && (
-              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                <Typography variant="caption" color="text.secondary">
-                  Einladung läuft ab: {new Date(user.invitationExpiresAt).toLocaleDateString()}
-                </Typography>
-                {(isAdmin || isGroupAdmin) && user.usedInvitationId && (
-                  <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
-                    onClick={() => { setNewDate(new Date(user.invitationExpiresAt).toISOString().slice(0,10)); setExtending(true); }}>
-                    Verlängern
-                  </Button>
-                )}
-              </Box>
-            )}
+            {user.invitationExpiresAt && !extending && (() => {
+              const days = daysUntil(user.invitationExpiresAt);
+              const isExpired = days !== null && days <= 0;
+              const isWarning = days !== null && days > 0 && days <= 14;
+              return (
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                  {(isExpired || isWarning) && (
+                    <WarningAmberIcon fontSize="small" color={isExpired ? 'error' : 'warning'}/>
+                  )}
+                  <Typography variant="caption"
+                    color={isExpired ? 'error' : isWarning ? 'warning.main' : 'text.secondary'}>
+                    Einladung {isExpired ? 'abgelaufen' : `läuft ab`}: {new Date(user.invitationExpiresAt).toLocaleDateString()}
+                    {isWarning && ` (${days}d)`}
+                  </Typography>
+                  {(isAdmin || isGroupAdmin) && user.usedInvitationId && (
+                    <Button size="small" sx={{fontSize: '0.7rem', py: 0, minWidth: 0}}
+                      onClick={() => { setNewDate(new Date(user.invitationExpiresAt).toISOString().slice(0,10)); setExtending(true); }}>
+                      Verlängern
+                    </Button>
+                  )}
+                </Box>
+              );
+            })()}
             {extending && (
               <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5}}>
                 <TextField size="small" type="date" value={newDate}
@@ -232,9 +257,15 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         <TableCell>{inv.role}</TableCell>
         <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
         <TableCell>
-          {inv.active
-            ? <Chip label="Aktiv" color="success" size="small"/>
-            : <Chip label="Inaktiv" size="small"/>}
+          {(() => {
+            if (!inv.active) return <Chip label="Inaktiv" size="small"/>;
+            const days = daysUntil(inv.expiresAt);
+            if (days !== null && days <= 0) return <Chip label="Abgelaufen" color="error" size="small"/>;
+            if (days !== null && days <= 14)
+              return <Chip label={`Läuft ab (${days}d)`} color="warning" size="small"
+                icon={<WarningAmberIcon/>}/>;
+            return <Chip label="Aktiv" color="success" size="small"/>;
+          })()}
         </TableCell>
         <TableCell>
           {registrationCount > 0 ? (
