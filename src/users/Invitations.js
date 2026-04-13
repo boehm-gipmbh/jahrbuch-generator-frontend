@@ -129,6 +129,102 @@ const UserRow = ({user, self, isAdmin}) => (
   </ListItem>
 );
 
+const GroupSection = ({label, invs, self, isAdmin, expanded, toggleExpanded, copyLink,
+    deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
+  const memberMap = new Map();
+  invs.forEach(inv => (inv.members || []).forEach(u => memberMap.set(u.id, u)));
+  const uniqueMembers = [...memberMap.values()];
+  const groupKey = `group_${label}`;
+  const isOpen = expanded[groupKey] !== false;
+
+  return (
+    <Box sx={{mb: 2}}>
+      <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5}}
+        onClick={() => toggleExpanded(groupKey)}>
+        {isOpen
+          ? <ExpandLessIcon fontSize="small" color="action"/>
+          : <ExpandMoreIcon fontSize="small" color="action"/>}
+        <Typography variant="subtitle2" fontWeight="bold">{label}</Typography>
+        {uniqueMembers.length > 0 && <Chip label={uniqueMembers.length} size="small" color="primary"/>}
+      </Box>
+      <Collapse in={isOpen} unmountOnExit>
+        {uniqueMembers.length > 0 && (
+          <List dense disablePadding sx={{mb: 1}}>
+            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin}/>)}
+          </List>
+        )}
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Rolle</TableCell>
+              <TableCell>Läuft ab</TableCell>
+              <TableCell>Status</TableCell>
+              {isAdmin && <TableCell>Gesendet an</TableCell>}
+              <TableCell/>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {invs.map(inv => (
+              <TableRow key={inv.id}>
+                <TableCell>{inv.role}</TableCell>
+                <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {inv.active
+                    ? <Chip label="Aktiv" color="success" size="small"/>
+                    : <Chip label="Inaktiv" size="small"/>}
+                </TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    {inv.recipientEmail ? (
+                      <Tooltip title={inv.recipientEmail}>
+                        <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                          <MailOutlineIcon fontSize="small" color="action"/>
+                          <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
+                            {inv.recipientEmail}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    ) : '—'}
+                  </TableCell>
+                )}
+                <TableCell align="right">
+                  <Tooltip title="Link kopieren">
+                    <span>
+                      <IconButton size="small" disabled={!inv.active} onClick={() => copyLink(inv.token)}>
+                        <ContentCopyIcon fontSize="small"/>
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  {isAdmin && (inv.active ? (
+                    <Tooltip title="Deaktivieren">
+                      <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
+                        <BlockIcon fontSize="small"/>
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Reaktivieren">
+                      <IconButton size="small" onClick={() => reactivateInvitation(inv.id)}>
+                        <CheckCircleOutlineIcon fontSize="small"/>
+                      </IconButton>
+                    </Tooltip>
+                  ))}
+                  {isAdmin && (
+                    <Tooltip title="Löschen">
+                      <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
+                        <DeleteIcon fontSize="small"/>
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Collapse>
+    </Box>
+  );
+};
+
 export const Invitations = () => {
   const {data: invitations = []} = api.endpoints.getInvitations.useQuery();
   const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
@@ -151,121 +247,20 @@ export const Invitations = () => {
     navigator.clipboard.writeText(url).then(() => setCopied(true));
   };
 
-  const effectiveMembers = (inv) => inv.members || [];
+  const sectionProps = {self, isAdmin, expanded, toggleExpanded, copyLink,
+    deactivateInvitation, reactivateInvitation, deleteInvitation};
 
-  const invitedUserIds = new Set(invitations.flatMap(inv => effectiveMembers(inv).map(u => u.id)));
-  const manualUsers = allUsers.filter(u => !invitedUserIds.has(u.id));
-
-  const groupedInvitations = isAdmin
-    ? Object.entries(invitations.reduce((acc, inv) => {
-        const key = inv.label || '—';
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(inv);
-        return acc;
-      }, {}))
-    : null;
-
-  const renderInvitationRows = (invs) => invs.map(inv => {
-    const users = effectiveMembers(inv);
-    const open = !!expanded[inv.id];
-    return (
-      <React.Fragment key={inv.id}>
-        <TableRow sx={{'& td': {borderBottom: open && users.length ? 'none' : undefined}}}>
-          <TableCell sx={{width: 40, pr: 0}}>
-            {users.length > 0 && (
-              <IconButton size="small" onClick={() => toggleExpanded(inv.id)}>
-                {open ? <ExpandLessIcon fontSize="small"/> : <ExpandMoreIcon fontSize="small"/>}
-              </IconButton>
-            )}
-          </TableCell>
-          <TableCell>
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-              {inv.label || '—'}
-              {users.length > 0 && (
-                <Chip label={users.length} size="small" variant="outlined"/>
-              )}
-            </Box>
-          </TableCell>
-          <TableCell>{inv.role}</TableCell>
-          <TableCell>{new Date(inv.expiresAt).toLocaleDateString()}</TableCell>
-          <TableCell>
-            {inv.active
-              ? <Chip label="Aktiv" color="success" size="small"/>
-              : <Chip label="Inaktiv" size="small"/>}
-          </TableCell>
-          {isAdmin && (
-            <TableCell>
-              {inv.recipientEmail ? (
-                <Tooltip title={inv.recipientEmail}>
-                  <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                    <MailOutlineIcon fontSize="small" color="action"/>
-                    <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
-                      {inv.recipientEmail}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              ) : '—'}
-            </TableCell>
-          )}
-          <TableCell align="right">
-            <Tooltip title="Link kopieren">
-              <span>
-                <IconButton size="small" disabled={!inv.active}
-                  onClick={() => copyLink(inv.token)}>
-                  <ContentCopyIcon fontSize="small"/>
-                </IconButton>
-              </span>
-            </Tooltip>
-            {isAdmin && (inv.active ? (
-              <Tooltip title="Deaktivieren">
-                <IconButton size="small" onClick={() => deactivateInvitation(inv.id)}>
-                  <BlockIcon fontSize="small"/>
-                </IconButton>
-              </Tooltip>
-            ) : (
-              <Tooltip title="Reaktivieren">
-                <IconButton size="small" onClick={() => reactivateInvitation(inv.id)}>
-                  <CheckCircleOutlineIcon fontSize="small"/>
-                </IconButton>
-              </Tooltip>
-            ))}
-            {isAdmin && (
-              <Tooltip title="Löschen">
-                <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
-                  <DeleteIcon fontSize="small"/>
-                </IconButton>
-              </Tooltip>
-            )}
-          </TableCell>
-        </TableRow>
-        {users.length > 0 && (
-          <TableRow>
-            <TableCell colSpan={isAdmin ? 7 : 6} sx={{py: 0}}>
-              <Collapse in={open} unmountOnExit>
-                <List dense disablePadding sx={{pb: 1}}>
-                  {users.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin}/>)}
-                </List>
-              </Collapse>
-            </TableCell>
-          </TableRow>
-        )}
-      </React.Fragment>
-    );
-  });
-
-  const tableHead = (
-    <TableHead>
-      <TableRow>
-        <TableCell/>
-        <TableCell>Label</TableCell>
-        <TableCell>Rolle</TableCell>
-        <TableCell>Läuft ab</TableCell>
-        <TableCell>Status</TableCell>
-        {isAdmin && <TableCell>Gesendet an</TableCell>}
-        <TableCell/>
-      </TableRow>
-    </TableHead>
+  const groupedInvitations = Object.entries(
+    invitations.reduce((acc, inv) => {
+      const key = inv.label || '—';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(inv);
+      return acc;
+    }, {})
   );
+
+  const invitedUserIds = new Set(invitations.flatMap(inv => (inv.members || []).map(u => u.id)));
+  const manualUsers = allUsers.filter(u => !invitedUserIds.has(u.id));
 
   return (
     <Layout>
@@ -281,33 +276,9 @@ export const Invitations = () => {
             </Button>
           </Box>
 
-          {isAdmin ? (
-            groupedInvitations.map(([label, groupInvs]) => {
-              const totalMembers = groupInvs.reduce((sum, inv) => sum + effectiveMembers(inv).length, 0);
-              const groupOpen = expanded[`group_${label}`] !== false;
-              return (
-                <Box key={label} sx={{mb: 2}}>
-                  <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', py: 0.5}}
-                    onClick={() => toggleExpanded(`group_${label}`)}>
-                    {groupOpen ? <ExpandLessIcon fontSize="small" color="action"/> : <ExpandMoreIcon fontSize="small" color="action"/>}
-                    <Typography variant="subtitle2" fontWeight="bold">{label}</Typography>
-                    {totalMembers > 0 && <Chip label={totalMembers} size="small" color="primary"/>}
-                  </Box>
-                  <Collapse in={groupOpen} unmountOnExit>
-                    <Table size="small">
-                      {tableHead}
-                      <TableBody>{renderInvitationRows(groupInvs)}</TableBody>
-                    </Table>
-                  </Collapse>
-                </Box>
-              );
-            })
-          ) : (
-            <Table size="small">
-              {tableHead}
-              <TableBody>{renderInvitationRows(invitations)}</TableBody>
-            </Table>
-          )}
+          {groupedInvitations.map(([label, groupInvs]) => (
+            <GroupSection key={label} label={label} invs={groupInvs} {...sectionProps}/>
+          ))}
 
           {isAdmin && manualUsers.length > 0 && (
             <>
