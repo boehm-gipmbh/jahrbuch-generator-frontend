@@ -66,6 +66,11 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
             </Typography>
             <TextField label="Ablaufdatum" type="date" value={expiresAt}
               onChange={e => setExpiresAt(e.target.value)} fullWidth InputLabelProps={{shrink: true}}/>
+            <TextField label="Rolle" value={role} onChange={e => setRole(e.target.value)}
+              select SelectProps={{native: true}} fullWidth>
+              <option value="user">user</option>
+              <option value="group-admin">group-admin</option>
+            </TextField>
           </>
         )}
         <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
