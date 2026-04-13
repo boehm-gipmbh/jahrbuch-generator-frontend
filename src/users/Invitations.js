@@ -162,7 +162,14 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
       </ListItem>
       <Collapse in={open} unmountOnExit>
         <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-          <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
+            {user.invitationExpiresAt && (
+              <Typography variant="caption" color="text.secondary">
+                Einladung läuft ab: {new Date(user.invitationExpiresAt).toLocaleDateString()}
+              </Typography>
+            )}
+          </Box>
           <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
         </Box>
       </Collapse>
