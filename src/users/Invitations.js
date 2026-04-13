@@ -97,6 +97,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const [reactivateUser] = api.endpoints.reactivateUser.useMutation();
   const [promoteUser] = api.endpoints.promoteUser.useMutation();
   const [demoteUser] = api.endpoints.demoteUser.useMutation();
+  const [sendReminder] = api.endpoints.sendReminder.useMutation();
   const isSelf = user.id === self?.id;
   const isGroupAdminRole = (user.roles || []).includes('group-admin');
 
@@ -106,6 +107,13 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
 
   return (
     <Box sx={{display: 'flex', gap: 0.5}}>
+      {canAct && !isSelf && user.email && (
+        <Tooltip title="Erinnerungsmail senden">
+          <IconButton size="small" onClick={() => sendReminder(user.id)}>
+            <MailOutlineIcon fontSize="small" color="action"/>
+          </IconButton>
+        </Tooltip>
+      )}
       {canAct && !isSelf && (
         isGroupAdminRole ? (
           <Tooltip title="Zu user degradieren">
