@@ -141,23 +141,34 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   );
 };
 
-const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => (
-  <ListItem disableGutters sx={{pl: 2, gap: 1}}>
-    <ListItemText
-      primary={
-        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-          {user.name}
-          {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
-          {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <ListItem disableGutters sx={{pl: 2, cursor: 'pointer'}} onClick={() => setOpen(v => !v)}>
+        <ListItemIcon sx={{minWidth: 28}}>
+          {open ? <ExpandLessIcon fontSize="small" color="action"/> : <ExpandMoreIcon fontSize="small" color="action"/>}
+        </ListItemIcon>
+        <ListItemText
+          primary={
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              {user.name}
+              {(user.roles || []).includes('group-admin') && <Chip label="group-admin" size="small" variant="outlined" color="primary"/>}
+              {!user.active && <Chip label="Gesperrt" size="small" color="error"/>}
+            </Box>
+          }
+          primaryTypographyProps={{variant: 'body2'}}
+        />
+      </ListItem>
+      <Collapse in={open} unmountOnExit>
+        <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+          <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
         </Box>
-      }
-      secondary={user.email}
-      primaryTypographyProps={{variant: 'body2'}}
-      secondaryTypographyProps={{variant: 'caption'}}
-    />
-    <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
-  </ListItem>
-);
+      </Collapse>
+    </>
+  );
+};
 
 const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
