@@ -194,6 +194,9 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
             {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>)}
           </List>
         )}
+        <Typography variant="caption" color="text.secondary" sx={{display: 'block', mt: 1, mb: 0.5, pl: 0.5}}>
+          Einladungslinks
+        </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
