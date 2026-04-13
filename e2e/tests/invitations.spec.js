@@ -108,9 +108,7 @@ test('group-admin erscheint als Mitglied im group-admin Token', async ({page}) =
 
     // Rolle "group-admin" in der Tabelle — immer sichtbar
     await expect(page.getByText('group-admin').first()).toBeVisible({timeout: 8_000});
-    // Zeile aufklappen, um Mitglied ddet zu sehen
-    await expect(page.locator('[data-testid="ExpandMoreIcon"]').first()).toBeVisible({timeout: 8_000});
-    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+    // ddet erscheint direkt als Member-Listeneintrag (Name ist immer sichtbar, kein Expand nötig)
     await expect(page.getByText('ddet', {exact: true})).toBeVisible({timeout: 8_000});
 });
 
@@ -138,9 +136,7 @@ test('neu registrierter user erscheint in der Mitgliederliste', async ({page}) =
 
     await goToInvitations(page, ddetJwt);
 
-    // Zeile aufklappen, um registrierten User zu sehen
-    await expect(page.locator('[data-testid="ExpandMoreIcon"]').first()).toBeVisible({timeout: 8_000});
-    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+    // User erscheint direkt als Member-Listeneintrag (Name immer sichtbar, kein Expand nötig)
     await expect(page.getByText('pwtest_neueruser', {exact: true})).toBeVisible({timeout: 8_000});
 });
 
@@ -152,11 +148,18 @@ test('dialog für group-admin zeigt keine Label- und Rollenfelder', async ({page
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
-    // Kein Label-Feld und kein Rollen-Feld für group-admin
+    // Kein Label-Feld für group-admin (Gruppe wird automatisch gesetzt)
     await expect(dialog.getByLabel('Label / Gruppe (optional)')).not.toBeVisible();
-    await expect(dialog.getByLabel('Rolle')).not.toBeVisible();
-    // Kein E-Mail-Feld für group-admin (nur für Admin)
-    await expect(dialog.locator('input[type="email"]')).not.toBeVisible();
+
+    // Rollen-Feld ist sichtbar, aber auf user/group-admin beschränkt (kein admin)
+    await expect(dialog.getByLabel('Rolle')).toBeVisible();
+    const roleSelect = dialog.getByLabel('Rolle');
+    await expect(roleSelect.locator('option[value="admin"]')).toHaveCount(0);
+    await expect(roleSelect.locator('option[value="user"]')).toHaveCount(1);
+    await expect(roleSelect.locator('option[value="group-admin"]')).toHaveCount(1);
+
+    // E-Mail-Feld ist sichtbar (group-admin kann Einladungsmail senden)
+    await expect(dialog.locator('input[type="email"]')).toBeVisible();
 
     // Ablaufdatum ist vorhanden
     await expect(dialog.getByLabel('Ablaufdatum')).toBeVisible();
