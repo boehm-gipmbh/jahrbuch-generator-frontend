@@ -456,8 +456,9 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
 
 export const Invitations = () => {
   const {data: invitations = []} = api.endpoints.getInvitations.useQuery();
-  const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
   const {data: self} = api.endpoints.getSelf.useQuery();
+  const isAdmin = self?.roles?.includes('admin');
+  const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000, skip: !isAdmin});
   const [deactivateInvitation] = api.endpoints.deactivateInvitation.useMutation();
   const [reactivateInvitation] = api.endpoints.reactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
@@ -465,7 +466,6 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
-  const isAdmin = self?.roles?.includes('admin');
   const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
   const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
   const groupId = isGroupAdmin ? self?.groups?.[0]?.id : null;
