@@ -319,6 +319,14 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
                   ? <ExpandLessIcon fontSize="small" color="action"/>
                   : <ExpandMoreIcon fontSize="small" color="action"/>}
               </Box>
+            ) : inv.recipientEmail ? (
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                <MailOutlineIcon fontSize="small" color="disabled"/>
+                <Box>
+                  <Typography variant="caption" display="block">{inv.recipientEmail}</Typography>
+                  {inv.sentAt && <Typography variant="caption" color="text.secondary">{new Date(inv.sentAt).toLocaleString()}</Typography>}
+                </Box>
+              </Box>
             ) : '—'}
           </TableCell>
         )}
