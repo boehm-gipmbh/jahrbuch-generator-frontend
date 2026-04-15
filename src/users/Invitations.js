@@ -307,14 +307,21 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         {canAct && (
           <TableCell>
             {inv.recipientEmail ? (
-              <Tooltip title={inv.recipientEmail}>
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                  <MailOutlineIcon fontSize="small" color="action"/>
-                  <Typography variant="caption" noWrap sx={{maxWidth: 120}}>
-                    {inv.recipientEmail}
-                  </Typography>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                <MailOutlineIcon fontSize="small" color="action"/>
+                <Box>
+                  <Tooltip title={inv.recipientEmail}>
+                    <Typography variant="caption" noWrap sx={{maxWidth: 120, display: 'block'}}>
+                      {inv.recipientEmail}
+                    </Typography>
+                  </Tooltip>
+                  {inv.sentAt && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {new Date(inv.sentAt).toLocaleString()}
+                    </Typography>
+                  )}
                 </Box>
-              </Tooltip>
+              </Box>
             ) : '—'}
           </TableCell>
         )}
