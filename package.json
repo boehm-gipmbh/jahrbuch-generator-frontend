@@ -38,9 +38,8 @@
     ]
   },
   "jest": {
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "<rootDir>/e2e/"
+    "testMatch": [
+      "<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}"
     ]
   },
   "browserslist": {
