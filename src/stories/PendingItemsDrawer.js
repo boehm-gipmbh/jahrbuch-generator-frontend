@@ -1,4 +1,5 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo, useRef, useEffect} from 'react';
+import {computeDateRange} from '../sortUtils';
 import {
     Drawer, Box, Typography, TextField, ToggleButton, ToggleButtonGroup, Paper, IconButton, Tooltip
 } from '@mui/material';
@@ -31,6 +32,17 @@ export const PendingItemsDrawer = ({open, onClose, bilder, texte, onAssign}) => 
     const [sortAsc, setSortAsc] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    const dateInitialized = useRef(false);
+    useEffect(() => {
+        const allItems = [...(bilder || []), ...(texte || [])];
+        if (allItems.length === 0) return;
+        const {dateFrom: from, dateTo: to} = computeDateRange(allItems);
+        if (!dateInitialized.current) {
+            dateInitialized.current = true;
+            setDateFrom(from);
+        }
+        setDateTo(to);
+    }, [bilder, texte]);
 
     const pendingBilder = useMemo(() =>
         (bilder || []).filter(b => !b.story), [bilder]);

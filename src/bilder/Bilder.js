@@ -26,7 +26,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
-import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
+import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
 const AssignToStoryButton = ({bild, stories}) => {
@@ -287,6 +287,16 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [search, setSearch] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    const dateInitialized = useRef(false);
+    useEffect(() => {
+        if (!data || data.length === 0) return;
+        const {dateFrom: from, dateTo: to} = computeDateRange(data);
+        if (!dateInitialized.current) {
+            dateInitialized.current = true;
+            setDateFrom(from);
+        }
+        setDateTo(to);
+    }, [data]);
     const [sortField, setSortField] = useState('date');
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());

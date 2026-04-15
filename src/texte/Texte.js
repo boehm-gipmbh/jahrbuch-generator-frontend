@@ -1,4 +1,4 @@
-import React, {useState, useMemo, useRef, memo} from 'react';
+import React, {useState, useMemo, useRef, memo, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
@@ -31,7 +31,7 @@ import {api as storyApi} from '../stories';
 import {StoryChip} from './StoryChip';
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange} from '../sortUtils';
+import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
 const AssignToStoryButton = ({text, stories}) => {
@@ -258,6 +258,16 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const dateInitialized = useRef(false);
+  useEffect(() => {
+    if (!data || data.length === 0) return;
+    const {dateFrom: from, dateTo: to} = computeDateRange(data);
+    if (!dateInitialized.current) {
+      dateInitialized.current = true;
+      setDateFrom(from);
+    }
+    setDateTo(to);
+  }, [data]);
   const [sortField, setSortField] = useState('date');
   const [sortAsc, setSortAsc] = useState(false);
   const [storyFilter, setStoryFilter] = useState(new Set());

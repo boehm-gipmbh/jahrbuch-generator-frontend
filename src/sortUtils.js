@@ -27,6 +27,25 @@ export const byDateAsc      = (a, b) => new Date(a.created) - new Date(b.created
 export const matchesSearch = (item, q) =>
     !q || (item.title || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q);
 
+const pad = n => String(n).padStart(2, '0');
+
+/** Formatiert einen Timestamp als lokale datetime-local-Zeichenkette (YYYY-MM-DDTHH:MM). */
+export const fmtLocal = ts => {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+/** Berechnet min/max-Datumsbereich aus einem Array von Items mit .created-Feld.
+ *  dateTo wird auf die nächste Minute aufgerundet, damit Einträge mit Sekunden nicht herausgefiltert werden. */
+export const computeDateRange = items => {
+    const timestamps = items.map(item => new Date(item.created).getTime());
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    const maxDate = new Date(maxTs);
+    maxDate.setMinutes(maxDate.getMinutes() + 1);
+    return {dateFrom: fmtLocal(minTs), dateTo: fmtLocal(maxDate.getTime())};
+};
+
 export const matchesDateRange = (item, dateFrom, dateTo) => {
     if (!dateFrom && !dateTo) return true;
     const created = new Date(item.created);
