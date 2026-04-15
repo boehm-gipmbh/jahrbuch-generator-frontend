@@ -247,7 +247,6 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   const [emailValue, setEmailValue] = useState('');
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
-  const [showSends, setShowSends] = useState(false);
   const [resendInvitation] = api.endpoints.resendInvitation.useMutation();
   const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
   const canAct = isAdmin || isGroupAdmin;
@@ -270,6 +269,9 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   const registrationCount = registeredUsers.length;
   const registeredEmails = registeredUsers.map(u => u.email).join('\n');
   const sends = inv.sends || [];
+  // Fallback: recipientEmail/sentAt vom Token selbst wenn noch keine InvitationSend-Records existieren
+  const sendList = sends.length > 0 ? sends
+    : (inv.recipientEmail ? [{sentTo: inv.recipientEmail, sentAt: inv.sentAt}] : []);
 
   const colSpan = canAct ? 6 : 5;
 
@@ -310,22 +312,17 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         </TableCell>
         {canAct && (
           <TableCell>
-            {sends.length > 0 ? (
-              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer'}}
-                onClick={() => setShowSends(v => !v)}>
-                <MailOutlineIcon fontSize="small" color="action"/>
-                <Typography variant="caption">{sends.length}×</Typography>
-                {showSends
-                  ? <ExpandLessIcon fontSize="small" color="action"/>
-                  : <ExpandMoreIcon fontSize="small" color="action"/>}
-              </Box>
-            ) : inv.recipientEmail ? (
-              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                <MailOutlineIcon fontSize="small" color="disabled"/>
-                <Box>
-                  <Typography variant="caption" display="block">{inv.recipientEmail}</Typography>
-                  {inv.sentAt && <Typography variant="caption" color="text.secondary">{new Date(inv.sentAt).toLocaleString()}</Typography>}
-                </Box>
+            {sendList.length > 0 ? (
+              <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.25}}>
+                {sendList.map((s, i) => (
+                  <Box key={i} sx={{display: 'flex', alignItems: 'baseline', gap: 0.5}}>
+                    <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.75rem', flexShrink: 0}}/>
+                    <Box>
+                      <Typography variant="caption" display="block">{s.sentTo}</Typography>
+                      {s.sentAt && <Typography variant="caption" color="text.secondary">{new Date(s.sentAt).toLocaleString()}</Typography>}
+                    </Box>
+                  </Box>
+                ))}
               </Box>
             ) : '—'}
           </TableCell>
@@ -390,21 +387,6 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
               <Button size="small" variant="contained" onClick={handleExtend}>OK</Button>
               <Button size="small" onClick={() => setExtending(false)}>Abbrechen</Button>
             </Box>
-          </TableCell>
-        </TableRow>
-      )}
-      {showSends && sends.length > 0 && (
-        <TableRow>
-          <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sends.map((s, i) => (
-              <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
-                <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-                <Typography variant="caption">{s.sentTo}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(s.sentAt).toLocaleString()}
-                </Typography>
-              </Box>
-            ))}
           </TableCell>
         </TableRow>
       )}
