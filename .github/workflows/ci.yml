@@ -24,5 +24,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Lint
+        run: npx eslint src/ --max-warnings=0
+
       - name: Tests ausführen
         run: npm test -- --watchAll=false
