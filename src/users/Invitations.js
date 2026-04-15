@@ -193,7 +193,9 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
               })()}
             </Box>
           }
+          secondary={user.email}
           primaryTypographyProps={{variant: 'body2'}}
+          secondaryTypographyProps={{variant: 'caption'}}
         />
       </ListItem>
       <Collapse in={open} unmountOnExit>
