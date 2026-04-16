@@ -259,25 +259,30 @@ const deliveryChip = (status) => {
 const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
   const reg = members.find(u => u.email === s.sentTo);
+  const isInvalid = s.status === 'invalid';
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25, flexWrap: 'wrap'}}>
-      <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-      <Typography variant="caption">{s.sentTo}</Typography>
-      <Typography variant="caption" color="text.secondary">
-        {new Date(s.sentAt).toLocaleString()}
-      </Typography>
-      {reg
-        ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
-            {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
-        : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
-            {canAct && (
-              <Tooltip title="Erneut senden">
-                <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
-                  <SendIcon sx={{fontSize: '0.875rem'}}/>
-                </IconButton>
-              </Tooltip>
-            )}</>}
-      {s.id && canAct && (
+      <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : 'action'} sx={{fontSize: '0.875rem'}}/>
+      <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{s.sentTo}</Typography>
+      {!isInvalid && s.sentAt && (
+        <Typography variant="caption" color="text.secondary">
+          {new Date(s.sentAt).toLocaleString()}
+        </Typography>
+      )}
+      {isInvalid
+        ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
+        : reg
+          ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
+              {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
+          : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+              {canAct && (
+                <Tooltip title="Erneut senden">
+                  <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                    <SendIcon sx={{fontSize: '0.875rem'}}/>
+                  </IconButton>
+                </Tooltip>
+              )}</>}
+      {!isInvalid && s.id && canAct && (
         <Tooltip title="Zustellstatus abrufen">
           <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
             <RefreshIcon sx={{fontSize: '0.875rem'}}/>
