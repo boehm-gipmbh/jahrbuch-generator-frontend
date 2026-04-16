@@ -16,6 +16,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import SendIcon from '@mui/icons-material/Send';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
 import {Layout} from '../layout';
@@ -407,7 +408,14 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
                   {reg
                     ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
                         {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
-                    : <Chip label="Noch nicht registriert" size="small" variant="outlined"/>}
+                    : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+                        {canAct && (
+                          <Tooltip title="Erneut senden">
+                            <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                              <SendIcon sx={{fontSize: '0.875rem'}}/>
+                            </IconButton>
+                          </Tooltip>
+                        )}</>}
                 </Box>
               );
             })}
