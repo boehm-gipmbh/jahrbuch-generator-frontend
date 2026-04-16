@@ -157,7 +157,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   );
 };
 
-const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
+const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   const [open, setOpen] = useState(false);
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
@@ -193,13 +193,14 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
               })()}
             </Box>
           }
+          secondary={<>{user.email}{invToken && <Box component="span" sx={{ml: 1, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}</>}
           primaryTypographyProps={{variant: 'body2'}}
+          secondaryTypographyProps={{variant: 'caption', component: 'span'}}
         />
       </ListItem>
       <Collapse in={open} unmountOnExit>
         <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
           <Box>
-            <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
             {user.invitationExpiresAt && !extending && (() => {
               const days = daysUntil(user.invitationExpiresAt);
               const isExpired = days !== null && days <= 0;
@@ -268,13 +269,21 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   const registrationCount = registeredUsers.length;
   const registeredEmails = registeredUsers.map(u => u.email).join('\n');
   const sends = inv.sends || [];
+  // Fallback: recipientEmail/sentAt vom Token selbst wenn noch keine InvitationSend-Records existieren
+  const sendList = sends.length > 0 ? sends
+    : (inv.recipientEmail ? [{sentTo: inv.recipientEmail, sentAt: inv.sentAt}] : []);
 
   const colSpan = canAct ? 6 : 5;
 
   return (
     <>
       <TableRow>
-        <TableCell>{inv.role}</TableCell>
+        <TableCell>
+          <Box sx={{display: 'flex', flexDirection: 'column'}}>
+            <span>{inv.role}</span>
+            {inv.token && <Typography variant="caption" color="text.disabled">#{inv.token.slice(0, 4)}</Typography>}
+          </Box>
+        </TableCell>
         <TableCell>
           <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
             {new Date(inv.expiresAt).toLocaleDateString()}
@@ -308,11 +317,11 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         </TableCell>
         {canAct && (
           <TableCell>
-            {sends.length > 0 ? (
+            {sendList.length > 0 ? (
               <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer'}}
                 onClick={() => setShowSends(v => !v)}>
                 <MailOutlineIcon fontSize="small" color="action"/>
-                <Typography variant="caption">{sends.length}×</Typography>
+                <Typography variant="caption">{sendList.length}×</Typography>
                 {showSends
                   ? <ExpandLessIcon fontSize="small" color="action"/>
                   : <ExpandMoreIcon fontSize="small" color="action"/>}
@@ -383,18 +392,25 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
           </TableCell>
         </TableRow>
       )}
-      {showSends && sends.length > 0 && (
+      {showSends && sendList.length > 0 && (
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sends.map((s, i) => (
-              <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
-                <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-                <Typography variant="caption">{s.sentTo}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(s.sentAt).toLocaleString()}
-                </Typography>
-              </Box>
-            ))}
+            {sendList.map((s, i) => {
+              const reg = registeredUsers.find(u => u.email === s.sentTo);
+              return (
+                <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
+                  <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+                  <Typography variant="caption">{s.sentTo}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(s.sentAt).toLocaleString()}
+                  </Typography>
+                  {reg
+                    ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
+                        {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
+                    : <Chip label="Noch nicht registriert" size="small" variant="outlined"/>}
+                </Box>
+              );
+            })}
           </TableCell>
         </TableRow>
       )}
@@ -405,7 +421,11 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
 const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const memberMap = new Map();
-  invs.forEach(inv => (inv.members || []).forEach(u => memberMap.set(u.id, u)));
+  const invTokenByUserId = new Map();
+  invs.forEach(inv => (inv.members || []).forEach(u => {
+    memberMap.set(u.id, u);
+    invTokenByUserId.set(u.id, inv.token);
+  }));
   const uniqueMembers = [...memberMap.values()];
   const groupKey = `group_${label}`;
   const isOpen = expanded[groupKey] !== false;
@@ -424,7 +444,7 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
       <Collapse in={isOpen} unmountOnExit>
         {uniqueMembers.length > 0 && (
           <List dense disablePadding sx={{mb: 1}}>
-            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>)}
+            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId} invToken={invTokenByUserId.get(u.id)}/>)}
           </List>
         )}
         <Typography variant="caption" color="text.secondary" sx={{display: 'block', mt: 1, mb: 0.5, pl: 0.5}}>
@@ -456,8 +476,9 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
 
 export const Invitations = () => {
   const {data: invitations = []} = api.endpoints.getInvitations.useQuery();
-  const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000});
   const {data: self} = api.endpoints.getSelf.useQuery();
+  const isAdmin = self?.roles?.includes('admin');
+  const {data: allUsers = []} = api.endpoints.getUsers.useQuery(undefined, {pollingInterval: 10000, skip: !isAdmin});
   const [deactivateInvitation] = api.endpoints.deactivateInvitation.useMutation();
   const [reactivateInvitation] = api.endpoints.reactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
@@ -465,7 +486,6 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
-  const isAdmin = self?.roles?.includes('admin');
   const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
   const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
   const groupId = isGroupAdmin ? self?.groups?.[0]?.id : null;
