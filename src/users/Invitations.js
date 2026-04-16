@@ -314,7 +314,9 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
       .catch(() => {});
   };
 
-  const reg = members.find(u => u.email === s.sentTo);
+  const regMember = members.find(u => u.email === s.sentTo);
+  const regName = regMember?.name || s.registeredUserName;
+  const regActive = regMember ? regMember.active !== false : true;
   const isInvalid = s.status === 'invalid';
 
   if (editingEmail) {
@@ -345,9 +347,9 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
       )}
       {isInvalid
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
-        : reg
-          ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
-              {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
+        : regName
+          ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
+              {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
           : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
               {canAct && (
                 <Tooltip title="Erneut senden">
