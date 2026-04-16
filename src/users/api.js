@@ -116,6 +116,14 @@ export const api = createApi({
         url: `/${id}/remind`,
         method: 'POST'
       })
+    }),
+    sendBatchInvitation: builder.mutation({
+      query: body => ({
+        url: '/invitations/batch',
+        method: 'POST',
+        body
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });

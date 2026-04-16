@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {BatchInviteDialog} from './BatchInviteDialog';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -492,6 +493,7 @@ export const Invitations = () => {
   const [reactivateInvitation] = api.endpoints.reactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
   const [showNew, setShowNew] = useState(false);
+  const [showBatch, setShowBatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
@@ -529,10 +531,15 @@ export const Invitations = () => {
             <Typography component="h2" variant="h6" color="primary">
               {isGroupAdmin ? `Einladungen — ${groupName}` : 'Benutzer & Einladungslinks'}
             </Typography>
-            <Button startIcon={<AddIcon/>} variant="contained" size="small"
-              onClick={() => setShowNew(true)}>
-              Neuer Link
-            </Button>
+            <Box sx={{display: 'flex', gap: 1}}>
+              <Button variant="outlined" size="small" onClick={() => setShowBatch(true)}>
+                Batch-Einladung
+              </Button>
+              <Button startIcon={<AddIcon/>} variant="contained" size="small"
+                onClick={() => setShowNew(true)}>
+                Neuer Link
+              </Button>
+            </Box>
           </Box>
 
           {groupedInvitations.map(([label, groupInvs]) => (
@@ -564,6 +571,14 @@ export const Invitations = () => {
       {showNew && (
         <NewInvitationDialog
           onClose={() => setShowNew(false)}
+          isAdmin={isAdmin}
+          groupName={groupName}
+        />
+      )}
+      {showBatch && (
+        <BatchInviteDialog
+          onClose={() => setShowBatch(false)}
+          invitations={invitations}
           isAdmin={isAdmin}
           groupName={groupName}
         />
