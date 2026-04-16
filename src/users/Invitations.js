@@ -17,6 +17,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
@@ -243,6 +244,51 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   );
 };
 
+const deliveryChip = (status) => {
+  if (!status || status === 'unknown') return null;
+  const map = {
+    sent:       {label: 'Gesendet',   color: 'info'},
+    delivered:  {label: 'Zugestellt', color: 'success'},
+    bounced:    {label: 'Bounced',    color: 'error'},
+    complained: {label: 'Spam',       color: 'warning'},
+  };
+  const cfg = map[status];
+  return cfg ? <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/> : null;
+};
+
+const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
+  const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const reg = members.find(u => u.email === s.sentTo);
+  return (
+    <Box sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25, flexWrap: 'wrap'}}>
+      <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+      <Typography variant="caption">{s.sentTo}</Typography>
+      <Typography variant="caption" color="text.secondary">
+        {new Date(s.sentAt).toLocaleString()}
+      </Typography>
+      {reg
+        ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
+            {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
+        : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+            {canAct && (
+              <Tooltip title="Erneut senden">
+                <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                  <SendIcon sx={{fontSize: '0.875rem'}}/>
+                </IconButton>
+              </Tooltip>
+            )}</>}
+      {s.id && canAct && (
+        <Tooltip title="Zustellstatus abrufen">
+          <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
+            <RefreshIcon sx={{fontSize: '0.875rem'}}/>
+          </IconButton>
+        </Tooltip>
+      )}
+      {statusData && deliveryChip(statusData.status)}
+    </Box>
+  );
+};
+
 const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailValue, setEmailValue] = useState('');
@@ -398,29 +444,9 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
       {showSends && sendList.length > 0 && (
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sendList.map((s, i) => {
-              const reg = members.find(u => u.email === s.sentTo);
-              return (
-                <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
-                  <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-                  <Typography variant="caption">{s.sentTo}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(s.sentAt).toLocaleString()}
-                  </Typography>
-                  {reg
-                    ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
-                        {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
-                    : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
-                        {canAct && (
-                          <Tooltip title="Erneut senden">
-                            <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
-                              <SendIcon sx={{fontSize: '0.875rem'}}/>
-                            </IconButton>
-                          </Tooltip>
-                        )}</>}
-                </Box>
-              );
-            })}
+            {sendList.map((s, i) => (
+              <SendRow key={i} s={s} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
+            ))}
           </TableCell>
         </TableRow>
       )}

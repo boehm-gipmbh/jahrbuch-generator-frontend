@@ -124,6 +124,9 @@ export const api = createApi({
         body
       }),
       invalidatesTags: ['Invitation']
+    }),
+    getSendStatus: builder.query({
+      query: sendId => `/invitations/sends/${sendId}/status`
     })
   })
 });
