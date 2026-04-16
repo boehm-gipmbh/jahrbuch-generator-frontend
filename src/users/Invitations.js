@@ -157,7 +157,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   );
 };
 
-const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
+const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   const [open, setOpen] = useState(false);
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
@@ -193,15 +193,14 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
               })()}
             </Box>
           }
-          secondary={user.email}
+          secondary={<>{user.email}{invToken && <Box component="span" sx={{ml: 1, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}</>}
           primaryTypographyProps={{variant: 'body2'}}
-          secondaryTypographyProps={{variant: 'caption'}}
+          secondaryTypographyProps={{variant: 'caption', component: 'span'}}
         />
       </ListItem>
       <Collapse in={open} unmountOnExit>
         <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
           <Box>
-            <Typography variant="caption" color="text.secondary" display="block">{user.email}</Typography>
             {user.invitationExpiresAt && !extending && (() => {
               const days = daysUntil(user.invitationExpiresAt);
               const isExpired = days !== null && days <= 0;
@@ -247,6 +246,7 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   const [emailValue, setEmailValue] = useState('');
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
+  const [showSends, setShowSends] = useState(false);
   const [resendInvitation] = api.endpoints.resendInvitation.useMutation();
   const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
   const canAct = isAdmin || isGroupAdmin;
@@ -278,7 +278,12 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   return (
     <>
       <TableRow>
-        <TableCell>{inv.role}</TableCell>
+        <TableCell>
+          <Box sx={{display: 'flex', flexDirection: 'column'}}>
+            <span>{inv.role}</span>
+            {inv.token && <Typography variant="caption" color="text.disabled">#{inv.token.slice(0, 4)}</Typography>}
+          </Box>
+        </TableCell>
         <TableCell>
           <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
             {new Date(inv.expiresAt).toLocaleDateString()}
@@ -313,16 +318,13 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         {canAct && (
           <TableCell>
             {sendList.length > 0 ? (
-              <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.25}}>
-                {sendList.map((s, i) => (
-                  <Box key={i} sx={{display: 'flex', alignItems: 'baseline', gap: 0.5}}>
-                    <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.75rem', flexShrink: 0}}/>
-                    <Box>
-                      <Typography variant="caption" display="block">{s.sentTo}</Typography>
-                      {s.sentAt && <Typography variant="caption" color="text.secondary">{new Date(s.sentAt).toLocaleString()}</Typography>}
-                    </Box>
-                  </Box>
-                ))}
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer'}}
+                onClick={() => setShowSends(v => !v)}>
+                <MailOutlineIcon fontSize="small" color="action"/>
+                <Typography variant="caption">{sendList.length}×</Typography>
+                {showSends
+                  ? <ExpandLessIcon fontSize="small" color="action"/>
+                  : <ExpandMoreIcon fontSize="small" color="action"/>}
               </Box>
             ) : '—'}
           </TableCell>
@@ -390,6 +392,21 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
           </TableCell>
         </TableRow>
       )}
+      {showSends && sendList.length > 0 && (
+        <TableRow>
+          <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
+            {sendList.map((s, i) => (
+              <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
+                <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+                <Typography variant="caption">{s.sentTo}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(s.sentAt).toLocaleString()}
+                </Typography>
+              </Box>
+            ))}
+          </TableCell>
+        </TableRow>
+      )}
     </>
   );
 };
@@ -397,7 +414,11 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
 const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const memberMap = new Map();
-  invs.forEach(inv => (inv.members || []).forEach(u => memberMap.set(u.id, u)));
+  const invTokenByUserId = new Map();
+  invs.forEach(inv => (inv.members || []).forEach(u => {
+    memberMap.set(u.id, u);
+    invTokenByUserId.set(u.id, inv.token);
+  }));
   const uniqueMembers = [...memberMap.values()];
   const groupKey = `group_${label}`;
   const isOpen = expanded[groupKey] !== false;
@@ -416,7 +437,7 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
       <Collapse in={isOpen} unmountOnExit>
         {uniqueMembers.length > 0 && (
           <List dense disablePadding sx={{mb: 1}}>
-            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>)}
+            {uniqueMembers.map(u => <UserRow key={u.id} user={u} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId} invToken={invTokenByUserId.get(u.id)}/>)}
           </List>
         )}
         <Typography variant="caption" color="text.secondary" sx={{display: 'block', mt: 1, mb: 0.5, pl: 0.5}}>
