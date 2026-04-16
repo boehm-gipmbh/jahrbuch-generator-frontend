@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {api} from './api';
 
@@ -29,6 +30,8 @@ const StatusChip = ({status}) => {
     return <Chip label="Ungültig" size="small" color="error" icon={<ErrorOutlineIcon/>}/>;
   if (status === 'already_registered')
     return <Chip label="Bereits registriert" size="small" color="warning" icon={<WarningAmberIcon/>}/>;
+  if (status === 'already_sent')
+    return <Chip label="Bereits versendet" size="small" variant="outlined" icon={<MailOutlineIcon/>}/>;
   return null;
 };
 
@@ -167,7 +170,8 @@ export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) =>
             <Typography variant="body2">
               <strong>{results.filter(r => r.status === 'sent').length}</strong> versendet ·{' '}
               <strong>{results.filter(r => r.status === 'invalid').length}</strong> ungültig ·{' '}
-              <strong>{results.filter(r => r.status === 'already_registered').length}</strong> bereits registriert
+              <strong>{results.filter(r => r.status === 'already_registered').length}</strong> bereits registriert ·{' '}
+              <strong>{results.filter(r => r.status === 'already_sent').length}</strong> bereits versendet
             </Typography>
             <Table size="small">
               <TableHead>
