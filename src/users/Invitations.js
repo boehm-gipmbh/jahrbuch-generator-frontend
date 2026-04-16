@@ -233,7 +233,7 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
               ) : (
                 <>
                   <span>{user.email}</span>
-                  {isAdmin && (
+                  {(isAdmin || isGroupAdmin) && (
                     <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', ml: 0.25, '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
                   )}
                   {invToken && <Box component="span" sx={{ml: 0.5, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}
