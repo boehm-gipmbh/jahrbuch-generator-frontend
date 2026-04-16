@@ -127,6 +127,14 @@ export const api = createApi({
     }),
     getSendStatus: builder.query({
       query: sendId => `/invitations/sends/${sendId}/status`
+    }),
+    updateUserEmail: builder.mutation({
+      query: ({id, email}) => ({
+        url: `/${id}/email`,
+        method: 'PUT',
+        body: {email}
+      }),
+      invalidatesTags: ['User', 'Invitation']
     })
   })
 });

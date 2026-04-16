@@ -164,7 +164,29 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   const [open, setOpen] = useState(false);
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
   const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+  const [updateUserEmail] = api.endpoints.updateUserEmail.useMutation();
+
+  const handleEmailEdit = (e) => {
+    e.stopPropagation();
+    setEmailValue(user.email || '');
+    setEditingEmail(true);
+  };
+
+  const handleEmailSave = (e) => {
+    e.stopPropagation();
+    updateUserEmail({id: user.id, email: emailValue})
+      .unwrap()
+      .then(() => setEditingEmail(false))
+      .catch(() => {});
+  };
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === 'Enter') handleEmailSave(e);
+    if (e.key === 'Escape') { e.stopPropagation(); setEditingEmail(false); }
+  };
 
   const handleExtend = () => {
     extendInvitation({id: user.usedInvitationId, expiresAt: new Date(newDate).toISOString()})
@@ -196,7 +218,29 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
               })()}
             </Box>
           }
-          secondary={<>{user.email}{invToken && <Box component="span" sx={{ml: 1, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}</>}
+          secondary={
+            <Box component="span" sx={{display: 'flex', alignItems: 'center', gap: 0.5}} onClick={e => e.stopPropagation()}>
+              {editingEmail ? (
+                <>
+                  <TextField size="small" value={emailValue} type="email"
+                    onChange={e => setEmailValue(e.target.value)}
+                    onKeyDown={handleEmailKeyDown}
+                    autoFocus
+                    sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
+                  <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
+                  <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={e => { e.stopPropagation(); setEditingEmail(false); }}>✕</Button>
+                </>
+              ) : (
+                <>
+                  <span>{user.email}</span>
+                  {isAdmin && (
+                    <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', ml: 0.25, '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
+                  )}
+                  {invToken && <Box component="span" sx={{ml: 0.5, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}
+                </>
+              )}
+            </Box>
+          }
           primaryTypographyProps={{variant: 'body2'}}
           secondaryTypographyProps={{variant: 'caption', component: 'span'}}
         />
