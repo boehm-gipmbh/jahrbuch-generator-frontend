@@ -302,12 +302,42 @@ const deliveryChip = (status) => {
 
 const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const [updateSendEmail] = api.endpoints.updateSendEmail.useMutation();
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+
+  const handleEmailEdit = () => { setEmailValue(s.sentTo); setEditingEmail(true); };
+  const handleEmailSave = () => {
+    updateSendEmail({sendId: s.id, email: emailValue})
+      .unwrap()
+      .then(() => setEditingEmail(false))
+      .catch(() => {});
+  };
+
   const reg = members.find(u => u.email === s.sentTo);
   const isInvalid = s.status === 'invalid';
+
+  if (editingEmail) {
+    return (
+      <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.25}}>
+        <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+        <TextField size="small" value={emailValue} type="email" autoFocus
+          onChange={e => setEmailValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleEmailSave(); if (e.key === 'Escape') setEditingEmail(false); }}
+          sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
+        <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
+        <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={() => setEditingEmail(false)}>✕</Button>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25, flexWrap: 'wrap'}}>
       <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : 'action'} sx={{fontSize: '0.875rem'}}/>
       <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{s.sentTo}</Typography>
+      {canAct && s.id && (
+        <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
+      )}
       {!isInvalid && s.sentAt && (
         <Typography variant="caption" color="text.secondary">
           {new Date(s.sentAt).toLocaleString()}

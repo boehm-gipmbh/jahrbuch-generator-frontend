@@ -128,6 +128,14 @@ export const api = createApi({
     getSendStatus: builder.query({
       query: sendId => `/invitations/sends/${sendId}/status`
     }),
+    updateSendEmail: builder.mutation({
+      query: ({sendId, email}) => ({
+        url: `/invitations/sends/${sendId}/email`,
+        method: 'PUT',
+        body: {email}
+      }),
+      invalidatesTags: ['Invitation']
+    }),
     updateUserEmail: builder.mutation({
       query: ({id, email}) => ({
         url: `/${id}/email`,
