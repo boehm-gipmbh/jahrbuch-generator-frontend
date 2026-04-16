@@ -11,6 +11,8 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {api} from './api';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const parseLines = (text) => {
   return text.split('\n')
     .map(line => line.trim())
@@ -19,7 +21,8 @@ const parseLines = (text) => {
       const parts = line.split(/\s+/);
       const email = parts[0];
       const role = parts[1] || null;
-      return {email, role};
+      const invalid = !EMAIL_RE.test(email);
+      return {email, role, invalid};
     });
 };
 
@@ -144,20 +147,35 @@ export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) =>
         {step === 2 && (
           <>
             <Typography variant="body2">
-              <strong>{entries.length}</strong> Einträge gelesen:
+              <strong>{entries.length}</strong> Einträge gelesen
+              {entries.filter(e => e.invalid).length > 0 && (
+                <> · <Typography component="span" variant="body2" color="error">
+                  <strong>{entries.filter(e => e.invalid).length}</strong> ungültig
+                </Typography></>
+              )}:
             </Typography>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell>E-Mail</TableCell>
                   <TableCell>Rolle</TableCell>
+                  <TableCell/>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {entries.map((e, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{e.email}</TableCell>
-                    <TableCell>{e.role || <Typography variant="caption" color="text.secondary">Standard ({defaultRole})</Typography>}</TableCell>
+                  <TableRow key={i} sx={e.invalid ? {bgcolor: 'error.50'} : {}}>
+                    <TableCell>
+                      <Typography variant="caption" color={e.invalid ? 'error' : 'inherit'}>
+                        {e.email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {e.role || <Typography variant="caption" color="text.secondary">Standard ({defaultRole})</Typography>}
+                    </TableCell>
+                    <TableCell>
+                      {e.invalid && <Chip label="Ungültig" size="small" color="error" icon={<ErrorOutlineIcon/>}/>}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
