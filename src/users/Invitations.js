@@ -395,15 +395,22 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
       {showSends && sendList.length > 0 && (
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sendList.map((s, i) => (
-              <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
-                <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-                <Typography variant="caption">{s.sentTo}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {new Date(s.sentAt).toLocaleString()}
-                </Typography>
-              </Box>
-            ))}
+            {sendList.map((s, i) => {
+              const reg = registeredUsers.find(u => u.email === s.sentTo);
+              return (
+                <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
+                  <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+                  <Typography variant="caption">{s.sentTo}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {new Date(s.sentAt).toLocaleString()}
+                  </Typography>
+                  {reg
+                    ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
+                        {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
+                    : <Chip label="Noch nicht registriert" size="small" variant="outlined"/>}
+                </Box>
+              );
+            })}
           </TableCell>
         </TableRow>
       )}
