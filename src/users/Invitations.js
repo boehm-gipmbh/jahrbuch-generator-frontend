@@ -267,6 +267,7 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   };
 
   const registeredUsers = inv.registeredUsers || [];
+  const members = inv.members || registeredUsers;
   const registrationCount = registeredUsers.length;
   const registeredEmails = registeredUsers.map(u => u.email).join('\n');
   const sends = inv.sends || [];
@@ -397,7 +398,7 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
             {sendList.map((s, i) => {
-              const reg = registeredUsers.find(u => u.email === s.sentTo);
+              const reg = members.find(u => u.email === s.sentTo);
               return (
                 <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
                   <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
