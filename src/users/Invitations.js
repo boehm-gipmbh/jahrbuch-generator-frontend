@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {BatchInviteDialog} from './BatchInviteDialog';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -16,6 +17,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import {api} from './api';
@@ -162,7 +164,29 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   const [open, setOpen] = useState(false);
   const [extending, setExtending] = useState(false);
   const [newDate, setNewDate] = useState('');
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
   const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+  const [updateUserEmail] = api.endpoints.updateUserEmail.useMutation();
+
+  const handleEmailEdit = (e) => {
+    e.stopPropagation();
+    setEmailValue(user.email || '');
+    setEditingEmail(true);
+  };
+
+  const handleEmailSave = (e) => {
+    e.stopPropagation();
+    updateUserEmail({id: user.id, email: emailValue})
+      .unwrap()
+      .then(() => setEditingEmail(false))
+      .catch(() => {});
+  };
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === 'Enter') handleEmailSave(e);
+    if (e.key === 'Escape') { e.stopPropagation(); setEditingEmail(false); }
+  };
 
   const handleExtend = () => {
     extendInvitation({id: user.usedInvitationId, expiresAt: new Date(newDate).toISOString()})
@@ -194,7 +218,29 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
               })()}
             </Box>
           }
-          secondary={<>{user.email}{invToken && <Box component="span" sx={{ml: 1, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}</>}
+          secondary={
+            <Box component="span" sx={{display: 'flex', alignItems: 'center', gap: 0.5}} onClick={e => e.stopPropagation()}>
+              {editingEmail ? (
+                <>
+                  <TextField size="small" value={emailValue} type="email"
+                    onChange={e => setEmailValue(e.target.value)}
+                    onKeyDown={handleEmailKeyDown}
+                    autoFocus
+                    sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
+                  <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
+                  <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={e => { e.stopPropagation(); setEditingEmail(false); }}>✕</Button>
+                </>
+              ) : (
+                <>
+                  <span>{user.email}</span>
+                  {(isAdmin || isGroupAdmin) && (
+                    <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', ml: 0.25, '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
+                  )}
+                  {invToken && <Box component="span" sx={{ml: 0.5, color: 'text.disabled'}}>#{invToken.slice(0, 4)}</Box>}
+                </>
+              )}
+            </Box>
+          }
           primaryTypographyProps={{variant: 'body2'}}
           secondaryTypographyProps={{variant: 'caption', component: 'span'}}
         />
@@ -239,6 +285,91 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
         </Box>
       </Collapse>
     </>
+  );
+};
+
+const deliveryChip = (status) => {
+  if (!status || status === 'unknown') return null;
+  const map = {
+    sent:       {label: 'Gesendet',   color: 'info'},
+    delivered:  {label: 'Zugestellt', color: 'success'},
+    bounced:    {label: 'Bounced',    color: 'error'},
+    complained: {label: 'Spam',       color: 'warning'},
+  };
+  const cfg = map[status];
+  return cfg ? <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/> : null;
+};
+
+const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
+  const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const [updateSendEmail] = api.endpoints.updateSendEmail.useMutation();
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+
+  const handleEmailEdit = () => { setEmailValue(s.sentTo); setEditingEmail(true); };
+  const handleEmailSave = () => {
+    updateSendEmail({sendId: s.id, email: emailValue})
+      .unwrap()
+      .then(() => setEditingEmail(false))
+      .catch(() => {});
+  };
+
+  const regMember = members.find(u => u.email === s.sentTo);
+  const regName = regMember?.name || s.registeredUserName;
+  const regActive = regMember ? regMember.active !== false : true;
+  const isInvalid = s.status === 'invalid';
+  const isAlreadyRegistered = s.status === 'already_registered';
+
+  if (editingEmail) {
+    return (
+      <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.25}}>
+        <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+        <TextField size="small" value={emailValue} type="email" autoFocus
+          onChange={e => setEmailValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleEmailSave(); if (e.key === 'Escape') setEditingEmail(false); }}
+          sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
+        <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
+        <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={() => setEditingEmail(false)}>✕</Button>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25, flexWrap: 'wrap'}}>
+      <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : 'action'} sx={{fontSize: '0.875rem'}}/>
+      <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{s.sentTo}</Typography>
+      {canAct && s.id && (
+        <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
+      )}
+      {!isInvalid && s.sentAt && (
+        <Typography variant="caption" color="text.secondary">
+          {new Date(s.sentAt).toLocaleString()}
+        </Typography>
+      )}
+      {isInvalid
+        ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
+        : isAlreadyRegistered
+          ? <Chip label={regName ? `Bereits registriert (${regName})` : 'Bereits registriert'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+          : regName
+          ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
+              {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
+          : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+              {canAct && (
+                <Tooltip title="Erneut senden">
+                  <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                    <SendIcon sx={{fontSize: '0.875rem'}}/>
+                  </IconButton>
+                </Tooltip>
+              )}</>}
+      {!isInvalid && s.id && canAct && (
+        <Tooltip title="Zustellstatus abrufen">
+          <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
+            <RefreshIcon sx={{fontSize: '0.875rem'}}/>
+          </IconButton>
+        </Tooltip>
+      )}
+      {statusData && deliveryChip(statusData.status)}
+    </Box>
   );
 };
 
@@ -397,29 +528,9 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
       {showSends && sendList.length > 0 && (
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sendList.map((s, i) => {
-              const reg = members.find(u => u.email === s.sentTo);
-              return (
-                <Box key={i} sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25}}>
-                  <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-                  <Typography variant="caption">{s.sentTo}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(s.sentAt).toLocaleString()}
-                  </Typography>
-                  {reg
-                    ? <><Chip label={reg.name} size="small" color="success" variant="outlined"/>
-                        {!reg.active && <Chip label="Gesperrt" size="small" color="error"/>}</>
-                    : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
-                        {canAct && (
-                          <Tooltip title="Erneut senden">
-                            <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
-                              <SendIcon sx={{fontSize: '0.875rem'}}/>
-                            </IconButton>
-                          </Tooltip>
-                        )}</>}
-                </Box>
-              );
-            })}
+            {sendList.map((s, i) => (
+              <SendRow key={i} s={s} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
+            ))}
           </TableCell>
         </TableRow>
       )}
@@ -492,6 +603,7 @@ export const Invitations = () => {
   const [reactivateInvitation] = api.endpoints.reactivateInvitation.useMutation();
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
   const [showNew, setShowNew] = useState(false);
+  const [showBatch, setShowBatch] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
@@ -529,10 +641,15 @@ export const Invitations = () => {
             <Typography component="h2" variant="h6" color="primary">
               {isGroupAdmin ? `Einladungen — ${groupName}` : 'Benutzer & Einladungslinks'}
             </Typography>
-            <Button startIcon={<AddIcon/>} variant="contained" size="small"
-              onClick={() => setShowNew(true)}>
-              Neuer Link
-            </Button>
+            <Box sx={{display: 'flex', gap: 1}}>
+              <Button variant="outlined" size="small" onClick={() => setShowBatch(true)}>
+                Batch-Einladung
+              </Button>
+              <Button startIcon={<AddIcon/>} variant="contained" size="small"
+                onClick={() => setShowNew(true)}>
+                Neuer Link
+              </Button>
+            </Box>
           </Box>
 
           {groupedInvitations.map(([label, groupInvs]) => (
@@ -564,6 +681,14 @@ export const Invitations = () => {
       {showNew && (
         <NewInvitationDialog
           onClose={() => setShowNew(false)}
+          isAdmin={isAdmin}
+          groupName={groupName}
+        />
+      )}
+      {showBatch && (
+        <BatchInviteDialog
+          onClose={() => setShowBatch(false)}
+          invitations={invitations}
           isAdmin={isAdmin}
           groupName={groupName}
         />
