@@ -300,48 +300,22 @@ const deliveryChip = (status) => {
   return cfg ? <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/> : null;
 };
 
-const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
+const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
-  const [updateSendEmail] = api.endpoints.updateSendEmail.useMutation();
-  const [editingEmail, setEditingEmail] = useState(false);
-  const [emailValue, setEmailValue] = useState('');
-
-  const handleEmailEdit = () => { setEmailValue(s.sentTo); setEditingEmail(true); };
-  const handleEmailSave = () => {
-    updateSendEmail({sendId: s.id, email: emailValue})
-      .unwrap()
-      .then(() => setEditingEmail(false))
-      .catch(() => {});
-  };
+  const [deleteSend] = api.endpoints.deleteSend.useMutation();
 
   const regMember = members.find(u => u.email === s.sentTo);
-  const regName = regMember?.name || s.registeredUserName;
   const regActive = regMember ? regMember.active !== false : true;
+  const inGroup = !!regMember;
+  const regName = regMember?.name || s.registeredUserName;
+  const hasAccount = !!(regMember || s.registeredUserName);
   const isInvalid = s.status === 'invalid';
   const isAlreadyRegistered = s.status === 'already_registered';
-
-  if (editingEmail) {
-    return (
-      <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.25}}>
-        <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
-        <TextField size="small" value={emailValue} type="email" autoFocus
-          onChange={e => setEmailValue(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleEmailSave(); if (e.key === 'Escape') setEditingEmail(false); }}
-          sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
-        <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
-        <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={() => setEditingEmail(false)}>✕</Button>
-      </Box>
-    );
-  }
+  const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
 
   return (
-    <Box sx={{display: 'flex', alignItems: 'center', gap: 1, py: 0.25, flexWrap: 'wrap'}}>
-      <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : 'action'} sx={{fontSize: '0.875rem'}}/>
-      <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{s.sentTo}</Typography>
-      {canAct && s.id && (
-        <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}} onClick={handleEmailEdit}>✎</Box>
-      )}
-      {!isInvalid && s.sentAt && (
+    <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 2, py: 0.1, flexWrap: 'wrap'}}>
+      {s.sentAt && (
         <Typography variant="caption" color="text.secondary">
           {new Date(s.sentAt).toLocaleString()}
         </Typography>
@@ -349,12 +323,21 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
       {isInvalid
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
         : isAlreadyRegistered
-          ? <Chip label={regName ? `Bereits registriert (${regName})` : 'Bereits registriert'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
-          : regName
+          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined"/>
+          : isRegisteredNotInGroup || (hasAccount && !inGroup)
+          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+              {canAct && s.id && (
+                <Tooltip title="Einladung erneut senden">
+                  <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                    <SendIcon sx={{fontSize: '0.875rem'}}/>
+                  </IconButton>
+                </Tooltip>
+              )}</>
+          : inGroup
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
           : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
-              {canAct && (
+              {canAct && s.id && (
                 <Tooltip title="Erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
                     <SendIcon sx={{fontSize: '0.875rem'}}/>
@@ -369,6 +352,75 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
         </Tooltip>
       )}
       {statusData && deliveryChip(statusData.status)}
+      {s.id && canAct && (
+        <Tooltip title="Eintrag löschen">
+          <IconButton size="small" onClick={() => deleteSend(s.id)}>
+            <DeleteIcon sx={{fontSize: '0.875rem'}}/>
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+  );
+};
+
+const SendEmailGroup = ({email, sends, inv, members, canAct, resendInvitation}) => {
+  const [updateSendEmail] = api.endpoints.updateSendEmail.useMutation();
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+
+  const sorted = [...sends].sort((a, b) => {
+    if (!a.sentAt && !b.sentAt) return (a.id || 0) - (b.id || 0);
+    if (!a.sentAt) return -1;
+    if (!b.sentAt) return 1;
+    return new Date(a.sentAt) - new Date(b.sentAt);
+  });
+  const latest = sorted[sorted.length - 1];
+  const history = sorted.slice(0, -1);
+  const editId = [...sorted].reverse().find(s => s.id)?.id;
+  const isInvalid = latest.status === 'invalid';
+  const isWarning = latest.status === 'registered_not_in_group';
+
+  const handleEmailSave = () => {
+    if (!editId) return;
+    updateSendEmail({sendId: editId, email: emailValue})
+      .unwrap()
+      .then(() => setEditingEmail(false))
+      .catch(() => {});
+  };
+
+  return (
+    <Box sx={{mb: 0.5}}>
+      {editingEmail ? (
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.25}}>
+          <MailOutlineIcon fontSize="small" color="action" sx={{fontSize: '0.875rem'}}/>
+          <TextField size="small" value={emailValue} type="email" autoFocus
+            onChange={e => setEmailValue(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleEmailSave(); if (e.key === 'Escape') setEditingEmail(false); }}
+            sx={{'& input': {py: 0.25, fontSize: '0.75rem'}, width: 220}}/>
+          <Button size="small" variant="contained" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={handleEmailSave}>OK</Button>
+          <Button size="small" sx={{py: 0, minWidth: 0, fontSize: '0.7rem'}} onClick={() => setEditingEmail(false)}>✕</Button>
+        </Box>
+      ) : (
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.1}}>
+          <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : isWarning ? 'warning' : 'action'} sx={{fontSize: '0.875rem'}}/>
+          <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{email}</Typography>
+          {canAct && editId && (
+            <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}}
+              onClick={() => { setEmailValue(email); setEditingEmail(true); }}>✎</Box>
+          )}
+          {history.length > 0 && (
+            <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.65rem', ml: 0.5, '&:hover': {color: 'text.primary'}}}
+              onClick={() => setShowHistory(v => !v)}>
+              {showHistory ? '▲' : `▼ +${history.length}`}
+            </Box>
+          )}
+        </Box>
+      )}
+      <SendHistoryEntry s={latest} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
+      {showHistory && history.map((s, i) => (
+        <SendHistoryEntry key={i} s={s} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
+      ))}
     </Box>
   );
 };
@@ -402,9 +454,15 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   const registrationCount = registeredUsers.length;
   const registeredEmails = registeredUsers.map(u => u.email).join('\n');
   const sends = inv.sends || [];
-  // Fallback: recipientEmail/sentAt vom Token selbst wenn noch keine InvitationSend-Records existieren
   const sendList = sends.length > 0 ? sends
     : (inv.recipientEmail ? [{sentTo: inv.recipientEmail, sentAt: inv.sentAt}] : []);
+  const sendsByEmail = sendList.reduce((acc, s) => {
+    const key = s.sentTo || '';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(s);
+    return acc;
+  }, {});
+  const emailCount = Object.keys(sendsByEmail).length;
 
   const colSpan = canAct ? 6 : 5;
 
@@ -454,7 +512,7 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
               <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer'}}
                 onClick={() => setShowSends(v => !v)}>
                 <MailOutlineIcon fontSize="small" color="action"/>
-                <Typography variant="caption">{sendList.length}×</Typography>
+                <Typography variant="caption">{emailCount}×</Typography>
                 {showSends
                   ? <ExpandLessIcon fontSize="small" color="action"/>
                   : <ExpandMoreIcon fontSize="small" color="action"/>}
@@ -525,11 +583,11 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
           </TableCell>
         </TableRow>
       )}
-      {showSends && sendList.length > 0 && (
+      {showSends && emailCount > 0 && (
         <TableRow>
           <TableCell colSpan={colSpan} sx={{py: 0.5, borderBottom: 0, pl: 4}}>
-            {sendList.map((s, i) => (
-              <SendRow key={i} s={s} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
+            {Object.entries(sendsByEmail).map(([email, emailSends]) => (
+              <SendEmailGroup key={email} email={email} sends={emailSends} inv={inv} members={members} canAct={canAct} resendInvitation={resendInvitation}/>
             ))}
           </TableCell>
         </TableRow>

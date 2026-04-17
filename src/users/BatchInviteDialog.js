@@ -32,7 +32,9 @@ const StatusChip = ({status}) => {
   if (status === 'invalid')
     return <Chip label="Ungültig" size="small" color="error" icon={<ErrorOutlineIcon/>}/>;
   if (status === 'already_registered')
-    return <Chip label="Bereits registriert" size="small" color="warning" icon={<WarningAmberIcon/>}/>;
+    return <Chip label="Bereits in der Gruppe" size="small" color="success" icon={<CheckCircleOutlineIcon/>}/>;
+  if (status === 'registered_not_in_group')
+    return <Chip label="Konto vorhanden, nicht in Gruppe" size="small" color="warning" icon={<WarningAmberIcon/>}/>;
   if (status === 'already_sent')
     return <Chip label="Bereits versendet" size="small" variant="outlined" icon={<MailOutlineIcon/>}/>;
   return null;
@@ -188,7 +190,8 @@ export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) =>
             <Typography variant="body2">
               <strong>{results.filter(r => r.status === 'sent').length}</strong> versendet ·{' '}
               <strong>{results.filter(r => r.status === 'invalid').length}</strong> ungültig ·{' '}
-              <strong>{results.filter(r => r.status === 'already_registered').length}</strong> bereits registriert ·{' '}
+              <strong>{results.filter(r => r.status === 'already_registered').length}</strong> bereits in der Gruppe ·{' '}
+              <strong>{results.filter(r => r.status === 'registered_not_in_group').length}</strong> Konto, nicht in Gruppe ·{' '}
               <strong>{results.filter(r => r.status === 'already_sent').length}</strong> bereits versendet
             </Typography>
             <Table size="small">

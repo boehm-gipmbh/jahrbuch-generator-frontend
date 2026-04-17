@@ -143,6 +143,13 @@ export const api = createApi({
         body: {email}
       }),
       invalidatesTags: ['User', 'Invitation']
+    }),
+    deleteSend: builder.mutation({
+      query: sendId => ({
+        url: `/invitations/sends/${sendId}`,
+        method: 'DELETE'
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });
