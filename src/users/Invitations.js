@@ -309,6 +309,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const regActive = regMember ? regMember.active !== false : true;
   const isInvalid = s.status === 'invalid';
   const isAlreadyRegistered = s.status === 'already_registered';
+  const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
 
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 2, py: 0.1, flexWrap: 'wrap'}}>
@@ -320,7 +321,16 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
       {isInvalid
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
         : isAlreadyRegistered
-          ? <Chip label={regName ? `Bereits registriert (${regName})` : 'Bereits registriert'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined"/>
+          : isRegisteredNotInGroup
+          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+              {canAct && s.id && (
+                <Tooltip title="Einladung erneut senden">
+                  <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
+                    <SendIcon sx={{fontSize: '0.875rem'}}/>
+                  </IconButton>
+                </Tooltip>
+              )}</>
           : regName
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
@@ -367,6 +377,7 @@ const SendEmailGroup = ({email, sends, inv, members, canAct, resendInvitation}) 
   const history = sorted.slice(0, -1);
   const editId = [...sorted].reverse().find(s => s.id)?.id;
   const isInvalid = latest.status === 'invalid';
+  const isWarning = latest.status === 'registered_not_in_group';
 
   const handleEmailSave = () => {
     if (!editId) return;
@@ -390,7 +401,7 @@ const SendEmailGroup = ({email, sends, inv, members, canAct, resendInvitation}) 
         </Box>
       ) : (
         <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, py: 0.1}}>
-          <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : 'action'} sx={{fontSize: '0.875rem'}}/>
+          <MailOutlineIcon fontSize="small" color={isInvalid ? 'disabled' : isWarning ? 'warning' : 'action'} sx={{fontSize: '0.875rem'}}/>
           <Typography variant="caption" color={isInvalid ? 'text.disabled' : 'inherit'}>{email}</Typography>
           {canAct && editId && (
             <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}}
