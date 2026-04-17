@@ -451,8 +451,8 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
 
   const registeredUsers = inv.registeredUsers || [];
   const members = inv.members || registeredUsers;
-  const registrationCount = registeredUsers.length;
-  const registeredEmails = registeredUsers.map(u => u.email).join('\n');
+  const registrationCount = members.length;
+  const registeredEmails = members.map(u => u.email).join('\n');
   const sends = inv.sends || [];
   const sendList = sends.length > 0 ? sends
     : (inv.recipientEmail ? [{sentTo: inv.recipientEmail, sentAt: inv.sentAt}] : []);
