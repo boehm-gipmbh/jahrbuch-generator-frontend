@@ -305,8 +305,10 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const [deleteSend] = api.endpoints.deleteSend.useMutation();
 
   const regMember = members.find(u => u.email === s.sentTo);
-  const regName = regMember?.name || s.registeredUserName;
   const regActive = regMember ? regMember.active !== false : true;
+  const inGroup = !!regMember;
+  const regName = regMember?.name || s.registeredUserName;
+  const hasAccount = !!(regMember || s.registeredUserName);
   const isInvalid = s.status === 'invalid';
   const isAlreadyRegistered = s.status === 'already_registered';
   const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
@@ -322,7 +324,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
         : isAlreadyRegistered
           ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined"/>
-          : isRegisteredNotInGroup
+          : isRegisteredNotInGroup || (hasAccount && !inGroup)
           ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
               {canAct && s.id && (
                 <Tooltip title="Einladung erneut senden">
@@ -331,7 +333,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                   </IconButton>
                 </Tooltip>
               )}</>
-          : regName
+          : inGroup
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
           : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
