@@ -462,8 +462,8 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
     acc[key].push(s);
     return acc;
   }, {});
-  // Alle Gruppen-Mitglieder ohne Send-Eintrag als synthetische Einträge ergänzen
-  members.forEach(u => {
+  // Direktregistrierungen via diesem Token (ohne Batch-Send) als synthetische Einträge ergänzen
+  registeredUsers.forEach(u => {
     if (u.email && !sendsByEmail[u.email]) {
       sendsByEmail[u.email] = [{sentTo: u.email, status: 'already_registered', registeredUserName: u.name}];
     }
