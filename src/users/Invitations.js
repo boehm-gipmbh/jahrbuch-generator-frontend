@@ -554,13 +554,6 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
               </IconButton>
             </Tooltip>
           ))}
-          {canAct && (
-            <Tooltip title="Löschen">
-              <IconButton size="small" onClick={() => deleteInvitation(inv.id)}>
-                <DeleteIcon fontSize="small"/>
-              </IconButton>
-            </Tooltip>
-          )}
         </TableCell>
       </TableRow>
       {sendingEmail && (
@@ -709,10 +702,12 @@ export const Invitations = () => {
               <Button variant="outlined" size="small" onClick={() => setShowBatch(true)}>
                 Batch-Einladung
               </Button>
-              <Button startIcon={<AddIcon/>} variant="contained" size="small"
-                onClick={() => setShowNew(true)}>
-                Neuer Link
-              </Button>
+              {(!isGroupAdmin || invitations.length === 0) && (
+                <Button startIcon={<AddIcon/>} variant="contained" size="small"
+                  onClick={() => setShowNew(true)}>
+                  Neuer Link
+                </Button>
+              )}
             </Box>
           </Box>
 
