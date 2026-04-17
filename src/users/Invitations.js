@@ -462,6 +462,12 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
     acc[key].push(s);
     return acc;
   }, {});
+  // Registrierungen via Token-Link (ohne Batch-Send) als synthetische Einträge ergänzen
+  registeredUsers.forEach(u => {
+    if (u.email && !sendsByEmail[u.email]) {
+      sendsByEmail[u.email] = [{sentTo: u.email, status: 'already_registered', registeredUserName: u.name}];
+    }
+  });
   const emailCount = Object.keys(sendsByEmail).length;
 
   const colSpan = canAct ? 6 : 5;
