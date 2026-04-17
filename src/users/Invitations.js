@@ -302,6 +302,7 @@ const deliveryChip = (status) => {
 
 const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const [deleteSend] = api.endpoints.deleteSend.useMutation();
 
   const regMember = members.find(u => u.email === s.sentTo);
   const regName = regMember?.name || s.registeredUserName;
@@ -339,6 +340,13 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
         </Tooltip>
       )}
       {statusData && deliveryChip(statusData.status)}
+      {s.id && canAct && (
+        <Tooltip title="Eintrag löschen">
+          <IconButton size="small" onClick={() => deleteSend(s.id)}>
+            <DeleteIcon sx={{fontSize: '0.875rem'}}/>
+          </IconButton>
+        </Tooltip>
+      )}
     </Box>
   );
 };
