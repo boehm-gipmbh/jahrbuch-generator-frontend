@@ -318,6 +318,7 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
   const regName = regMember?.name || s.registeredUserName;
   const regActive = regMember ? regMember.active !== false : true;
   const isInvalid = s.status === 'invalid';
+  const isAlreadyRegistered = s.status === 'already_registered';
 
   if (editingEmail) {
     return (
@@ -347,7 +348,9 @@ const SendRow = ({s, inv, members, canAct, resendInvitation}) => {
       )}
       {isInvalid
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
-        : regName
+        : isAlreadyRegistered
+          ? <Chip label={regName ? `Bereits registriert (${regName})` : 'Bereits registriert'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+          : regName
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
           : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
