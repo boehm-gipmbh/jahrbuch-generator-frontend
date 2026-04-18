@@ -24,9 +24,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import PersonIcon from '@mui/icons-material/Person';
 import Typography from '@mui/material/Typography';
-import {HasRole} from '../auth';
 import {api as storyApi} from '../stories';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
@@ -196,14 +194,6 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
                 />
 
-                <HasRole role='admin'>
-                    <Divider/>
-                    <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Benutzer &amp; Einladungen' to='/invitations'/>
-                </HasRole>
-                <HasRole role='group-admin'>
-                    <Divider/>
-                    <Item disableTooltip={drawerOpen} Icon={PersonIcon} title='Einladungen' to='/invitations'/>
-                </HasRole>
             </List>
         </Box>
         {drawerOpen && process.env.REACT_APP_VERSION && (

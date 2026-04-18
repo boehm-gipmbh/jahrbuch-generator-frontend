@@ -166,7 +166,7 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   const [newDate, setNewDate] = useState('');
   const [editingEmail, setEditingEmail] = useState(false);
   const [emailValue, setEmailValue] = useState('');
-  const [extendInvitation] = api.endpoints.extendInvitation.useMutation();
+  const [updateUserInvitationExpiry] = api.endpoints.updateUserInvitationExpiry.useMutation();
   const [updateUserEmail] = api.endpoints.updateUserEmail.useMutation();
 
   const handleEmailEdit = (e) => {
@@ -189,7 +189,7 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
   };
 
   const handleExtend = () => {
-    extendInvitation({id: user.usedInvitationId, expiresAt: new Date(newDate).toISOString()})
+    updateUserInvitationExpiry({id: user.id, expiresAt: new Date(newDate).toISOString()})
       .unwrap()
       .then(() => setExtending(false))
       .catch(() => {});
@@ -451,8 +451,8 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
 
   const registeredUsers = inv.registeredUsers || [];
   const members = inv.members || registeredUsers;
-  const registrationCount = registeredUsers.length;
-  const registeredEmails = registeredUsers.map(u => u.email).join('\n');
+  const registrationCount = members.length;
+  const registeredEmails = members.map(u => u.email).join('\n');
   const sends = inv.sends || [];
   const sendList = sends.length > 0 ? sends
     : (inv.recipientEmail ? [{sentTo: inv.recipientEmail, sentAt: inv.sentAt}] : []);
@@ -462,6 +462,12 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
     acc[key].push(s);
     return acc;
   }, {});
+  // Alle Gruppenmitglieder (egal ob via Email-Send oder direktem Link registriert) anzeigen
+  members.forEach(u => {
+    if (u.email && !sendsByEmail[u.email]) {
+      sendsByEmail[u.email] = [{sentTo: u.email, status: 'already_registered', registeredUserName: u.name}];
+    }
+  });
   const emailCount = Object.keys(sendsByEmail).length;
 
   const colSpan = canAct ? 6 : 5;
@@ -703,10 +709,12 @@ export const Invitations = () => {
               <Button variant="outlined" size="small" onClick={() => setShowBatch(true)}>
                 Batch-Einladung
               </Button>
-              <Button startIcon={<AddIcon/>} variant="contained" size="small"
-                onClick={() => setShowNew(true)}>
-                Neuer Link
-              </Button>
+              {(!isGroupAdmin || invitations.length === 0) && (
+                <Button startIcon={<AddIcon/>} variant="contained" size="small"
+                  onClick={() => setShowNew(true)}>
+                  Neuer Link
+                </Button>
+              )}
             </Box>
           </Box>
 

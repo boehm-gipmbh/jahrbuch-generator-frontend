@@ -2,8 +2,7 @@ import React, {useRef, useState} from 'react';
 import {
   Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
   FormControl, FormControlLabel, InputLabel, MenuItem, Radio, RadioGroup,
-  Select, Table, TableBody, TableCell, TableHead, TableRow, TextField,
-  Typography
+  Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -41,9 +40,14 @@ const StatusChip = ({status}) => {
 };
 
 export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) => {
-  const [step, setStep] = useState(1);
-  const [tokenMode, setTokenMode] = useState('new');
-  const [existingTokenId, setExistingTokenId] = useState('');
+  const activeTokens = (invitations || []).filter(inv => inv.active);
+  const groupAdminHasToken = !isAdmin && activeTokens.length > 0;
+  const initialTokenMode = groupAdminHasToken ? 'existing' : 'new';
+  const initialTokenId = groupAdminHasToken ? String(activeTokens[0].id) : '';
+
+  const [step, setStep] = useState(groupAdminHasToken ? 1 : 1);
+  const [tokenMode, setTokenMode] = useState(initialTokenMode);
+  const [existingTokenId, setExistingTokenId] = useState(initialTokenId);
   const [label, setLabel] = useState(isAdmin ? '' : (groupName || ''));
   const [defaultRole, setDefaultRole] = useState('user');
   const [expiresAt, setExpiresAt] = useState(() => {
@@ -57,8 +61,6 @@ export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) =>
   const fileRef = useRef();
 
   const [sendBatch] = api.endpoints.sendBatchInvitation.useMutation();
-
-  const activeTokens = (invitations || []).filter(inv => inv.active);
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -93,45 +95,48 @@ export const BatchInviteDialog = ({onClose, invitations, isAdmin, groupName}) =>
 
         {step === 1 && (
           <>
-            <RadioGroup row value={tokenMode} onChange={e => setTokenMode(e.target.value)}>
-              <FormControlLabel value="new" control={<Radio size="small"/>} label="Neuen Token erstellen"/>
-              <FormControlLabel value="existing" control={<Radio size="small"/>} label="Bestehenden Token verwenden"/>
-            </RadioGroup>
-
-            {tokenMode === 'new' ? (
-              <>
-                {isAdmin && (
-                  <TextField label="Label / Gruppe (optional)" value={label}
-                    onChange={e => setLabel(e.target.value)} fullWidth size="small"/>
-                )}
-                {!isAdmin && (
-                  <Typography variant="body2" color="text.secondary">
-                    Gruppe: <strong>{groupName}</strong>
-                  </Typography>
-                )}
-                <TextField label="Ablaufdatum" type="date" value={expiresAt}
-                  onChange={e => setExpiresAt(e.target.value)} fullWidth size="small"
-                  InputLabelProps={{shrink: true}}/>
-                <TextField label="Standardrolle" value={defaultRole}
-                  onChange={e => setDefaultRole(e.target.value)}
-                  select SelectProps={{native: true}} fullWidth size="small">
-                  <option value="user">user</option>
-                  <option value="group-admin">group-admin</option>
-                  {isAdmin && <option value="admin">admin</option>}
-                </TextField>
-              </>
+            {groupAdminHasToken ? (
+              <Typography variant="body2" color="text.secondary">
+                Token: <strong>{activeTokens[0].label || activeTokens[0].token?.slice(0, 8)}</strong>
+              </Typography>
             ) : (
-              <FormControl fullWidth size="small">
-                <InputLabel>Token auswählen</InputLabel>
-                <Select value={existingTokenId} label="Token auswählen"
-                  onChange={e => setExistingTokenId(e.target.value)}>
-                  {activeTokens.map(inv => (
-                    <MenuItem key={inv.id} value={inv.id}>
-                      {inv.label || '—'} · {inv.role} · #{inv.token?.slice(0, 4)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <>
+                <RadioGroup row value={tokenMode} onChange={e => setTokenMode(e.target.value)}>
+                  <FormControlLabel value="new" control={<Radio size="small"/>} label="Neuen Token erstellen"/>
+                  <FormControlLabel value="existing" control={<Radio size="small"/>} label="Bestehenden Token verwenden"/>
+                </RadioGroup>
+
+                {tokenMode === 'new' ? (
+                  <>
+                    {isAdmin && (
+                      <TextField label="Label / Gruppe (optional)" value={label}
+                        onChange={e => setLabel(e.target.value)} fullWidth size="small"/>
+                    )}
+                    <TextField label="Ablaufdatum" type="date" value={expiresAt}
+                      onChange={e => setExpiresAt(e.target.value)} fullWidth size="small"
+                      InputLabelProps={{shrink: true}}/>
+                    <TextField label="Standardrolle" value={defaultRole}
+                      onChange={e => setDefaultRole(e.target.value)}
+                      select SelectProps={{native: true}} fullWidth size="small">
+                      <option value="user">user</option>
+                      <option value="group-admin">group-admin</option>
+                      {isAdmin && <option value="admin">admin</option>}
+                    </TextField>
+                  </>
+                ) : (
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Token auswählen</InputLabel>
+                    <Select value={existingTokenId} label="Token auswählen"
+                      onChange={e => setExistingTokenId(e.target.value)}>
+                      {activeTokens.map(inv => (
+                        <MenuItem key={inv.id} value={inv.id}>
+                          {inv.label || '—'} · {inv.role} · #{inv.token?.slice(0, 4)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </>
             )}
 
             <Box>
