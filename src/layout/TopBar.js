@@ -3,6 +3,8 @@ import {AppBar, IconButton, Toolbar, Tooltip, Typography} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
+import {useNavigate} from 'react-router-dom';
 import {UserIcon} from "./UserIcon";
 import {GroupSwitcher} from "./GroupSwitcher";
 import {api} from '../users';
@@ -10,6 +12,9 @@ import {api} from '../users';
 export const TopBar = ({goHome, newText, toggleDrawer}) => {
   const {data: user} = api.endpoints.getSelf.useQuery();
   const title = user?.activeGroup?.name ?? 'Jahrbuch-Generator';
+  const navigate = useNavigate();
+  const isAdmin = user?.roles?.includes('admin');
+  const isGroupAdmin = user?.roles?.includes('group-admin');
 
   return (
     <AppBar
@@ -40,6 +45,13 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
           {title}
         </Typography>
         <GroupSwitcher />
+        {(isAdmin || isGroupAdmin) && (
+          <Tooltip title='Einladungen'>
+            <IconButton color='inherit' onClick={() => navigate('/invitations')}>
+              <PeopleOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         <Tooltip title='Quick Add'>
           <IconButton
             color='inherit'

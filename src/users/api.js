@@ -150,6 +150,14 @@ export const api = createApi({
         method: 'DELETE'
       }),
       invalidatesTags: ['Invitation']
+    }),
+    updateUserInvitationExpiry: builder.mutation({
+      query: ({id, expiresAt}) => ({
+        url: `/${id}/invitation-expires`,
+        method: 'PUT',
+        body: {expiresAt}
+      }),
+      invalidatesTags: ['Invitation']
     })
   })
 });
