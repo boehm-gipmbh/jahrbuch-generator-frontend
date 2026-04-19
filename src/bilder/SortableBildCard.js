@@ -3,6 +3,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment} from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -23,6 +24,7 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
     };
 
     const [updateBild] = api.endpoints.updateBild.useMutation();
+    const [deleteBild] = api.endpoints.deleteBild.useMutation();
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
@@ -184,7 +186,7 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
                     </Box>
                 </Box>
 
-                {/* Aus Story entfernen */}
+                {/* Aktionen unten rechts */}
                 <Box sx={{
                     position: 'absolute',
                     bottom: 4,
@@ -192,7 +194,8 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
                     backgroundColor: 'rgba(255,255,255,0.7)',
                     borderRadius: 1,
                     padding: '2px',
-                    zIndex: 1
+                    zIndex: 1,
+                    display: 'flex'
                 }}>
                     <Tooltip title="Aus Story entfernen">
                         <span onClick={() => isComplete && setLockMsg(true)}>
@@ -202,6 +205,17 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
                                 onClick={(e) => { e.stopPropagation(); onRemoveFromStory(bild); }}
                             >
                                 <LinkOffIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="In Papierkorb legen">
+                        <span onClick={() => isComplete && setLockMsg(true)}>
+                            <IconButton
+                                disabled={isComplete}
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); deleteBild(bild); }}
+                            >
+                                <DeleteOutlineIcon fontSize="small"/>
                             </IconButton>
                         </span>
                     </Tooltip>
