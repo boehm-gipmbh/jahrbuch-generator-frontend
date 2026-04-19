@@ -200,7 +200,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                 )}
                 {!Boolean(story) && (
                     <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
-                        <StoryChip bild={bild} size='small'/>
+                        <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
                     </Box>
                 )}
             </Box>
