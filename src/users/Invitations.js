@@ -602,7 +602,7 @@ const TokenRow = ({inv, isAdmin, isGroupAdmin, copyLink, deactivateInvitation, r
   );
 };
 
-const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expanded, toggleExpanded, copyLink,
+const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId: parentGroupId, expanded, toggleExpanded, copyLink,
     deactivateInvitation, reactivateInvitation, deleteInvitation}) => {
   const memberMap = new Map();
   const invTokenByUserId = new Map();
@@ -611,6 +611,7 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId, expand
     invTokenByUserId.set(u.id, inv.token);
   }));
   const uniqueMembers = [...memberMap.values()];
+  const groupId = parentGroupId ?? invs.find(inv => inv.group?.id)?.group?.id ?? null;
   const groupKey = `group_${label}`;
   const isOpen = expanded[groupKey] !== false;
   const canAct = isAdmin || isGroupAdmin;
