@@ -94,13 +94,62 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
   );
 };
 
+const ReminderSendEntry = ({send}) => {
+  const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getReminderSendStatus.useLazyQuery();
+  return (
+    <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 1, py: 0.1}}>
+      <Typography variant="caption" color="text.secondary">
+        {new Date(send.sentAt).toLocaleString()}
+      </Typography>
+      <Tooltip title="Zustellstatus abrufen">
+        <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(send.id)}>
+          <RefreshIcon sx={{fontSize: '0.875rem'}}/>
+        </IconButton>
+      </Tooltip>
+      {statusData && statusData.id === send.id && deliveryChip(statusData.status)}
+    </Box>
+  );
+};
+
+const ReminderSection = ({user, canAct}) => {
+  const [sendReminder] = api.endpoints.sendReminder.useMutation();
+  const [showHistory, setShowHistory] = useState(false);
+  const {data: sends, refetch} = api.endpoints.getReminderSends.useQuery(user.id, {skip: !canAct || !user.email});
+
+  const handleSend = () => {
+    sendReminder(user.id).unwrap().then(() => refetch()).catch(() => {});
+  };
+
+  if (!canAct || !user.email) return null;
+
+  return (
+    <Box sx={{mb: 0.5}}>
+      <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+        <MailOutlineIcon sx={{fontSize: '0.875rem'}} color="action"/>
+        <Typography variant="caption" color="text.secondary">Erinnerungsmail</Typography>
+        <Tooltip title="Jetzt senden">
+          <IconButton size="small" onClick={handleSend}>
+            <SendIcon sx={{fontSize: '0.875rem'}}/>
+          </IconButton>
+        </Tooltip>
+        {sends && sends.length > 0 && (
+          <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.65rem', '&:hover': {color: 'text.primary'}}}
+            onClick={() => setShowHistory(v => !v)}>
+            {showHistory ? '▲' : `▼ ${sends.length}×`}
+          </Box>
+        )}
+      </Box>
+      {showHistory && sends && sends.map(s => <ReminderSendEntry key={s.id} send={s}/>)}
+    </Box>
+  );
+};
+
 const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const [deleteUser] = api.endpoints.deleteUser.useMutation();
   const [deactivateUser] = api.endpoints.deactivateUser.useMutation();
   const [reactivateUser] = api.endpoints.reactivateUser.useMutation();
   const [promoteUser] = api.endpoints.promoteUser.useMutation();
   const [demoteUser] = api.endpoints.demoteUser.useMutation();
-  const [sendReminder] = api.endpoints.sendReminder.useMutation();
   const isSelf = user.id === self?.id;
   const isGroupAdminRole = (user.roles || []).includes('group-admin');
 
@@ -109,14 +158,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const canAct = isAdmin || isGroupAdmin;
 
   return (
-    <Box sx={{display: 'flex', gap: 0.5}}>
-      {canAct && !isSelf && user.email && (
-        <Tooltip title="Erinnerungsmail senden">
-          <IconButton size="small" onClick={() => sendReminder(user.id)}>
-            <MailOutlineIcon fontSize="small" color="action"/>
-          </IconButton>
-        </Tooltip>
-      )}
+    <Box sx={{display: 'flex', gap: 0.5, alignItems: 'center'}}>
       {canAct && !isSelf && (
         isGroupAdminRole ? (
           <Tooltip title="Zu user degradieren">
@@ -246,7 +288,9 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
         />
       </ListItem>
       <Collapse in={open} unmountOnExit>
-        <Box sx={{pl: 7, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+        <Box sx={{pl: 7, pb: 1}}>
+          <ReminderSection user={user} canAct={isAdmin || isGroupAdmin}/>
+          <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
           <Box>
             {user.invitationExpiresAt && !extending && (() => {
               const days = daysUntil(user.invitationExpiresAt);
@@ -282,6 +326,7 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
             )}
           </Box>
           <UserActions user={user} self={self} isAdmin={isAdmin} isGroupAdmin={isGroupAdmin} groupId={groupId}/>
+          </Box>
         </Box>
       </Collapse>
     </>
@@ -408,6 +453,13 @@ const SendEmailGroup = ({email, sends, inv, members, canAct, resendInvitation}) 
           {canAct && editId && (
             <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.7rem', '&:hover': {color: 'primary.main'}}}
               onClick={() => { setEmailValue(email); setEditingEmail(true); }}>✎</Box>
+          )}
+          {canAct && !isInvalid && (
+            <Tooltip title="Erneut senden">
+              <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: email})}>
+                <SendIcon sx={{fontSize: '0.875rem'}}/>
+              </IconButton>
+            </Tooltip>
           )}
           {history.length > 0 && (
             <Box component="span" sx={{cursor: 'pointer', color: 'text.disabled', fontSize: '0.65rem', ml: 0.5, '&:hover': {color: 'text.primary'}}}
