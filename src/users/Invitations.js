@@ -101,6 +101,7 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const [promoteUser] = api.endpoints.promoteUser.useMutation();
   const [demoteUser] = api.endpoints.demoteUser.useMutation();
   const [sendReminder] = api.endpoints.sendReminder.useMutation();
+  const [fetchReminderStatus, {data: reminderStatus, isFetching: statusFetching}] = api.endpoints.getReminderStatus.useLazyQuery();
   const isSelf = user.id === self?.id;
   const isGroupAdminRole = (user.roles || []).includes('group-admin');
 
@@ -109,13 +110,21 @@ const UserActions = ({user, self, isAdmin, isGroupAdmin, groupId}) => {
   const canAct = isAdmin || isGroupAdmin;
 
   return (
-    <Box sx={{display: 'flex', gap: 0.5}}>
+    <Box sx={{display: 'flex', gap: 0.5, alignItems: 'center'}}>
       {canAct && !isSelf && user.email && (
-        <Tooltip title="Erinnerungsmail senden">
-          <IconButton size="small" onClick={() => sendReminder(user.id)}>
-            <MailOutlineIcon fontSize="small" color="action"/>
-          </IconButton>
-        </Tooltip>
+        <>
+          <Tooltip title="Erinnerungsmail senden">
+            <IconButton size="small" onClick={() => sendReminder(user.id)}>
+              <MailOutlineIcon fontSize="small" color="action"/>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Zustellstatus der letzten Erinnerungsmail abrufen">
+            <IconButton size="small" disabled={statusFetching} onClick={() => fetchReminderStatus(user.id)}>
+              <RefreshIcon fontSize="small" color="action"/>
+            </IconButton>
+          </Tooltip>
+          {reminderStatus && deliveryChip(reminderStatus.status)}
+        </>
       )}
       {canAct && !isSelf && (
         isGroupAdminRole ? (

@@ -115,7 +115,11 @@ export const api = createApi({
       query: id => ({
         url: `/${id}/remind`,
         method: 'POST'
-      })
+      }),
+      invalidatesTags: ['User']
+    }),
+    getReminderStatus: builder.query({
+      query: id => `/${id}/remind/status`
     }),
     sendBatchInvitation: builder.mutation({
       query: body => ({
