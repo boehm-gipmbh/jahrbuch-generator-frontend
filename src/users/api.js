@@ -121,6 +121,13 @@ export const api = createApi({
     getReminderStatus: builder.query({
       query: id => `/${id}/remind/status`
     }),
+    getReminderSends: builder.query({
+      query: id => `/${id}/remind/sends`,
+      providesTags: ['User']
+    }),
+    getReminderSendStatus: builder.query({
+      query: sendId => `/remind/sends/${sendId}/status`
+    }),
     sendBatchInvitation: builder.mutation({
       query: body => ({
         url: '/invitations/batch',
