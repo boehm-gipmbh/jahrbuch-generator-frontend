@@ -338,7 +338,7 @@ const deliveryChip = (status) => {
   const map = {
     sent:        {label: 'Gesendet',    color: 'info'},
     delivered:   {label: 'Zugestellt', color: 'success'},
-    bounced:     {label: 'Bounced',    color: 'error'},
+    bounced:     {label: 'Zurückgewiesen', color: 'error'},
     suppressed:  {label: 'Gesperrt',   color: 'error'},
     complained:  {label: 'Spam',       color: 'warning'},
   };
@@ -359,6 +359,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const isAlreadyRegistered = s.status === 'already_registered';
   const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
   const shownDeliveryStatus = liveStatus?.status || s.deliveryStatus;
+  const deliveryFailed = ['bounced', 'suppressed', 'complained'].includes(shownDeliveryStatus);
 
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 2, py: 0.1, flexWrap: 'wrap'}}>
@@ -383,7 +384,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
           : inGroup
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
-          : <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined"/>
+          : !deliveryFailed && <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined"/>
               {canAct && s.id && (
                 <Tooltip title="Erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
