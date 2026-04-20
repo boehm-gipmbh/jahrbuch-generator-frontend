@@ -336,10 +336,11 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
 const deliveryChip = (status) => {
   if (!status || status === 'unknown') return null;
   const map = {
-    sent:       {label: 'Gesendet',   color: 'info'},
-    delivered:  {label: 'Zugestellt', color: 'success'},
-    bounced:    {label: 'Bounced',    color: 'error'},
-    complained: {label: 'Spam',       color: 'warning'},
+    sent:        {label: 'Gesendet',    color: 'info'},
+    delivered:   {label: 'Zugestellt', color: 'success'},
+    bounced:     {label: 'Bounced',    color: 'error'},
+    suppressed:  {label: 'Gesperrt',   color: 'error'},
+    complained:  {label: 'Spam',       color: 'warning'},
   };
   const cfg = map[status];
   return cfg ? <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/> : null;
