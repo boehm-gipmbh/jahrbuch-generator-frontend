@@ -728,9 +728,11 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
-  const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
-  const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
-  const groupId = isGroupAdmin ? self?.groups?.[0]?.id : null;
+  const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin')
+    && self?.managedGroup != null
+    && self?.activeGroup?.id === self?.managedGroup?.id;
+  const groupName = isGroupAdmin ? self?.managedGroup?.name : null;
+  const groupId = isGroupAdmin ? self?.managedGroup?.id : null;
 
   const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 
