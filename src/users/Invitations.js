@@ -368,6 +368,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
           {new Date(s.sentAt).toLocaleString()}
         </Typography>
       )}
+      {deliveryChip(shownDeliveryStatus)}
       {isInvalid
         ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
         : isAlreadyRegistered
@@ -392,7 +393,6 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                   </IconButton>
                 </Tooltip>
               )}</>}
-      {deliveryChip(shownDeliveryStatus)}
       {!isInvalid && s.id && canAct && (
         <Tooltip title="Zustellstatus aktualisieren">
           <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
