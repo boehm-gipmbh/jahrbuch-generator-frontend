@@ -382,7 +382,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
           : inGroup
           ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
               {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
-          : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+          : <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined"/>
               {canAct && s.id && (
                 <Tooltip title="Erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
