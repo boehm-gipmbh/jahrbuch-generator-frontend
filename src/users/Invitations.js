@@ -346,7 +346,7 @@ const deliveryChip = (status) => {
 };
 
 const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
-  const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const [fetchStatus, {data: liveStatus, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
   const [deleteSend] = api.endpoints.deleteSend.useMutation();
 
   const regMember = members.find(u => u.email === s.sentTo);
@@ -357,6 +357,7 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const isInvalid = s.status === 'invalid';
   const isAlreadyRegistered = s.status === 'already_registered';
   const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
+  const shownDeliveryStatus = liveStatus?.status || s.deliveryStatus;
 
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 2, py: 0.1, flexWrap: 'wrap'}}>
@@ -389,14 +390,14 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                   </IconButton>
                 </Tooltip>
               )}</>}
+      {deliveryChip(shownDeliveryStatus)}
       {!isInvalid && s.id && canAct && (
-        <Tooltip title="Zustellstatus abrufen">
+        <Tooltip title="Zustellstatus aktualisieren">
           <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
             <RefreshIcon sx={{fontSize: '0.875rem'}}/>
           </IconButton>
         </Tooltip>
       )}
-      {statusData && deliveryChip(statusData.status)}
       {s.id && canAct && (
         <Tooltip title="Eintrag löschen">
           <IconButton size="small" onClick={() => deleteSend(s.id)}>
