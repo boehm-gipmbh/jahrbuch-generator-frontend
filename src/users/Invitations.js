@@ -96,6 +96,7 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
 
 const ReminderSendEntry = ({send}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getReminderSendStatus.useLazyQuery();
+  const shownStatus = statusData?.id === String(send.id) ? statusData.status : send.deliveryStatus;
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 1, py: 0.1}}>
       <Typography variant="caption" color="text.secondary">
@@ -106,7 +107,7 @@ const ReminderSendEntry = ({send}) => {
           <RefreshIcon sx={{fontSize: '0.875rem'}}/>
         </IconButton>
       </Tooltip>
-      {statusData && statusData.id === send.id && deliveryChip(statusData.status)}
+      {shownStatus && deliveryChip(shownStatus)}
     </Box>
   );
 };
