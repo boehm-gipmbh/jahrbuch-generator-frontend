@@ -370,11 +370,11 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
       )}
       {deliveryChip(shownDeliveryStatus)}
       {isInvalid
-        ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
+        ? <Chip label="Ungültig" size="small" color="error" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
         : isAlreadyRegistered
-          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined"/>
+          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
           : isRegisteredNotInGroup || (hasAccount && !inGroup)
-          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>} sx={{fontSize: '0.65rem', height: 18}}/>
               {canAct && s.id && (
                 <Tooltip title="Einladung erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
@@ -383,9 +383,9 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                 </Tooltip>
               )}</>
           : inGroup
-          ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
-              {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
-          : !deliveryFailed && <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined"/>
+          ? <><Chip label={regName} size="small" color="success" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
+              {!regActive && <Chip label="Gesperrt" size="small" color="error" sx={{fontSize: '0.65rem', height: 18}}/>}</>
+          : !deliveryFailed && <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
               {canAct && s.id && (
                 <Tooltip title="Erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
