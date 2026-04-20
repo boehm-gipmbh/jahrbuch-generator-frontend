@@ -728,11 +728,26 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
-  const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin')
+  const hasGroupAdminRole = !isAdmin && self?.roles?.includes('group-admin');
+  const isGroupAdmin = hasGroupAdminRole
     && self?.managedGroup != null
     && self?.activeGroup?.id === self?.managedGroup?.id;
   const groupName = isGroupAdmin ? self?.managedGroup?.name : null;
   const groupId = isGroupAdmin ? self?.managedGroup?.id : null;
+
+  if (hasGroupAdminRole && !isGroupAdmin) {
+    return (
+      <Layout>
+        <Container sx={{mt: 2}}>
+          <Paper sx={{p: 2}}>
+            <Typography color="text.secondary">
+              Wechseln Sie zu Ihrer verwalteten Gruppe um Einladungen zu verwalten.
+            </Typography>
+          </Paper>
+        </Container>
+      </Layout>
+    );
+  }
 
   const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 
