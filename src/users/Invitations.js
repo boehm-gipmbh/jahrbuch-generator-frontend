@@ -729,11 +729,9 @@ export const Invitations = () => {
   const [expanded, setExpanded] = useState({});
 
   const hasGroupAdminRole = !isAdmin && self?.roles?.includes('group-admin');
-  const isGroupAdmin = hasGroupAdminRole
-    && self?.managedGroup != null
-    && self?.activeGroup?.id === self?.managedGroup?.id;
-  const groupName = isGroupAdmin ? self?.managedGroup?.name : null;
-  const groupId = isGroupAdmin ? self?.managedGroup?.id : null;
+  const isGroupAdmin = hasGroupAdminRole && self?.activeGroup != null;
+  const groupName = isGroupAdmin ? self?.activeGroup?.name : null;
+  const groupId = isGroupAdmin ? self?.activeGroup?.id : null;
 
   if (hasGroupAdminRole && !isGroupAdmin) {
     return (
