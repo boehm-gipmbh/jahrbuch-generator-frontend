@@ -11,7 +11,7 @@ export const GroupSwitcher = () => {
     const [setActiveGroup] = api.endpoints.setActiveGroup.useMutation();
     const [clearActiveGroup] = api.endpoints.clearActiveGroup.useMutation();
 
-    const groups = user?.groups ?? [];
+    const groups = [...new Map((user?.groups ?? []).map(g => [g.id, g])).values()];
     const activeGroup = user?.activeGroup ?? null;
 
     if (groups.length === 0) return null;
