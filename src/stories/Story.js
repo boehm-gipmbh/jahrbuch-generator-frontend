@@ -213,6 +213,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             key={id}
             text={item}
             story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
             onSetComplete={(args) => setTextComplete(args)}
             onRemoveFromStory={(t) => updateText({...t, story: null}).unwrap()
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
