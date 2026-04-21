@@ -17,7 +17,7 @@ import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
 import {VideoUploadDialog} from '../videos/VideoUploadDialog';
-import AuthVideo from '../videos/AuthVideo';
+import {VideoCard} from '../videos/VideoCard';
 import {
     DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
     PointerSensor, useSensor, useSensors, useDroppable
@@ -119,6 +119,9 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const {data: bilderData} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const {data: videoData} = videoApi.endpoints.getVideos.useQuery(undefined, {pollingInterval: 10000});
     const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
+    const [setVideoComplete] = videoApi.endpoints.setComplete.useMutation();
+    const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
+    const {data: storiesData, isSuccess: storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined);
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
@@ -174,21 +177,20 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
 
     const renderVideoCard = (video) => (
-        <Box key={`video-${video.id}`} sx={{mb: 1}}>
-            <Typography variant="subtitle2" sx={{mb: 0.5}}>{video.title}</Typography>
-            <AuthVideo
-                src={`/api/v1/videos/extern${video.pfad}`}
-                style={{width: '100%', maxHeight: 240, display: 'block', borderRadius: 4}}
-            />
-            {video.description && (
-                <Typography variant="body2" sx={{mt: 0.5, color: 'text.secondary'}}>{video.description}</Typography>
-            )}
-            <Button size="small" color="error" onClick={() => deleteVideo(video).unwrap()
+        <VideoCard
+            key={`video-${video.id}`}
+            video={video}
+            story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
+            onSetComplete={(args) => setVideoComplete(args)}
+            onUpdate={(v) => updateVideo(v).unwrap()
                 .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                .catch(e => console.error(e))}>
-                Entfernen
-            </Button>
-        </Box>
+                .catch(e => console.error(e))}
+            onDelete={() => deleteVideo(video).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e))}
+        />
     );
 
     const renderCard = (type, id, item) => type === 'bild' ? (
