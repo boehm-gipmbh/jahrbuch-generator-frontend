@@ -26,9 +26,6 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
-import {VideoUploadDialog} from "../videos/VideoUploadDialog";
-import {VideoCard} from "../videos/VideoCard";
-import {api as videoApi} from "../videos/api";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
@@ -281,12 +278,8 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
     const dispatch = useDispatch();
     const {data} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
-    const {data: videoData} = videoApi.endpoints.getVideos.useQuery(undefined, {pollingInterval: 10000});
     const [setComplete] = bilderApi.endpoints.setComplete.useMutation();
-    const [setVideoComplete] = videoApi.endpoints.setComplete.useMutation();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
-    const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
-    const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const [rotateBild] = bilderApi.endpoints.rotateBild.useMutation();
     const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
@@ -368,7 +361,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     Foto shot&nbsp;!
                 </Button>)}
             <BilderUploadDialog/>
-            <VideoUploadDialog/>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>
@@ -418,30 +410,6 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     ))}
                 </Box>
 
-                {(videoData || []).filter(v => !v.deleted && (story ? v.story?.id === story.id : true)).length > 0 && (
-                    <Box sx={{mt: 2}}>
-                        <Typography variant="subtitle2" color="text.secondary" sx={{mb: 1}}>Videos</Typography>
-                        <Grid container spacing={2}>
-                            {(videoData || [])
-                                .filter(v => !v.deleted && (story ? v.story?.id === story.id : true))
-                                .map(video => (
-                                    <Grid item xs={12} sm={6} key={video.id}>
-                                        <VideoCard
-                                            video={video}
-                                            story={story}
-                                            storiesLoaded={storiesLoaded}
-                                            stories={stories}
-                                            onSetComplete={(args) => setVideoComplete(args)}
-                                            onUpdate={(updated) => updateVideo(updated)}
-                                            onDelete={() => deleteVideo(video).unwrap()
-                                                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                                                .catch(e => console.error(e))}
-                                        />
-                                    </Grid>
-                                ))}
-                        </Grid>
-                    </Box>
-                )}
             </Paper>
         </Container>
 
