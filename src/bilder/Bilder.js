@@ -26,6 +26,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
+import {VideoUploadDialog} from "../videos/VideoUploadDialog";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
@@ -361,6 +362,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                     Foto shot&nbsp;!
                 </Button>)}
             <BilderUploadDialog/>
+            <VideoUploadDialog/>
         </Box>
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Paper sx={{p: 2}}>
