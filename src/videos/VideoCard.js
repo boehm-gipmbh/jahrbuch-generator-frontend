@@ -1,6 +1,6 @@
 import React, {memo, useState} from 'react';
 import {
-    Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent,
+    Box, Button, ButtonGroup, Checkbox, Chip, Dialog, DialogActions, DialogContent,
     DialogContentText, DialogTitle, IconButton, Paper, Snackbar, TextField,
     Tooltip, Typography, MenuItem, Popover, MenuList, Divider
 } from '@mui/material';
@@ -123,9 +123,11 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                     )}
                     {!Boolean(story) && video.story && (
                         <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
-                            <Typography variant="caption" color="text.secondary">
-                                {video.story.name}
-                            </Typography>
+                            <Chip
+                                label={video.story.name}
+                                size="small"
+                                onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
+                            />
                         </Box>
                     )}
                 </Box>
