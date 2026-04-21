@@ -5,6 +5,7 @@ import {
     Tooltip, Typography, MenuItem, Popover, MenuList, Divider
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddLinkIcon from '@mui/icons-material/AddLink';
@@ -78,7 +79,7 @@ const AssignVideoToStoryButton = ({video, stories}) => {
     );
 };
 
-export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, onRemoveFromStory}) => {
+export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, onRemoveFromStory, dragHandleProps}) => {
     const [priority, setPriorityState] = useState(video.priority);
     const [lockMsg, setLockMsg] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -87,6 +88,13 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
     return (
         <>
             <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
+                {dragHandleProps && (
+                    <Box {...dragHandleProps} sx={{position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                        cursor: 'grab', zIndex: 2, p: 1, touchAction: 'none', userSelect: 'none',
+                        color: 'action.disabled', '&:hover': {color: 'action.active'}}}>
+                        <DragIndicatorIcon fontSize="small" sx={{transform: 'rotate(90deg)'}}/>
+                    </Box>
+                )}
                 {/* Priority oben links */}
                 <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
                     <span onClick={() => isComplete && setLockMsg(true)}>

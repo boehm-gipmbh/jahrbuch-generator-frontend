@@ -17,7 +17,7 @@ import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
 import {VideoUploadDialog} from '../videos/VideoUploadDialog';
-import {VideoCard} from '../videos/VideoCard';
+import {SortableVideoCard} from '../videos/SortableVideoCard';
 import {
     DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
     PointerSensor, useSensor, useSensors, useDroppable
@@ -141,7 +141,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     // Clear optimistic state when server data arrives (only when not actively dragging and no reorder pending)
     useEffect(() => {
         if (activeItem === null && !pendingReorderRef.current) updateDragItems(null);
-    }, [texteData, bilderData]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [texteData, bilderData, videoData]); // eslint-disable-line react-hooks/exhaustive-deps
     const [activeItem, setActiveItem] = useState(null);
 
     const updateDragItems = (val) => {
@@ -160,7 +160,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const videoItems = videoData
         ? Array.from(videoData).filter(filterVideo).map(v => ({type: 'video', id: `video-${v.id}`, item: v}))
         : [];
-    const serverItems = [...bildItems, ...textItems];
+    const serverItems = [...bildItems, ...textItems, ...videoItems];
     const activeItems = dragItems || serverItems;
 
     const is1col = layout === '1col';
@@ -172,14 +172,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
     });
 
-    const videosByCol = (colIdx) => videoItems
-        .filter(v => (v.item.storyColumn ?? 0) === colIdx)
-        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
-
-    const renderVideoCard = (video) => (
-        <VideoCard
-            key={`video-${video.id}`}
-            video={video}
+    const renderCard = (type, id, item) => type === 'video' ? (
+        <SortableVideoCard
+            key={id}
+            video={item}
             story={story}
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
@@ -187,16 +183,14 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             onUpdate={(v) => updateVideo(v).unwrap()
                 .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                 .catch(e => console.error(e))}
-            onDelete={() => deleteVideo(video).unwrap()
+            onDelete={() => deleteVideo(item).unwrap()
                 .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                 .catch(e => console.error(e))}
             onRemoveFromStory={(v) => updateVideo({...v, story: null}).unwrap()
                 .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                 .catch(e => console.error(e))}
         />
-    );
-
-    const renderCard = (type, id, item) => type === 'bild' ? (
+    ) : type === 'bild' ? (
         <SortableBildCard
             key={id}
             bild={item}
@@ -350,6 +344,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     pendingReorderRef.current = false;
                     dispatch(bilderApi.util.invalidateTags(['Bild']));
                     dispatch(texteApi.util.invalidateTags(['Text']));
+                    dispatch(videoApi.util.invalidateTags(['Video']));
                 })
                 .catch((err) => {
                     pendingReorderRef.current = false;
@@ -430,7 +425,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                 {itemsSorted1col.map(({type, id, item}) => (
                                     <Box key={id}>{renderCard(type, id, item)}</Box>
                                 ))}
-                                {videoItems.map(({item}) => renderVideoCard(item))}
                             </Box>
                         </SortableContext>
                     ) : (
@@ -451,7 +445,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             {colItems.map(({type, id, item}) => (
                                                 <Box key={id}>{renderCard(type, id, item)}</Box>
                                             ))}
-                                            {videosByCol(colIdx).map(({item}) => renderVideoCard(item))}
                                         </DroppableColumn>
                                     </SortableContext>
                                 );
@@ -479,6 +472,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 {activeItem.item.description}
                                             </pre>
                                         )}
+                                    </Box>
+                                ) : activeItem.type === 'video' ? (
+                                    <Box sx={{mb: 2, textAlign: 'center', color: 'text.secondary'}}>
+                                        🎬 Video
                                     </Box>
                                 ) : (
                                     <pre className="wrap-pre" style={{margin: 0}}>
