@@ -25,6 +25,7 @@ import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import Typography from '@mui/material/Typography';
+import VideocamIcon from '@mui/icons-material/Videocam';
 import {api as storyApi} from '../stories';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
@@ -191,6 +192,7 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
 
                 <Divider/>
                 <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
+                <Item disableTooltip={drawerOpen} Icon={VideocamIcon} title='Deine Videos' to='/videos' bold/>
                 <PapierkorbItem disableTooltip={drawerOpen}/>
                 <Stories
                     drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}

@@ -4,6 +4,7 @@ import {Login, Register, VerifyEmail, ForgotPassword, ResetPassword, ForgotUsern
 
 import {Bilder} from './bilder';
 import {Texte} from './texte';
+import {Videos} from './videos';
 import {Invitations} from './users';
 import {Story} from "./stories/Story";
 import {Papierkorb} from "./papierkorb/Papierkorb";
@@ -25,6 +26,7 @@ export const App = () => (
             <Route exact path='/texte/story/:storyId' element={<Texte />} />
             <Route exact path='/bilder' element={<Bilder />} />
             <Route exact path='/bilder/story/:storyId' element={<Story />} />
+            <Route exact path='/videos' element={<Videos />} />
             <Route exact path='/papierkorb' element={<Papierkorb />} />
             <Route exact path='/users' element={<Navigate to='/invitations' />} />
             <Route exact path='/invitations' element={<Invitations />} />
