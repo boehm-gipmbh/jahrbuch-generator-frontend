@@ -8,6 +8,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
@@ -89,6 +90,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
     };
 
     const [updateText] = api.endpoints.updateText.useMutation();
+    const [deleteText] = api.endpoints.deleteText.useMutation();
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
@@ -260,6 +262,17 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                                 onClick={(e) => { e.stopPropagation(); onRemoveFromStory(text); }}
                             >
                                 <LinkOffIcon fontSize="small"/>
+                            </IconButton>
+                        </span>
+                    </Tooltip>
+                    <Tooltip title="In Papierkorb legen">
+                        <span onClick={() => isComplete && setLockMsg(true)}>
+                            <IconButton
+                                disabled={isComplete}
+                                size="small"
+                                onClick={(e) => { e.stopPropagation(); deleteText(text); }}
+                            >
+                                <DeleteOutlineIcon fontSize="small"/>
                             </IconButton>
                         </span>
                     </Tooltip>
