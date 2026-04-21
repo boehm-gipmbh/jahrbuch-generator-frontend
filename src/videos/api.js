@@ -19,6 +19,22 @@ export const api = createApi({
             query: () => '/',
             providesTags: ['Video'],
         }),
+        updateVideo: builder.mutation({
+            query: video => ({
+                url: `/${video.id}`,
+                method: 'PUT',
+                body: video,
+            }),
+            invalidatesTags: ['Video'],
+        }),
+        setComplete: builder.mutation({
+            query: ({video, complete}) => ({
+                url: `/${video.id}/complete`,
+                method: 'PUT',
+                body: JSON.stringify(complete),
+            }),
+            invalidatesTags: ['Video'],
+        }),
         deleteVideo: builder.mutation({
             query: video => ({
                 url: `/${video.id}`,
