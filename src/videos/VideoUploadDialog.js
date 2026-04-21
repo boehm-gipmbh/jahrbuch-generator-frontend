@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {useDispatch} from 'react-redux';
 import {
     Button,
     Dialog,
@@ -17,6 +18,7 @@ const ALLOWED_TYPES = ['.mp4', '.mov', '.webm', '.avi'];
 const MAX_SIZE_BYTES = 524288000; // 500 MB
 
 export const VideoUploadDialog = ({story}) => {
+    const dispatch = useDispatch();
     const [open, setOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [title, setTitle] = useState('');
@@ -56,6 +58,7 @@ export const VideoUploadDialog = ({story}) => {
 
         try {
             await uploadVideo(formData).unwrap();
+            dispatch(videoApi.util.invalidateTags(['Video']));
             setOpen(false);
             setSelectedFile(null);
             setTitle('');
