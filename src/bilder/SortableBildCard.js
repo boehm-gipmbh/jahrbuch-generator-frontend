@@ -1,19 +1,86 @@
 import {useState, memo} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment} from '@mui/material';
+import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment,
+    MenuItem, Popover, MenuList, Divider} from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
+import AddLinkIcon from '@mui/icons-material/AddLink';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CheckIcon from '@mui/icons-material/Check';
+import {useDispatch} from 'react-redux';
 import AuthImage from './AuthImage';
 import {EditBildPriority} from './Priority';
 import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
+import {api as storyApi} from '../stories';
 
-export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromStory}) => {
+const AssignBildToStoryButton = ({bild, stories}) => {
+    const dispatch = useDispatch();
+    const [updateBild] = api.endpoints.updateBild.useMutation();
+    const [addStory] = storyApi.endpoints.addStory.useMutation();
+    const [anchor, setAnchor] = useState(null);
+    const [newStoryName, setNewStoryName] = useState('');
+
+    const assignTo = (storyId, knownStory) => {
+        const storyObj = knownStory || stories.find(s => s.id === storyId) || null;
+        updateBild({...bild, story: storyObj ? {id: storyId} : null}).unwrap()
+            .then(() => dispatch(api.util.invalidateTags(['Bild'])))
+            .catch(e => console.error(e));
+        setAnchor(null);
+    };
+
+    const handleCreateAndAssign = () => {
+        if (!newStoryName.trim()) return;
+        addStory({name: newStoryName.trim()}).unwrap()
+            .then(story => {
+                dispatch(storyApi.util.invalidateTags(['Story']));
+                assignTo(story.id, story);
+            })
+            .catch(e => console.error(e));
+        setNewStoryName('');
+        setAnchor(null);
+    };
+
+    return (
+        <>
+            <Tooltip title="Zu anderer Story hinzufügen">
+                <IconButton size="small" onClick={e => setAnchor(e.currentTarget)}>
+                    <AddLinkIcon fontSize="small"/>
+                </IconButton>
+            </Tooltip>
+            <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
+                     anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}>
+                <MenuList dense sx={{minWidth: 180}}>
+                    {(stories || []).map(s => (
+                        <MenuItem key={s.id} onClick={() => assignTo(s.id)}
+                                  selected={bild.story?.id === s.id}>
+                            {bild.story?.id === s.id && <CheckIcon fontSize="small" sx={{mr: 1}}/>}
+                            {s.name}
+                        </MenuItem>
+                    ))}
+                    {(stories || []).length > 0 && <Divider/>}
+                    <MenuItem disableRipple>
+                        <TextField size="small" placeholder="Neue Story …" value={newStoryName}
+                                   onChange={e => setNewStoryName(e.target.value)}
+                                   onKeyDown={e => e.key === 'Enter' && handleCreateAndAssign()}
+                                   InputProps={{endAdornment: (
+                                       <IconButton size="small" onClick={handleCreateAndAssign}>
+                                           <AddCircleOutlineIcon fontSize="small"/>
+                                       </IconButton>
+                                   )}}/>
+                    </MenuItem>
+                </MenuList>
+            </Popover>
+        </>
+    );
+};
+
+export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onRemoveFromStory}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -197,6 +264,7 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
                     zIndex: 1,
                     display: 'flex'
                 }}>
+                    {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
                     <Tooltip title="Aus Story entfernen">
                         <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton
@@ -232,5 +300,7 @@ export const SortableBildCard = memo(({bild, story, onSetComplete, onRemoveFromS
     );
 }, (prev, next) =>
     prev.bild === next.bild &&
-    prev.story === next.story
+    prev.story === next.story &&
+    prev.storiesLoaded === next.storiesLoaded &&
+    prev.stories === next.stories
 );

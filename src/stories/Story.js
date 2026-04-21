@@ -201,6 +201,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             key={id}
             bild={item}
             story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
             onSetComplete={(args) => setBildComplete(args)}
             onRemoveFromStory={(b) => updateBild({...b, story: null}).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
