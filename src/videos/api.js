@@ -43,5 +43,23 @@ export const api = createApi({
             }),
             invalidatesTags: ['Video'],
         }),
+        getPapierkorb: builder.query({
+            query: () => '/papierkorb',
+            providesTags: ['Video'],
+        }),
+        restoreVideo: builder.mutation({
+            query: video => ({
+                url: `/${video.id}/restore`,
+                method: 'PUT',
+            }),
+            invalidatesTags: ['Video'],
+        }),
+        hardDeleteVideo: builder.mutation({
+            query: video => ({
+                url: `/${video.id}/hard`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Video'],
+        }),
     }),
 });
