@@ -1,9 +1,10 @@
 import React, {memo, useState} from 'react';
 import {
     Box, Button, ButtonGroup, Checkbox, Chip, Dialog, DialogActions, DialogContent,
-    DialogContentText, DialogTitle, IconButton, Paper, Snackbar, TextField,
+    DialogContentText, DialogTitle, IconButton, InputAdornment, Paper, Snackbar, TextField,
     Tooltip, Typography, MenuItem, Popover, MenuList, Divider
 } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LockIcon from '@mui/icons-material/Lock';
@@ -83,7 +84,23 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
     const [priority, setPriorityState] = useState(video.priority);
     const [lockMsg, setLockMsg] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
+    const [editField, setEditField] = useState(null);
+    const [editValue, setEditValue] = useState('');
     const isComplete = Boolean(video.complete);
+
+    const startEdit = (field) => {
+        if (isComplete) { setLockMsg(true); return; }
+        setEditField(field);
+        setEditValue(video[field] ?? '');
+    };
+    const commitEdit = () => {
+        if (editField && editValue !== (video[editField] ?? '')) onUpdate({...video, [editField]: editValue});
+        setEditField(null);
+    };
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') setEditField(null);
+    };
 
     return (
         <>
@@ -115,19 +132,53 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                 </Tooltip>
 
                 <Box sx={{display: 'flex', flexDirection: 'column', flex: 1, pt: 3}}>
-                    <Typography variant="subtitle1" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center'}}>
-                        {video.title || 'Kein Titel'}
-                    </Typography>
+                    {editField === 'title' ? (
+                        <TextField autoFocus size="small" value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit} onKeyDown={handleKeyDown}
+                            fullWidth sx={{mb: 1}}/>
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
+                            <Typography variant="subtitle1" component="div"
+                                sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                                    cursor: isComplete ? 'default' : 'text',
+                                    '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
+                                onClick={() => startEdit('title')}>
+                                {video.title || 'Kein Titel'}
+                            </Typography>
+                        </Tooltip>
+                    )}
                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                         <AuthVideo
                             src={`/api/v1/videos/extern${video.pfad}`}
                             style={{maxWidth: '100%', maxHeight: 200}}
                         />
                     </Box>
-                    {video.description && (
-                        <pre className="wrap-pre" style={{margin: '0 0 20px 0', minHeight: '1.5em'}}>
-                            {video.description}
-                        </pre>
+                    {editField === 'description' ? (
+                        <TextField autoFocus size="small" multiline value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit} onKeyDown={handleKeyDown}
+                            fullWidth sx={{mb: 5}}
+                            inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
+                            InputProps={{endAdornment: editValue ? (
+                                <InputAdornment position="end">
+                                    <IconButton size="small" onMouseDown={e => { e.preventDefault(); setEditValue(''); }}>
+                                        <ClearIcon fontSize="small"/>
+                                    </IconButton>
+                                </InputAdornment>
+                            ) : null}}/>
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
+                            <pre className="wrap-pre" onClick={() => startEdit('description')}
+                                style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
+                                    marginBottom: 40,
+                                    border: !video.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
+                                    borderRadius: 4,
+                                    padding: '8.5px 14px',
+                                    color: video.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
+                                {video.description || 'Beschreibung hinzufügen …'}
+                            </pre>
+                        </Tooltip>
                     )}
                     {!Boolean(story) && video.story && (
                         <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
