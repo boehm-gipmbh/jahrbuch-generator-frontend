@@ -10,6 +10,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import ImageIcon from '@mui/icons-material/Image';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import VideocamIcon from '@mui/icons-material/Videocam';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -17,6 +18,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {Layout} from '../layout';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
+import {api as videoApi} from '../videos/api';
 import {api as storyApi} from '../stories';
 
 const KEIN_STORY = '__kein_story__';
@@ -39,7 +41,9 @@ const ItemRow = ({type, item, onRestore, onHardDelete}) => (
         <ListItemIcon sx={{minWidth: 32}}>
             {type === 'bild'
                 ? <ImageIcon fontSize="small" color="action"/>
-                : <TextSnippetIcon fontSize="small" color="action"/>}
+                : type === 'video'
+                    ? <VideocamIcon fontSize="small" color="action"/>
+                    : <TextSnippetIcon fontSize="small" color="action"/>}
         </ListItemIcon>
         <ListItemText primary={item.title || 'Kein Titel'}
             primaryTypographyProps={{variant: 'body2'}}/>
@@ -58,9 +62,9 @@ const ItemRow = ({type, item, onRestore, onHardDelete}) => (
     </ListItem>
 );
 
-const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestoreStory}) => {
+const StoryGroup = ({storyName, bilder, texte, videos, onRestore, onHardDelete, onRestoreStory}) => {
     const [open, setOpen] = useState(true);
-    const count = bilder.length + texte.length;
+    const count = bilder.length + texte.length + videos.length;
     const isReal = storyName !== KEIN_STORY;
     const label = isReal ? storyName : '(ohne Story)';
 
@@ -107,6 +111,11 @@ const StoryGroup = ({storyName, bilder, texte, onRestore, onHardDelete, onRestor
                             onRestore={() => onRestore('text', t)}
                             onHardDelete={onHardDelete}/>
                     ))}
+                    {videos.map(v => (
+                        <ItemRow key={`video-${v.id}`} type="video" item={v}
+                            onRestore={() => onRestore('video', v)}
+                            onHardDelete={onHardDelete}/>
+                    ))}
                 </List>
             </Collapse>
         </>
@@ -117,10 +126,13 @@ export const Papierkorb = () => {
     const dispatch = useDispatch();
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
     const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
+    const {data: videosDeleted = []} = videoApi.endpoints.getPapierkorb.useQuery();
     const [restoreBild] = bilderApi.endpoints.restoreBild.useMutation();
     const [hardDeleteBild] = bilderApi.endpoints.hardDeleteBild.useMutation();
     const [restoreText] = texteApi.endpoints.restoreText.useMutation();
     const [hardDeleteText] = texteApi.endpoints.hardDeleteText.useMutation();
+    const [restoreVideo] = videoApi.endpoints.restoreVideo.useMutation();
+    const [hardDeleteVideo] = videoApi.endpoints.hardDeleteVideo.useMutation();
     const [restoreStory] = storyApi.endpoints.restoreStory.useMutation();
 
     const [confirmItem, setConfirmItem] = useState(null); // {type, item}
@@ -129,6 +141,10 @@ export const Papierkorb = () => {
         if (type === 'bild') {
             restoreBild(item).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
+                .catch(e => console.error(e));
+        } else if (type === 'video') {
+            restoreVideo(item).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                 .catch(e => console.error(e));
         } else {
             restoreText(item).unwrap()
@@ -155,6 +171,10 @@ export const Papierkorb = () => {
             hardDeleteBild(confirmItem.item).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
                 .catch(e => console.error(e));
+        } else if (confirmItem.type === 'video') {
+            hardDeleteVideo(confirmItem.item).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e));
         } else {
             hardDeleteText(confirmItem.item).unwrap()
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
@@ -167,13 +187,17 @@ export const Papierkorb = () => {
     const groups = {};
     bilderDeleted.forEach(b => {
         const key = b.deletedFromStoryName || KEIN_STORY;
-        if (!groups[key]) groups[key] = {bilder: [], texte: []};
+        if (!groups[key]) groups[key] = {bilder: [], texte: [], videos: []};
         groups[key].bilder.push(b);
     });
     texteDeleted.forEach(t => {
         const key = t.deletedFromStoryName || KEIN_STORY;
-        if (!groups[key]) groups[key] = {bilder: [], texte: []};
+        if (!groups[key]) groups[key] = {bilder: [], texte: [], videos: []};
         groups[key].texte.push(t);
+    });
+    videosDeleted.forEach(v => {
+        if (!groups[KEIN_STORY]) groups[KEIN_STORY] = {bilder: [], texte: [], videos: []};
+        groups[KEIN_STORY].videos.push(v);
     });
 
     // Story-Gruppen zuerst, "ohne Story" zuletzt
@@ -183,7 +207,7 @@ export const Papierkorb = () => {
         return a.localeCompare(b);
     });
 
-    const isEmpty = bilderDeleted.length === 0 && texteDeleted.length === 0;
+    const isEmpty = bilderDeleted.length === 0 && texteDeleted.length === 0 && videosDeleted.length === 0;
 
     return (
         <Layout>
@@ -204,6 +228,7 @@ export const Papierkorb = () => {
                                     storyName={key}
                                     bilder={groups[key].bilder}
                                     texte={groups[key].texte}
+                                    videos={groups[key].videos}
                                     onRestore={handleRestore}
                                     onHardDelete={(type, item) => setConfirmItem({type, item})}
                                     onRestoreStory={handleRestoreStory}

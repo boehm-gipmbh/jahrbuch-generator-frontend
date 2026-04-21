@@ -71,7 +71,7 @@ const AssignToStoryButton = ({text, stories}) => {
 
     return (
         <>
-            <Tooltip title="Zu Story hinzufügen">
+            <Tooltip title="Zu anderer Story hinzufügen">
                 <IconButton size="small"
                     onClick={e => { e.stopPropagation(); setAnchor(a => a ? null : e.currentTarget); }}>
                     <AddLinkIcon fontSize="small"/>

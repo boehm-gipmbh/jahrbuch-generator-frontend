@@ -12,9 +12,12 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
+import {api as videoApi} from '../videos/api';
 import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
+import {VideoUploadDialog} from '../videos/VideoUploadDialog';
+import {SortableVideoCard} from '../videos/SortableVideoCard';
 import {
     DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
     PointerSensor, useSensor, useSensors, useDroppable
@@ -114,6 +117,11 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const dispatch = useDispatch();
     const {data: texteData} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
     const {data: bilderData} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
+    const {data: videoData} = videoApi.endpoints.getVideos.useQuery(undefined, {pollingInterval: 10000});
+    const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
+    const [setVideoComplete] = videoApi.endpoints.setComplete.useMutation();
+    const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
+    const {data: storiesData, isSuccess: storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined);
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
@@ -133,7 +141,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     // Clear optimistic state when server data arrives (only when not actively dragging and no reorder pending)
     useEffect(() => {
         if (activeItem === null && !pendingReorderRef.current) updateDragItems(null);
-    }, [texteData, bilderData]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [texteData, bilderData, videoData]); // eslint-disable-line react-hooks/exhaustive-deps
     const [activeItem, setActiveItem] = useState(null);
 
     const updateDragItems = (val) => {
@@ -141,13 +149,18 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         setDragItems(val);
     };
 
+    const filterVideo = video => video.story?.id === story?.id && !video.deleted;
+
     const bildItems = bilderData
         ? Array.from(bilderData).filter(filterBild).map(b => ({type: 'bild', id: `bild-${b.id}`, item: b}))
         : [];
     const textItems = texteData
         ? Array.from(texteData).filter(filterText).map(t => ({type: 'text', id: `text-${t.id}`, item: t}))
         : [];
-    const serverItems = [...bildItems, ...textItems];
+    const videoItems = videoData
+        ? Array.from(videoData).filter(filterVideo).map(v => ({type: 'video', id: `video-${v.id}`, item: v}))
+        : [];
+    const serverItems = [...bildItems, ...textItems, ...videoItems];
     const activeItems = dragItems || serverItems;
 
     const is1col = layout === '1col';
@@ -159,11 +172,31 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
     });
 
-    const renderCard = (type, id, item) => type === 'bild' ? (
+    const renderCard = (type, id, item) => type === 'video' ? (
+        <SortableVideoCard
+            key={id}
+            video={item}
+            story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
+            onSetComplete={(args) => setVideoComplete(args)}
+            onUpdate={(v) => updateVideo(v).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e))}
+            onDelete={() => deleteVideo(item).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e))}
+            onRemoveFromStory={(v) => updateVideo({...v, story: null}).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e))}
+        />
+    ) : type === 'bild' ? (
         <SortableBildCard
             key={id}
             bild={item}
             story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
             onSetComplete={(args) => setBildComplete(args)}
             onRemoveFromStory={(b) => updateBild({...b, story: null}).unwrap()
                 .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
@@ -174,6 +207,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             key={id}
             text={item}
             story={story}
+            storiesLoaded={storiesLoaded}
+            stories={storiesData || []}
             onSetComplete={(args) => setTextComplete(args)}
             onRemoveFromStory={(t) => updateText({...t, story: null}).unwrap()
                 .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
@@ -309,6 +344,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     pendingReorderRef.current = false;
                     dispatch(bilderApi.util.invalidateTags(['Bild']));
                     dispatch(texteApi.util.invalidateTags(['Text']));
+                    dispatch(videoApi.util.invalidateTags(['Video']));
                 })
                 .catch((err) => {
                     pendingReorderRef.current = false;
@@ -365,6 +401,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         </Button>
                     )}
                     <BilderUploadDialog story={story}/>
+                    <VideoUploadDialog story={story}/>
                 </Box>
             </Box>
 
@@ -435,6 +472,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 {activeItem.item.description}
                                             </pre>
                                         )}
+                                    </Box>
+                                ) : activeItem.type === 'video' ? (
+                                    <Box sx={{mb: 2, textAlign: 'center', color: 'text.secondary'}}>
+                                        🎬 Video
                                     </Box>
                                 ) : (
                                     <pre className="wrap-pre" style={{margin: 0}}>

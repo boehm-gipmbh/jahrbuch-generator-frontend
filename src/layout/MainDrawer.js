@@ -28,11 +28,13 @@ import Typography from '@mui/material/Typography';
 import {api as storyApi} from '../stories';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
+import {api as videoApi} from '../videos/api';
 
 const PapierkorbItem = ({disableTooltip}) => {
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
     const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
-    const count = bilderDeleted.length + texteDeleted.length;
+    const {data: videosDeleted = []} = videoApi.endpoints.getPapierkorb.useQuery();
+    const count = bilderDeleted.length + texteDeleted.length + videosDeleted.length;
     const match = Boolean(useMatch('/papierkorb'));
     return (
         <ListItemButton component={Link} to='/papierkorb' selected={match}>
