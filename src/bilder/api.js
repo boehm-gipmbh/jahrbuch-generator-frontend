@@ -59,7 +59,8 @@ export const api = createApi({
                     query: ({bild, complete}) => ({
                         url: `/${bild.id}/complete`,
                         method: 'PUT',
-                        body: JSON.stringify(complete)
+                        body: JSON.stringify(complete),
+                        headers: {'Content-Type': 'application/json'}
                     }),
                     invalidatesTags: ['Bild'],
                 }),

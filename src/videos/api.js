@@ -32,6 +32,7 @@ export const api = createApi({
                 url: `/${video.id}/complete`,
                 method: 'PUT',
                 body: JSON.stringify(complete),
+                headers: {'Content-Type': 'application/json'},
             }),
             invalidatesTags: ['Video'],
         }),
