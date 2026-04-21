@@ -8,6 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddLinkIcon from '@mui/icons-material/AddLink';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {EditBildPriority} from '../bilder/Priority';
@@ -45,7 +46,7 @@ const AssignVideoToStoryButton = ({video, stories}) => {
 
     return (
         <>
-            <Tooltip title="Zu Story hinzufügen">
+            <Tooltip title="Zu anderer Story hinzufügen">
                 <IconButton size="small" onClick={e => setAnchor(e.currentTarget)}>
                     <AddLinkIcon fontSize="small"/>
                 </IconButton>
@@ -77,7 +78,7 @@ const AssignVideoToStoryButton = ({video, stories}) => {
     );
 };
 
-export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
+export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, onRemoveFromStory}) => {
     const [priority, setPriorityState] = useState(video.priority);
     const [lockMsg, setLockMsg] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -133,6 +134,16 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px', zIndex: 1}}>
                     <ButtonGroup size="small">
                         {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
+                        {video.story && onRemoveFromStory && (
+                            <Tooltip title="Aus Story entfernen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                                onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
+                                        <LinkOffIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        )}
                         <Tooltip title="Video löschen">
                             <span onClick={() => isComplete && setLockMsg(true)}>
                                 <IconButton disabled={isComplete} size="small"
