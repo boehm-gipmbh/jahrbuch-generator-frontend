@@ -96,6 +96,7 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
 
 const ReminderSendEntry = ({send}) => {
   const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getReminderSendStatus.useLazyQuery();
+  const shownStatus = statusData?.id === String(send.id) ? statusData.status : send.deliveryStatus;
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 1, py: 0.1}}>
       <Typography variant="caption" color="text.secondary">
@@ -106,7 +107,7 @@ const ReminderSendEntry = ({send}) => {
           <RefreshIcon sx={{fontSize: '0.875rem'}}/>
         </IconButton>
       </Tooltip>
-      {statusData && statusData.id === send.id && deliveryChip(statusData.status)}
+      {shownStatus && deliveryChip(shownStatus)}
     </Box>
   );
 };
@@ -336,17 +337,18 @@ const UserRow = ({user, self, isAdmin, isGroupAdmin, groupId, invToken}) => {
 const deliveryChip = (status) => {
   if (!status || status === 'unknown') return null;
   const map = {
-    sent:       {label: 'Gesendet',   color: 'info'},
-    delivered:  {label: 'Zugestellt', color: 'success'},
-    bounced:    {label: 'Bounced',    color: 'error'},
-    complained: {label: 'Spam',       color: 'warning'},
+    sent:        {label: 'Gesendet',    color: 'info'},
+    delivered:   {label: 'Zugestellt', color: 'success'},
+    bounced:     {label: 'Zurückgewiesen', color: 'error'},
+    suppressed:  {label: 'Gesperrt',   color: 'error'},
+    complained:  {label: 'Spam',       color: 'warning'},
   };
   const cfg = map[status];
   return cfg ? <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/> : null;
 };
 
 const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
-  const [fetchStatus, {data: statusData, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
+  const [fetchStatus, {data: liveStatus, isFetching}] = api.endpoints.getSendStatus.useLazyQuery();
   const [deleteSend] = api.endpoints.deleteSend.useMutation();
 
   const regMember = members.find(u => u.email === s.sentTo);
@@ -357,6 +359,8 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
   const isInvalid = s.status === 'invalid';
   const isAlreadyRegistered = s.status === 'already_registered';
   const isRegisteredNotInGroup = s.status === 'registered_not_in_group';
+  const shownDeliveryStatus = liveStatus?.status || s.deliveryStatus;
+  const deliveryFailed = ['bounced', 'suppressed', 'complained'].includes(shownDeliveryStatus);
 
   return (
     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, pl: 2, py: 0.1, flexWrap: 'wrap'}}>
@@ -365,12 +369,13 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
           {new Date(s.sentAt).toLocaleString()}
         </Typography>
       )}
+      {deliveryChip(shownDeliveryStatus)}
       {isInvalid
-        ? <Chip label="Ungültig" size="small" color="error" variant="outlined"/>
+        ? <Chip label="Ungültig" size="small" color="error" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
         : isAlreadyRegistered
-          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined"/>
+          ? <Chip label={regName ? `Bereits in der Gruppe (${regName})` : 'Bereits in der Gruppe'} size="small" color="success" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
           : isRegisteredNotInGroup || (hasAccount && !inGroup)
-          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>}/>
+          ? <><Chip label={regName ? `Konto vorhanden (${regName}), nicht in Gruppe` : 'Konto vorhanden, nicht in Gruppe'} size="small" color="warning" variant="outlined" icon={<WarningAmberIcon/>} sx={{fontSize: '0.65rem', height: 18}}/>
               {canAct && s.id && (
                 <Tooltip title="Einladung erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
@@ -379,9 +384,9 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                 </Tooltip>
               )}</>
           : inGroup
-          ? <><Chip label={regName} size="small" color="success" variant="outlined"/>
-              {!regActive && <Chip label="Gesperrt" size="small" color="error"/>}</>
-          : <><Chip label="Noch nicht registriert" size="small" variant="outlined"/>
+          ? <><Chip label={regName} size="small" color="success" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
+              {!regActive && <Chip label="Gesperrt" size="small" color="error" sx={{fontSize: '0.65rem', height: 18}}/>}</>
+          : !deliveryFailed && <><Chip label="Noch nicht registriert" size="small" color="warning" variant="outlined" sx={{fontSize: '0.65rem', height: 18}}/>
               {canAct && s.id && (
                 <Tooltip title="Erneut senden">
                   <IconButton size="small" onClick={() => resendInvitation({id: inv.id, recipientEmail: s.sentTo})}>
@@ -390,13 +395,12 @@ const SendHistoryEntry = ({s, inv, members, canAct, resendInvitation}) => {
                 </Tooltip>
               )}</>}
       {!isInvalid && s.id && canAct && (
-        <Tooltip title="Zustellstatus abrufen">
+        <Tooltip title="Zustellstatus aktualisieren">
           <IconButton size="small" disabled={isFetching} onClick={() => fetchStatus(s.id)}>
             <RefreshIcon sx={{fontSize: '0.875rem'}}/>
           </IconButton>
         </Tooltip>
       )}
-      {statusData && deliveryChip(statusData.status)}
       {s.id && canAct && (
         <Tooltip title="Eintrag löschen">
           <IconButton size="small" onClick={() => deleteSend(s.id)}>
@@ -724,9 +728,24 @@ export const Invitations = () => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
-  const isGroupAdmin = !isAdmin && self?.roles?.includes('group-admin');
-  const groupName = isGroupAdmin ? self?.groups?.[0]?.name : null;
-  const groupId = isGroupAdmin ? self?.groups?.[0]?.id : null;
+  const hasGroupAdminRole = !isAdmin && self?.roles?.includes('group-admin');
+  const isGroupAdmin = hasGroupAdminRole && self?.activeGroup != null;
+  const groupName = isGroupAdmin ? self?.activeGroup?.name : null;
+  const groupId = isGroupAdmin ? self?.activeGroup?.id : null;
+
+  if (hasGroupAdminRole && !isGroupAdmin) {
+    return (
+      <Layout>
+        <Container sx={{mt: 2}}>
+          <Paper sx={{p: 2}}>
+            <Typography color="text.secondary">
+              Wechseln Sie zu Ihrer verwalteten Gruppe um Einladungen zu verwalten.
+            </Typography>
+          </Paper>
+        </Container>
+      </Layout>
+    );
+  }
 
   const toggleExpanded = (key) => setExpanded(prev => ({...prev, [key]: !prev[key]}));
 

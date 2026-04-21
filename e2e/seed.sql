@@ -144,6 +144,8 @@ INSERT INTO user_roles (id, role)
 SELECT id, 'user' FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
 INSERT INTO user_groups (user_id, group_id)
 SELECT id, 1 FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
+INSERT INTO user_managed_groups (user_id, group_id)
+SELECT id, 1 FROM users WHERE name = 'ddet' ON CONFLICT DO NOTHING;
 
 -- Playwright-Einladungs-Testdaten aus Vorläufen bereinigen
 DELETE FROM user_groups WHERE user_id IN (SELECT id FROM users WHERE name LIKE 'pwtest%');
