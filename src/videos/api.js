@@ -1,0 +1,30 @@
+import {createApi} from '@reduxjs/toolkit/query/react';
+import {authBaseQuery} from '../auth';
+
+export const api = createApi({
+    reducerPath: 'videos',
+    baseQuery: authBaseQuery({path: 'videos'}),
+    tagTypes: ['Video'],
+    endpoints: builder => ({
+        uploadVideo: builder.mutation({
+            query: formData => ({
+                url: '/upload',
+                method: 'POST',
+                body: formData,
+                formData: true,
+            }),
+            invalidatesTags: ['Video'],
+        }),
+        getVideos: builder.query({
+            query: () => '/',
+            providesTags: ['Video'],
+        }),
+        deleteVideo: builder.mutation({
+            query: video => ({
+                url: `/${video.id}`,
+                method: 'DELETE',
+            }),
+            invalidatesTags: ['Video'],
+        }),
+    }),
+});

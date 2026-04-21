@@ -12,9 +12,12 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
+import {api as videoApi} from '../videos/api';
 import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
+import {VideoUploadDialog} from '../videos/VideoUploadDialog';
+import AuthVideo from '../videos/AuthVideo';
 import {
     DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
     PointerSensor, useSensor, useSensors, useDroppable
@@ -114,6 +117,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const dispatch = useDispatch();
     const {data: texteData} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
     const {data: bilderData} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
+    const {data: videoData} = videoApi.endpoints.getVideos.useQuery(undefined, {pollingInterval: 10000});
+    const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
@@ -141,11 +146,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         setDragItems(val);
     };
 
+    const filterVideo = video => video.story?.id === story?.id && !video.deleted;
+
     const bildItems = bilderData
         ? Array.from(bilderData).filter(filterBild).map(b => ({type: 'bild', id: `bild-${b.id}`, item: b}))
         : [];
     const textItems = texteData
         ? Array.from(texteData).filter(filterText).map(t => ({type: 'text', id: `text-${t.id}`, item: t}))
+        : [];
+    const videoItems = videoData
+        ? Array.from(videoData).filter(filterVideo).map(v => ({type: 'video', id: `video-${v.id}`, item: v}))
         : [];
     const serverItems = [...bildItems, ...textItems];
     const activeItems = dragItems || serverItems;
@@ -158,6 +168,28 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         if (colDiff !== 0) return colDiff;
         return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
     });
+
+    const videosByCol = (colIdx) => videoItems
+        .filter(v => (v.item.storyColumn ?? 0) === colIdx)
+        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+    const renderVideoCard = (video) => (
+        <Box key={`video-${video.id}`} sx={{mb: 1}}>
+            <Typography variant="subtitle2" sx={{mb: 0.5}}>{video.title}</Typography>
+            <AuthVideo
+                src={`/api/v1/videos/extern${video.pfad}`}
+                style={{width: '100%', maxHeight: 240, display: 'block', borderRadius: 4}}
+            />
+            {video.description && (
+                <Typography variant="body2" sx={{mt: 0.5, color: 'text.secondary'}}>{video.description}</Typography>
+            )}
+            <Button size="small" color="error" onClick={() => deleteVideo(video).unwrap()
+                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
+                .catch(e => console.error(e))}>
+                Entfernen
+            </Button>
+        </Box>
+    );
 
     const renderCard = (type, id, item) => type === 'bild' ? (
         <SortableBildCard
@@ -365,6 +397,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         </Button>
                     )}
                     <BilderUploadDialog story={story}/>
+                    <VideoUploadDialog story={story}/>
                 </Box>
             </Box>
 
@@ -388,6 +421,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                 {itemsSorted1col.map(({type, id, item}) => (
                                     <Box key={id}>{renderCard(type, id, item)}</Box>
                                 ))}
+                                {videoItems.map(({item}) => renderVideoCard(item))}
                             </Box>
                         </SortableContext>
                     ) : (
@@ -408,6 +442,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                             {colItems.map(({type, id, item}) => (
                                                 <Box key={id}>{renderCard(type, id, item)}</Box>
                                             ))}
+                                            {videosByCol(colIdx).map(({item}) => renderVideoCard(item))}
                                         </DroppableColumn>
                                     </SortableContext>
                                 );

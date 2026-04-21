@@ -5,6 +5,7 @@ import {api as storyApi} from './stories';
 import {api as bildApi} from './bilder';
 import {api as userApi} from './users';
 import {api as textApi} from './texte';
+import {api as videoApi} from './videos/api';
 
 const appReducer = combineReducers({
     auth: authReducer,
@@ -12,7 +13,8 @@ const appReducer = combineReducers({
     [storyApi.reducerPath]: storyApi.reducer,
     [bildApi.reducerPath]: bildApi.reducer,
     [userApi.reducerPath]: userApi.reducer,
-    [textApi.reducerPath]: textApi.reducer
+    [textApi.reducerPath]: textApi.reducer,
+    [videoApi.reducerPath]: videoApi.reducer,
 });
 
 const rootReducer = (state, action) => {
@@ -29,5 +31,6 @@ export const store = configureStore({
         .concat(bildApi.middleware)
         .concat(userApi.middleware)
         .concat(textApi.middleware)
+        .concat(videoApi.middleware)
 });
 
