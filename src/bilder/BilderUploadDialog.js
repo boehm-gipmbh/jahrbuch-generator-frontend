@@ -8,92 +8,97 @@ import {
     TextField,
     Box,
     Typography,
-    Alert
+    Alert,
+    LinearProgress,
+    List,
+    ListItem,
+    ListItemText,
 } from '@mui/material';
 import UploadIcon from '@mui/icons-material/Upload';
 import {api as bilderApi} from './api';
 
+const CONCURRENCY = 3;
+
 export const BilderUploadDialog = ({ story }) => {
     const [open, setOpen] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [error, setError] = useState('');
+    const [validationErrors, setValidationErrors] = useState([]);
+    const [progress, setProgress] = useState({ done: 0, total: 0, errors: [] });
+    const [uploading, setUploading] = useState(false);
 
-    // Konfiguration für Upload-Beschränkungen
     const [uploadConfig, setUploadConfig] = useState({
-        maxSize: 2097152, // 2MB Fallback
-        allowedTypes: ['.jpg', '.jpeg', '.png', '.gif'] // Fallback
+        maxSize: 2097152,
+        allowedTypes: ['.jpg', '.jpeg', '.png', '.gif']
     });
 
     const [uploadBild] = bilderApi.endpoints.uploadBild.useMutation();
-    const {data: config} = bilderApi.endpoints.getUploadConfig.useQuery(null, {
-        skip: !open
-    });
+    const {data: config} = bilderApi.endpoints.getUploadConfig.useQuery(null, { skip: !open });
 
     useEffect(() => {
-        if (config) {
-            setUploadConfig(config);
-        }
+        if (config) setUploadConfig(config);
     }, [config]);
 
     const validateFile = (file) => {
-        if (!file) return null;
-
-        // Größenvalidierung
-        if (file.size > uploadConfig.maxSize) {
-            return `Die Datei ist zu groß. Maximale Größe: ${uploadConfig.maxSize / 1024 / 1024}MB`;
-        }
-
-        // Typ-Validierung
-        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        if (!uploadConfig.allowedTypes.includes(fileExtension)) {
-            return `Nicht unterstütztes Dateiformat. Erlaubte Formate: ${uploadConfig.allowedTypes.join(', ')}`;
-        }
-
+        if (file.size > uploadConfig.maxSize)
+            return `${file.name}: zu groß (max. ${uploadConfig.maxSize / 1024 / 1024} MB)`;
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!uploadConfig.allowedTypes.includes(ext))
+            return `${file.name}: Format nicht erlaubt (${uploadConfig.allowedTypes.join(', ')})`;
         return null;
     };
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        setSelectedFile(file);
 
-        // Validierung bei Dateiauswahl
-        const errorMsg = validateFile(file);
-        setError(errorMsg);
+    const handleFileChange = (event) => {
+        const files = Array.from(event.target.files);
+        setSelectedFiles(files);
+        setValidationErrors(files.map(validateFile).filter(Boolean));
+        setProgress({ done: 0, total: 0, errors: [] });
+    };
+
+    const handleClose = () => {
+        if (uploading) return;
+        setOpen(false);
+        setSelectedFiles([]);
+        setTitle('');
+        setDescription('');
+        setValidationErrors([]);
+        setProgress({ done: 0, total: 0, errors: [] });
+    };
+
+    const uploadSingle = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', selectedFiles.length === 1 ? title : file.name.replace(/\.[^/.]+$/, ''));
+        if (selectedFiles.length === 1) formData.append('description', description);
+        if (story?.id) formData.append('storyId', story.id);
+        await uploadBild(formData).unwrap();
     };
 
     const handleUpload = async () => {
-        if (!selectedFile) return;
+        if (selectedFiles.length === 0 || validationErrors.length > 0) return;
+        setUploading(true);
+        const errors = [];
+        let done = 0;
+        setProgress({ done: 0, total: selectedFiles.length, errors: [] });
 
-        // Nochmalige Validierung vor dem Upload
-        const errorMsg = validateFile(selectedFile);
-        if (errorMsg) {
-            setError(errorMsg);
-            return;
+        for (let i = 0; i < selectedFiles.length; i += CONCURRENCY) {
+            const batch = selectedFiles.slice(i, i + CONCURRENCY);
+            const results = await Promise.allSettled(batch.map(f => uploadSingle(f)));
+            results.forEach((r, idx) => {
+                if (r.status === 'rejected')
+                    errors.push(`${batch[idx].name}: ${r.reason?.data?.message || 'Fehler'}`);
+            });
+            done += batch.length;
+            setProgress({ done, total: selectedFiles.length, errors: [...errors] });
         }
 
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('title', title);
-        formData.append('description', description);
-
-        // Story-ID hinzufügen, wenn eine Story vorhanden ist
-        if (story?.id) {
-            formData.append('storyId', story.id);
-        }
-
-        try {
-            await uploadBild(formData).unwrap();
-            setOpen(false);
-            setSelectedFile(null);
-            setTitle('');
-            setDescription('');
-            setError('');
-        } catch (error) {
-            console.error('Upload fehlgeschlagen:', error);
-            setError('Upload fehlgeschlagen: ' + (error.data?.message || error.message || 'Unbekannter Fehler'));
-        }
+        setUploading(false);
+        if (errors.length === 0) handleClose();
     };
+
+    const isBulk = selectedFiles.length > 1;
+    const canUpload = selectedFiles.length > 0 && validationErrors.length === 0 && !uploading;
 
     return (
         <>
@@ -101,34 +106,46 @@ export const BilderUploadDialog = ({ story }) => {
                 Bild hochladen
             </Button>
 
-            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Bild hochladen</DialogTitle>
+            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+                <DialogTitle>{isBulk ? `${selectedFiles.length} Bilder hochladen` : 'Bild hochladen'}</DialogTitle>
                 <DialogContent>
                     <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 1}}>
-                        {error && <Alert severity="error">{error}</Alert>}
+                        {validationErrors.map((e, i) => <Alert key={i} severity="error">{e}</Alert>)}
+                        {progress.errors.map((e, i) => <Alert key={i} severity="error">{e}</Alert>)}
 
-                        <Button
-                            variant="outlined"
-                            component="label"
-                        >
-                            Datei auswählen
+                        <Button variant="outlined" component="label">
+                            Dateien auswählen
                             <input
                                 type="file"
                                 accept={uploadConfig.allowedTypes.join(',')}
                                 hidden
+                                multiple
                                 onChange={handleFileChange}
                             />
                         </Button>
 
-                        {selectedFile && (
-                            <Box sx={{mt: 1}}>
+                        {isBulk && selectedFiles.length > 0 && (
+                            <List dense disablePadding>
+                                {selectedFiles.map((f, i) => (
+                                    <ListItem key={i} disableGutters>
+                                        <ListItemText
+                                            primary={f.name}
+                                            secondary={`${(f.size / 1024).toFixed(1)} KB`}
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
+
+                        {!isBulk && selectedFiles[0] && (
+                            <Box>
                                 <Typography variant="body2">
-                                    Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                                    {selectedFiles[0].name} ({(selectedFiles[0].size / 1024).toFixed(2)} KB)
                                 </Typography>
-                                {selectedFile.type.startsWith('image/') && (
+                                {selectedFiles[0].type.startsWith('image/') && (
                                     <Box sx={{mt: 1}}>
                                         <img
-                                            src={URL.createObjectURL(selectedFile)}
+                                            src={URL.createObjectURL(selectedFiles[0])}
                                             alt="Vorschau"
                                             style={{maxWidth: '100%', maxHeight: 200}}
                                         />
@@ -137,31 +154,27 @@ export const BilderUploadDialog = ({ story }) => {
                             </Box>
                         )}
 
-                        <TextField
-                            label="Titel"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            fullWidth
-                        />
+                        {!isBulk && (
+                            <>
+                                <TextField label="Titel" value={title} onChange={e => setTitle(e.target.value)} fullWidth />
+                                <TextField label="Beschreibung" value={description} onChange={e => setDescription(e.target.value)} multiline rows={3} fullWidth />
+                            </>
+                        )}
 
-                        <TextField
-                            label="Beschreibung"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            multiline
-                            rows={3}
-                            fullWidth
-                        />
+                        {uploading && (
+                            <Box>
+                                <Typography variant="body2" sx={{mb: 0.5}}>
+                                    {progress.done} von {progress.total} hochgeladen
+                                </Typography>
+                                <LinearProgress variant="determinate" value={(progress.done / progress.total) * 100} />
+                            </Box>
+                        )}
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)}>Abbrechen</Button>
-                    <Button
-                        onClick={handleUpload}
-                        variant="contained"
-                        disabled={!selectedFile || !!error}
-                    >
-                        Hochladen
+                    <Button onClick={handleClose} disabled={uploading}>Abbrechen</Button>
+                    <Button onClick={handleUpload} variant="contained" disabled={!canUpload}>
+                        {isBulk ? `${selectedFiles.length} Bilder hochladen` : 'Hochladen'}
                     </Button>
                 </DialogActions>
             </Dialog>
