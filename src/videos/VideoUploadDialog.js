@@ -79,15 +79,18 @@ export const VideoUploadDialog = ({story}) => {
         xhr.send(formData);
     });
 
-    const sendChunkWithRetry = async (formData, chunkIndex, maxRetries = 3) => {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const sendChunkWithRetry = async (formData, chunkIndex) => {
+        const backoff = [5, 15, 30, 60, 120];
+        for (let attempt = 0; attempt <= backoff.length; attempt++) {
             try {
                 return await sendChunk(formData);
             } catch (err) {
-                if (attempt === maxRetries) throw err;
-                const waitSec = attempt * 3;
-                setStatusText(`Chunk ${chunkIndex + 1} Fehler – Wiederhole in ${waitSec}s… (Versuch ${attempt}/${maxRetries})`);
-                await new Promise(r => setTimeout(r, waitSec * 1000));
+                if (attempt === backoff.length) throw err;
+                const waitSec = backoff[attempt];
+                for (let remaining = waitSec; remaining > 0; remaining--) {
+                    setStatusText(`Chunk ${chunkIndex + 1} Fehler – Wiederhole in ${remaining}s… (${attempt + 1}/${backoff.length})`);
+                    await new Promise(r => setTimeout(r, 1000));
+                }
             }
         }
     };
