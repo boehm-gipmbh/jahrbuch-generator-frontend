@@ -17,6 +17,7 @@ import {api as videoApi} from './api';
 
 const ALLOWED_TYPES = ['.mp4', '.mov', '.webm', '.avi'];
 const MAX_SIZE_BYTES = 524288000; // 500 MB
+const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB pro Chunk
 
 export const VideoUploadDialog = ({story}) => {
     const dispatch = useDispatch();
@@ -28,6 +29,7 @@ export const VideoUploadDialog = ({story}) => {
     const [error, setError] = useState('');
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [statusText, setStatusText] = useState('');
 
     const validateFile = (file) => {
         if (!file) return null;
@@ -55,62 +57,74 @@ export const VideoUploadDialog = ({story}) => {
         setDescription('');
         setError('');
         setProgress(0);
+        setStatusText('');
     };
 
-    const handleUpload = () => {
+    const sendChunk = (formData) => new Promise((resolve, reject) => {
+        const apiUrl = process.env.REACT_APP_API_URL || '';
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${apiUrl}/videos/upload/chunk`);
+        xhr.setRequestHeader('Authorization', `Bearer ${jwt}`);
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(JSON.parse(xhr.responseText));
+            } else {
+                let msg = `HTTP ${xhr.status}`;
+                try { msg = JSON.parse(xhr.responseText).message || msg; } catch (_) {}
+                reject(new Error(msg));
+            }
+        };
+        xhr.onerror = () => reject(new Error('Netzwerkfehler'));
+        xhr.ontimeout = () => reject(new Error('Timeout'));
+        xhr.send(formData);
+    });
+
+    const handleUpload = async () => {
         if (!selectedFile) return;
         const errorMsg = validateFile(selectedFile);
         if (errorMsg) { setError(errorMsg); return; }
 
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('title', title);
-        formData.append('description', description);
-        if (story?.id) formData.append('storyId', story.id);
-
-        const apiUrl = process.env.REACT_APP_API_URL || '';
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${apiUrl}/videos/upload`);
-        xhr.setRequestHeader('Authorization', `Bearer ${jwt}`);
-
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                setProgress(Math.round((e.loaded / e.total) * 100));
-            }
-        };
-
-        xhr.onload = () => {
-            setUploading(false);
-            if (xhr.status >= 200 && xhr.status < 300) {
-                dispatch(videoApi.util.invalidateTags(['Video']));
-                handleClose();
-            } else {
-                let msg = `HTTP ${xhr.status}`;
-                try {
-                    const body = JSON.parse(xhr.responseText);
-                    msg = body.message || msg;
-                } catch (_) {}
-                setError(`Upload fehlgeschlagen: ${msg}`);
-                setProgress(0);
-            }
-        };
-
-        xhr.onerror = () => {
-            setUploading(false);
-            setError('Upload fehlgeschlagen: Netzwerkfehler');
-            setProgress(0);
-        };
-
-        xhr.ontimeout = () => {
-            setUploading(false);
-            setError('Upload fehlgeschlagen: Timeout');
-            setProgress(0);
-        };
-
         setUploading(true);
         setError('');
         setProgress(0);
-        xhr.send(formData);
+
+        const uploadId = crypto.randomUUID();
+        const totalChunks = Math.ceil(selectedFile.size / CHUNK_SIZE);
+
+        try {
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, selectedFile.size);
+                const chunk = selectedFile.slice(start, end);
+
+                setStatusText(`Chunk ${i + 1} von ${totalChunks} (${Math.round(end / 1024 / 1024)} MB)…`);
+
+                const formData = new FormData();
+                formData.append('uploadId', uploadId);
+                formData.append('chunkIndex', i);
+                formData.append('totalChunks', totalChunks);
+                formData.append('fileName', selectedFile.name);
+                formData.append('file', chunk, selectedFile.name);
+
+                if (i === totalChunks - 1) {
+                    formData.append('title', title);
+                    formData.append('description', description);
+                    if (story?.id) formData.append('storyId', story.id);
+                }
+
+                await sendChunk(formData);
+                setProgress(Math.round(((i + 1) / totalChunks) * 100));
+            }
+
+            dispatch(videoApi.util.invalidateTags(['Video']));
+            handleClose();
+        } catch (err) {
+            setError('Upload fehlgeschlagen: ' + (err.message || 'Unbekannter Fehler'));
+            setProgress(0);
+            setStatusText('');
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -137,7 +151,8 @@ export const VideoUploadDialog = ({story}) => {
 
                         {selectedFile && (
                             <Typography variant="body2">
-                                Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                                Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB
+                                {selectedFile.size > CHUNK_SIZE && ` · ${Math.ceil(selectedFile.size / CHUNK_SIZE)} Chunks à 10 MB`})
                             </Typography>
                         )}
 
@@ -162,7 +177,7 @@ export const VideoUploadDialog = ({story}) => {
                         {uploading && (
                             <Box>
                                 <Typography variant="body2" sx={{mb: 0.5}}>
-                                    {progress}% hochgeladen…
+                                    {progress}% — {statusText}
                                 </Typography>
                                 <LinearProgress variant="determinate" value={progress}/>
                             </Box>
