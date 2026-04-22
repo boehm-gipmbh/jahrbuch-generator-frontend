@@ -17,7 +17,7 @@ import {api as videoApi} from './api';
 
 const ALLOWED_TYPES = ['.mp4', '.mov', '.webm', '.avi'];
 const MAX_SIZE_BYTES = 524288000; // 500 MB
-const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB pro Chunk
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB pro Chunk
 
 export const VideoUploadDialog = ({story}) => {
     const dispatch = useDispatch();
@@ -80,17 +80,13 @@ export const VideoUploadDialog = ({story}) => {
     });
 
     const sendChunkWithRetry = async (formData, chunkIndex) => {
-        const backoff = [5, 15, 30, 60, 120];
-        for (let attempt = 0; attempt <= backoff.length; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
             try {
                 return await sendChunk(formData);
             } catch (err) {
-                if (attempt === backoff.length) throw err;
-                const waitSec = backoff[attempt];
-                for (let remaining = waitSec; remaining > 0; remaining--) {
-                    setStatusText(`Chunk ${chunkIndex + 1} Fehler – Wiederhole in ${remaining}s… (${attempt + 1}/${backoff.length})`);
-                    await new Promise(r => setTimeout(r, 1000));
-                }
+                if (attempt === 4) throw err;
+                setStatusText(`Chunk ${chunkIndex + 1} wird wiederholt…`);
+                await new Promise(r => setTimeout(r, 1500));
             }
         }
     };
@@ -168,7 +164,7 @@ export const VideoUploadDialog = ({story}) => {
                         {selectedFile && (
                             <Typography variant="body2">
                                 Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB
-                                {selectedFile.size > CHUNK_SIZE && ` · ${Math.ceil(selectedFile.size / CHUNK_SIZE)} Chunks à 10 MB`})
+                                {selectedFile.size > CHUNK_SIZE && ` · ${Math.ceil(selectedFile.size / CHUNK_SIZE)} Chunks`})
                             </Typography>
                         )}
 
