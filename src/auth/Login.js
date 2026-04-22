@@ -43,7 +43,7 @@ export const Login = () => {
         </Typography>
         <Box noValidate sx={{ mt: 1 }}>
           <TextField margin='normal' required fullWidth autoFocus
-            label='Username' name='username' onChange={onChange} value={values.username}
+            label='Username oder E-Mail' name='username' onChange={onChange} value={values.username}
           />
           <TextField type='password' margin='normal' required fullWidth
             label='Password' name='password' onChange={onChange} value={values.password}
