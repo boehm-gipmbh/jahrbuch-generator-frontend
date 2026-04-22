@@ -79,6 +79,19 @@ export const VideoUploadDialog = ({story}) => {
         xhr.send(formData);
     });
 
+    const sendChunkWithRetry = async (formData, chunkIndex, maxRetries = 3) => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await sendChunk(formData);
+            } catch (err) {
+                if (attempt === maxRetries) throw err;
+                const waitSec = attempt * 3;
+                setStatusText(`Chunk ${chunkIndex + 1} Fehler – Wiederhole in ${waitSec}s… (Versuch ${attempt}/${maxRetries})`);
+                await new Promise(r => setTimeout(r, waitSec * 1000));
+            }
+        }
+    };
+
     const handleUpload = async () => {
         if (!selectedFile) return;
         const errorMsg = validateFile(selectedFile);
@@ -112,7 +125,7 @@ export const VideoUploadDialog = ({story}) => {
                     if (story?.id) formData.append('storyId', story.id);
                 }
 
-                await sendChunk(formData);
+                await sendChunkWithRetry(formData, i);
                 setProgress(Math.round(((i + 1) / totalChunks) * 100));
             }
 
