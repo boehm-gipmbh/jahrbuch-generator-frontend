@@ -148,17 +148,17 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             </Typography>
                         </Tooltip>
                     )}
-                    <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
+                    <Box sx={{mb: 1}}>
                         <AuthVideo
                             src={`/api/v1/videos/extern${video.pfad}`}
-                            style={{maxWidth: '100%', maxHeight: 200}}
+                            style={{width: '100%', height: 'auto', display: 'block'}}
                         />
                     </Box>
                     {editField === 'description' ? (
                         <TextField autoFocus size="small" multiline value={editValue}
                             onChange={e => setEditValue(e.target.value)}
                             onBlur={commitEdit} onKeyDown={handleKeyDown}
-                            fullWidth sx={{mb: 5}}
+                            fullWidth sx={{mb: 1}}
                             inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.95rem'}}}
                             InputProps={{endAdornment: editValue ? (
                                 <InputAdornment position="end">
@@ -171,7 +171,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                             <pre className="wrap-pre" onClick={() => startEdit('description')}
                                 style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
-                                    marginBottom: 40,
+                                    marginBottom: 8,
                                     border: !video.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                     borderRadius: 4,
                                     padding: '8.5px 14px',
@@ -180,40 +180,39 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             </pre>
                         </Tooltip>
                     )}
-                    {!Boolean(story) && video.story && (
-                        <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
-                            <Chip
-                                label={video.story.name}
-                                size="small"
-                                onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
-                            />
+                    {/* Aktionen + Story-Chip */}
+                    <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto'}}>
+                        <Box>
+                            {!Boolean(story) && video.story && (
+                                <Chip
+                                    label={video.story.name}
+                                    size="small"
+                                    onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
+                                />
+                            )}
                         </Box>
-                    )}
-                </Box>
-
-                {/* Aktionen unten rechts */}
-                <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px', zIndex: 1}}>
-                    <ButtonGroup size="small">
-                        {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
-                        {video.story && onRemoveFromStory && (
-                            <Tooltip title="Aus Story entfernen">
+                        <ButtonGroup size="small">
+                            {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
+                            {video.story && onRemoveFromStory && (
+                                <Tooltip title="Aus Story entfernen">
+                                    <span onClick={() => isComplete && setLockMsg(true)}>
+                                        <IconButton disabled={isComplete} size="small"
+                                                    onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
+                                            <LinkOffIcon fontSize="small"/>
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            )}
+                            <Tooltip title="Video löschen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>
                                     <IconButton disabled={isComplete} size="small"
-                                                onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
-                                        <LinkOffIcon fontSize="small"/>
+                                                onClick={e => { e.stopPropagation(); setDeleteConfirm(true); }}>
+                                        <DeleteIcon fontSize="small"/>
                                     </IconButton>
                                 </span>
                             </Tooltip>
-                        )}
-                        <Tooltip title="Video löschen">
-                            <span onClick={() => isComplete && setLockMsg(true)}>
-                                <IconButton disabled={isComplete} size="small"
-                                            onClick={e => { e.stopPropagation(); setDeleteConfirm(true); }}>
-                                    <DeleteIcon fontSize="small"/>
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </ButtonGroup>
+                        </ButtonGroup>
+                    </Box>
                 </Box>
             </Paper>
             <Snackbar open={lockMsg} autoHideDuration={2500} onClose={() => setLockMsg(false)}
