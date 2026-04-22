@@ -29,17 +29,14 @@ export const VideoUploadDialog = ({story}) => {
     const [error, setError] = useState('');
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [statusText, setStatusText] = useState('');
 
     const validateFile = (file) => {
         if (!file) return null;
-        if (file.size > MAX_SIZE_BYTES) {
+        if (file.size > MAX_SIZE_BYTES)
             return `Die Datei ist zu groß. Maximale Größe: ${MAX_SIZE_BYTES / 1024 / 1024} MB`;
-        }
         const ext = '.' + file.name.split('.').pop().toLowerCase();
-        if (!ALLOWED_TYPES.includes(ext)) {
+        if (!ALLOWED_TYPES.includes(ext))
             return `Nicht unterstütztes Format. Erlaubt: ${ALLOWED_TYPES.join(', ')}`;
-        }
         return null;
     };
 
@@ -57,7 +54,6 @@ export const VideoUploadDialog = ({story}) => {
         setDescription('');
         setError('');
         setProgress(0);
-        setStatusText('');
     };
 
     const sendChunk = (formData) => new Promise((resolve, reject) => {
@@ -79,13 +75,12 @@ export const VideoUploadDialog = ({story}) => {
         xhr.send(formData);
     });
 
-    const sendChunkWithRetry = async (formData, chunkIndex) => {
+    const sendChunkWithRetry = async (formData) => {
         for (let attempt = 0; attempt < 5; attempt++) {
             try {
                 return await sendChunk(formData);
             } catch (err) {
                 if (attempt === 4) throw err;
-                setStatusText(`Chunk ${chunkIndex + 1} wird wiederholt…`);
                 await new Promise(r => setTimeout(r, 1500));
             }
         }
@@ -107,16 +102,13 @@ export const VideoUploadDialog = ({story}) => {
             for (let i = 0; i < totalChunks; i++) {
                 const start = i * CHUNK_SIZE;
                 const end = Math.min(start + CHUNK_SIZE, selectedFile.size);
-                const chunk = selectedFile.slice(start, end);
-
-                setStatusText(`Chunk ${i + 1} von ${totalChunks} (${Math.round(end / 1024 / 1024)} MB)…`);
 
                 const formData = new FormData();
                 formData.append('uploadId', uploadId);
                 formData.append('chunkIndex', i);
                 formData.append('totalChunks', totalChunks);
                 formData.append('fileName', selectedFile.name);
-                formData.append('file', chunk, selectedFile.name);
+                formData.append('file', selectedFile.slice(start, end), selectedFile.name);
 
                 if (i === totalChunks - 1) {
                     formData.append('title', title);
@@ -124,7 +116,7 @@ export const VideoUploadDialog = ({story}) => {
                     if (story?.id) formData.append('storyId', story.id);
                 }
 
-                await sendChunkWithRetry(formData, i);
+                await sendChunkWithRetry(formData);
                 setProgress(Math.round(((i + 1) / totalChunks) * 100));
             }
 
@@ -133,7 +125,6 @@ export const VideoUploadDialog = ({story}) => {
         } catch (err) {
             setError('Upload fehlgeschlagen: ' + (err.message || 'Unbekannter Fehler'));
             setProgress(0);
-            setStatusText('');
         } finally {
             setUploading(false);
         }
@@ -163,8 +154,7 @@ export const VideoUploadDialog = ({story}) => {
 
                         {selectedFile && (
                             <Typography variant="body2">
-                                Ausgewählt: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB
-                                {selectedFile.size > CHUNK_SIZE && ` · ${Math.ceil(selectedFile.size / CHUNK_SIZE)} Chunks`})
+                                {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
                             </Typography>
                         )}
 
@@ -188,9 +178,7 @@ export const VideoUploadDialog = ({story}) => {
 
                         {uploading && (
                             <Box>
-                                <Typography variant="body2" sx={{mb: 0.5}}>
-                                    {progress}% — {statusText}
-                                </Typography>
+                                <Typography variant="body2" sx={{mb: 0.5}}>{progress}%</Typography>
                                 <LinearProgress variant="determinate" value={progress}/>
                             </Box>
                         )}
