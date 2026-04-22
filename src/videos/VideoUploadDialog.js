@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {
     Button,
     Dialog,
@@ -9,7 +9,8 @@ import {
     TextField,
     Box,
     Typography,
-    Alert
+    Alert,
+    LinearProgress
 } from '@mui/material';
 import UploadIcon from '@mui/icons-material/Upload';
 import {api as videoApi} from './api';
@@ -19,13 +20,14 @@ const MAX_SIZE_BYTES = 524288000; // 500 MB
 
 export const VideoUploadDialog = ({story}) => {
     const dispatch = useDispatch();
+    const jwt = useSelector(state => state.auth.jwt);
     const [open, setOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [error, setError] = useState('');
-
-    const [uploadVideo] = videoApi.endpoints.uploadVideo.useMutation();
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     const validateFile = (file) => {
         if (!file) return null;
@@ -45,7 +47,17 @@ export const VideoUploadDialog = ({story}) => {
         setError(validateFile(file) || '');
     };
 
-    const handleUpload = async () => {
+    const handleClose = () => {
+        if (uploading) return;
+        setOpen(false);
+        setSelectedFile(null);
+        setTitle('');
+        setDescription('');
+        setError('');
+        setProgress(0);
+    };
+
+    const handleUpload = () => {
         if (!selectedFile) return;
         const errorMsg = validateFile(selectedFile);
         if (errorMsg) { setError(errorMsg); return; }
@@ -56,17 +68,49 @@ export const VideoUploadDialog = ({story}) => {
         formData.append('description', description);
         if (story?.id) formData.append('storyId', story.id);
 
-        try {
-            await uploadVideo(formData).unwrap();
-            dispatch(videoApi.util.invalidateTags(['Video']));
-            setOpen(false);
-            setSelectedFile(null);
-            setTitle('');
-            setDescription('');
-            setError('');
-        } catch (err) {
-            setError('Upload fehlgeschlagen: ' + (err.data?.message || err.message || 'Unbekannter Fehler'));
-        }
+        const apiUrl = process.env.REACT_APP_API_URL || '';
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${apiUrl}/videos/upload`);
+        xhr.setRequestHeader('Authorization', `Bearer ${jwt}`);
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                setProgress(Math.round((e.loaded / e.total) * 100));
+            }
+        };
+
+        xhr.onload = () => {
+            setUploading(false);
+            if (xhr.status >= 200 && xhr.status < 300) {
+                dispatch(videoApi.util.invalidateTags(['Video']));
+                handleClose();
+            } else {
+                let msg = `HTTP ${xhr.status}`;
+                try {
+                    const body = JSON.parse(xhr.responseText);
+                    msg = body.message || msg;
+                } catch (_) {}
+                setError(`Upload fehlgeschlagen: ${msg}`);
+                setProgress(0);
+            }
+        };
+
+        xhr.onerror = () => {
+            setUploading(false);
+            setError('Upload fehlgeschlagen: Netzwerkfehler');
+            setProgress(0);
+        };
+
+        xhr.ontimeout = () => {
+            setUploading(false);
+            setError('Upload fehlgeschlagen: Timeout');
+            setProgress(0);
+        };
+
+        setUploading(true);
+        setError('');
+        setProgress(0);
+        xhr.send(formData);
     };
 
     return (
@@ -75,13 +119,13 @@ export const VideoUploadDialog = ({story}) => {
                 Video hochladen
             </Button>
 
-            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+            <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
                 <DialogTitle>Video hochladen</DialogTitle>
                 <DialogContent>
                     <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 1}}>
                         {error && <Alert severity="error">{error}</Alert>}
 
-                        <Button variant="outlined" component="label">
+                        <Button variant="outlined" component="label" disabled={uploading}>
                             Datei auswählen
                             <input
                                 type="file"
@@ -102,6 +146,7 @@ export const VideoUploadDialog = ({story}) => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             fullWidth
+                            disabled={uploading}
                         />
 
                         <TextField
@@ -111,17 +156,27 @@ export const VideoUploadDialog = ({story}) => {
                             multiline
                             rows={3}
                             fullWidth
+                            disabled={uploading}
                         />
+
+                        {uploading && (
+                            <Box>
+                                <Typography variant="body2" sx={{mb: 0.5}}>
+                                    {progress}% hochgeladen…
+                                </Typography>
+                                <LinearProgress variant="determinate" value={progress}/>
+                            </Box>
+                        )}
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)}>Abbrechen</Button>
+                    <Button onClick={handleClose} disabled={uploading}>Abbrechen</Button>
                     <Button
                         onClick={handleUpload}
                         variant="contained"
-                        disabled={!selectedFile || !!error}
+                        disabled={!selectedFile || !!error || uploading}
                     >
-                        Hochladen
+                        {uploading ? 'Lädt hoch…' : 'Hochladen'}
                     </Button>
                 </DialogActions>
             </Dialog>
