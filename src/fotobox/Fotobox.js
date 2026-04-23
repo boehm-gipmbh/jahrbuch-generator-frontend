@@ -1,21 +1,15 @@
 import React, {useState, useEffect, useCallback, useRef} from 'react';
-import {useNavigate} from 'react-router-dom';
 import {Box, Chip, CircularProgress, Typography} from '@mui/material';
 import {CameraAlt, FiberManualRecord} from '@mui/icons-material';
-import {api as bilderApi} from '../bilder/api';
-import AuthImage from '../bilder/AuthImage';
+import {fetchFotoboxState, triggerFotoboxCapture, fotoboxBildUrl} from './api';
 
 const SCREENSAVER_TIMEOUT_MS = 60000;
 const PREVIEW_DURATION_MS = 8000;
 const SLIDE_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 5000;
 
 export const Fotobox = () => {
-    const navigate = useNavigate();
-    const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
-    const {data: cameraStatus} = bilderApi.endpoints.getCameraStatus.useQuery(undefined, {pollingInterval: 5000});
-    const {data: bilder} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
-    const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
-
+    const [state, setState] = useState(null); // FotoboxStateDTO
     const [phase, setPhase] = useState('idle'); // idle | countdown | capturing | preview | screensaver
     const [countdown, setCountdown] = useState(3);
     const [lastBild, setLastBild] = useState(null);
@@ -24,17 +18,15 @@ export const Fotobox = () => {
     const phaseRef = useRef(phase);
     phaseRef.current = phase;
 
+    // State pollen
     useEffect(() => {
-        if (capturesConfig && !capturesConfig.enabled) {
-            navigate('/bilder');
-        }
-    }, [capturesConfig, navigate]);
+        const load = () => fetchFotoboxState().then(setState).catch(console.error);
+        load();
+        const interval = setInterval(load, POLL_INTERVAL_MS);
+        return () => clearInterval(interval);
+    }, []);
 
-    const todaysBilder = (bilder || []).filter(b => {
-        if (!b.created) return false;
-        return new Date(b.created).toDateString() === new Date().toDateString();
-    });
-
+    // Inaktivitäts-Screensaver
     const startInactivityTimer = useCallback(() => {
         clearTimeout(inactivityTimer.current);
         inactivityTimer.current = setTimeout(() => {
@@ -46,9 +38,7 @@ export const Fotobox = () => {
     }, []);
 
     const handleActivity = useCallback(() => {
-        if (phaseRef.current === 'screensaver') {
-            setPhase('idle');
-        }
+        if (phaseRef.current === 'screensaver') setPhase('idle');
         startInactivityTimer();
     }, [startInactivityTimer]);
 
@@ -63,6 +53,8 @@ export const Fotobox = () => {
         };
     }, [handleActivity, startInactivityTimer]);
 
+    // Screensaver Slideshow
+    const todaysBilder = state?.todaysBilderPfade || [];
     useEffect(() => {
         if (phase !== 'screensaver' || todaysBilder.length === 0) return;
         const timer = setInterval(() => {
@@ -71,6 +63,7 @@ export const Fotobox = () => {
         return () => clearInterval(timer);
     }, [phase, todaysBilder.length]);
 
+    // Auslösen
     const handleCapture = useCallback(async () => {
         if (phase !== 'idle') return;
         setPhase('countdown');
@@ -85,20 +78,22 @@ export const Fotobox = () => {
         });
         setPhase('capturing');
         try {
-            const result = await triggerCapture().unwrap();
-            setLastBild(result);
+            const bild = await triggerFotoboxCapture();
+            setLastBild(bild);
             setPhase('preview');
             setTimeout(() => setPhase('idle'), PREVIEW_DURATION_MS);
-        } catch {
+        } catch (e) {
+            console.error(e);
             setPhase('idle');
         }
-    }, [phase, triggerCapture]);
+    }, [phase]);
 
+    // Screensaver
     if (phase === 'screensaver') {
         return (
             <Box onClick={handleActivity} sx={{width: '100vw', height: '100vh', bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'none'}}>
                 {todaysBilder.length > 0
-                    ? <AuthImage src={`/api/v1/bilder/extern${todaysBilder[slideIndex]?.pfad}`} style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}} />
+                    ? <img src={fotoboxBildUrl(todaysBilder[slideIndex])} alt="" style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}} />
                     : <Typography variant="h3" sx={{color: 'white', opacity: 0.2}}>Jahrbuch Fotobox</Typography>
                 }
             </Box>
@@ -111,28 +106,32 @@ export const Fotobox = () => {
             {/* Kamera-Status */}
             <Box sx={{position: 'absolute', top: 20, left: 20}}>
                 <Chip
-                    icon={<FiberManualRecord sx={{fontSize: 12, color: cameraStatus?.connected ? 'success.main' : 'error.main'}} />}
-                    label={cameraStatus?.connected ? (cameraStatus.model || 'Kamera verbunden') : 'Keine Kamera'}
+                    icon={<FiberManualRecord sx={{fontSize: 12, color: state?.cameraConnected ? 'success.main' : 'error.main'}} />}
+                    label={state?.cameraConnected ? (state.cameraModel || 'Kamera verbunden') : 'Keine Kamera'}
                     sx={{bgcolor: 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12}}
                 />
             </Box>
 
+            {/* Vorschau letztes Bild */}
             {phase === 'preview' && lastBild && (
                 <Box sx={{position: 'absolute', top: 24, right: 24, width: 220, borderRadius: 2, overflow: 'hidden', border: '3px solid white', boxShadow: 8}}>
-                    <AuthImage src={`/api/v1/bilder/extern${lastBild.pfad}`} style={{width: '100%', height: 'auto', display: 'block'}} />
+                    <img src={fotoboxBildUrl(lastBild.pfad)} alt="Letztes Foto" style={{width: '100%', height: 'auto', display: 'block'}} />
                 </Box>
             )}
 
+            {/* Countdown */}
             {phase === 'countdown' && (
-                <Typography sx={{color: 'white', fontSize: '30vw', fontWeight: 'bold', lineHeight: 1, animation: 'pulse 1s ease-in-out'}}>
+                <Typography sx={{color: 'white', fontSize: '30vw', fontWeight: 'bold', lineHeight: 1}}>
                     {countdown}
                 </Typography>
             )}
 
+            {/* Capturing */}
             {phase === 'capturing' && (
                 <CircularProgress size={140} thickness={2} sx={{color: 'white'}} />
             )}
 
+            {/* Auslöser-Button */}
             {(phase === 'idle' || phase === 'preview') && (
                 <Box onClick={handleCapture} sx={{
                     width: 220, height: 220, borderRadius: '50%',
