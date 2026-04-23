@@ -22,7 +22,7 @@ export const api = createApi({
 
             triggerCapture: builder.mutation({
                 query: () => ({
-                    url: 'https://elsie-preperusal-overpresumptuously.ngrok-free.dev/api/v1/bilder/capture',
+                    url: '/api/v1/bilder/capture',
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({"mainImgsettingsImageformat": "Small Fine JPEG"})
@@ -73,6 +73,10 @@ export const api = createApi({
                 builder.query({
                     query: () => '/capture/config',
                     providesTags: ['Bild'],
+                }),
+            getCameraStatus:
+                builder.query({
+                    query: () => '/capture/status',
                 }),
             rotateBild: builder.mutation({
                 query: ({bildId, degrees}) => ({
