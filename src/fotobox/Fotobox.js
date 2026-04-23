@@ -92,7 +92,7 @@ export const Fotobox = () => {
             console.error(e);
             setPhase('idle');
         }
-    }, [phase]);
+    }, [phase, config?.imageFormat]);
 
     // Screensaver
     if (phase === 'screensaver') {
