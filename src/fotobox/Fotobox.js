@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Box, Chip, CircularProgress, Typography} from '@mui/material';
 import {CameraAlt, FiberManualRecord} from '@mui/icons-material';
-import {fetchFotoboxState, triggerFotoboxCapture, fotoboxBildUrl} from './api';
+import {fetchFotoboxState, fetchFotoboxConfig, triggerFotoboxCapture, fotoboxBildUrl} from './api';
 
 const SCREENSAVER_TIMEOUT_MS = 60000;
 const PREVIEW_DURATION_MS = 8000;
@@ -10,6 +10,7 @@ const POLL_INTERVAL_MS = 5000;
 
 export const Fotobox = () => {
     const [state, setState] = useState(null); // FotoboxStateDTO
+    const [config, setConfig] = useState(null); // FotoboxConfigDTO
     const [phase, setPhase] = useState('idle'); // idle | countdown | capturing | preview | screensaver
     const [countdown, setCountdown] = useState(3);
     const [lastBild, setLastBild] = useState(null);
@@ -17,6 +18,11 @@ export const Fotobox = () => {
     const inactivityTimer = useRef(null);
     const phaseRef = useRef(phase);
     phaseRef.current = phase;
+
+    // Config einmalig laden
+    useEffect(() => {
+        fetchFotoboxConfig().then(setConfig).catch(console.error);
+    }, []);
 
     // State pollen
     useEffect(() => {
@@ -78,7 +84,7 @@ export const Fotobox = () => {
         });
         setPhase('capturing');
         try {
-            const bild = await triggerFotoboxCapture();
+            const bild = await triggerFotoboxCapture(config?.imageFormat);
             setLastBild(bild);
             setPhase('preview');
             setTimeout(() => setPhase('idle'), PREVIEW_DURATION_MS);
