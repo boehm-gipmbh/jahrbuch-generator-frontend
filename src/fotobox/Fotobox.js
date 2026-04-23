@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {Box, CircularProgress, Typography} from '@mui/material';
-import {CameraAlt} from '@mui/icons-material';
+import {Box, Chip, CircularProgress, Typography} from '@mui/material';
+import {CameraAlt, FiberManualRecord} from '@mui/icons-material';
 import {api as bilderApi} from '../bilder/api';
 import AuthImage from '../bilder/AuthImage';
 
@@ -12,6 +12,7 @@ const SLIDE_INTERVAL_MS = 3000;
 export const Fotobox = () => {
     const navigate = useNavigate();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
+    const {data: cameraStatus} = bilderApi.endpoints.getCameraStatus.useQuery(undefined, {pollingInterval: 5000});
     const {data: bilder} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
 
@@ -106,6 +107,15 @@ export const Fotobox = () => {
 
     return (
         <Box sx={{width: '100vw', height: '100vh', bgcolor: '#111', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, userSelect: 'none', overflow: 'hidden'}}>
+
+            {/* Kamera-Status */}
+            <Box sx={{position: 'absolute', top: 20, left: 20}}>
+                <Chip
+                    icon={<FiberManualRecord sx={{fontSize: 12, color: cameraStatus?.connected ? 'success.main' : 'error.main'}} />}
+                    label={cameraStatus?.connected ? (cameraStatus.model || 'Kamera verbunden') : 'Keine Kamera'}
+                    sx={{bgcolor: 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12}}
+                />
+            </Box>
 
             {phase === 'preview' && lastBild && (
                 <Box sx={{position: 'absolute', top: 24, right: 24, width: 220, borderRadius: 2, overflow: 'hidden', border: '3px solid white', boxShadow: 8}}>

@@ -74,6 +74,10 @@ export const api = createApi({
                     query: () => '/capture/config',
                     providesTags: ['Bild'],
                 }),
+            getCameraStatus:
+                builder.query({
+                    query: () => '/capture/status',
+                }),
             rotateBild: builder.mutation({
                 query: ({bildId, degrees}) => ({
                     url: `/${bildId}/rotate`,
