@@ -9,6 +9,7 @@ import {Invitations} from './users';
 import {Story} from "./stories/Story";
 import {Papierkorb} from "./papierkorb/Papierkorb";
 import {Fotobox} from "./fotobox/Fotobox";
+import {Groups} from "./groups/Groups";
 
 export const App = () => (
     <BrowserRouter>
@@ -31,6 +32,7 @@ export const App = () => (
             <Route exact path='/papierkorb' element={<Papierkorb />} />
             <Route exact path='/users' element={<Navigate to='/invitations' />} />
             <Route exact path='/invitations' element={<Invitations />} />
+            <Route exact path='/groups' element={<Groups />} />
             <Route exact path='/fotobox' element={<Fotobox />} />
             {/*<Route exact path='/' element={<Navigate to='/initial-page' />} />*/}
             {/*<Route exact path='/initial-page' element={<InitialPage />} />*/}
