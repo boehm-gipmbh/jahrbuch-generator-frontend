@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
+import GroupsIcon from '@mui/icons-material/Groups';
 import {useNavigate} from 'react-router-dom';
 import {UserIcon} from "./UserIcon";
 import {GroupSwitcher} from "./GroupSwitcher";
@@ -49,6 +50,13 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
           <Tooltip title='Einladungen'>
             <IconButton color='inherit' onClick={() => navigate('/invitations')}>
               <PeopleOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+        {(isAdmin || isGroupAdmin) && (
+          <Tooltip title='Gruppen'>
+            <IconButton color='inherit' onClick={() => navigate('/groups')}>
+              <GroupsIcon />
             </IconButton>
           </Tooltip>
         )}
