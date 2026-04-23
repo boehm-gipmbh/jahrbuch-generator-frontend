@@ -106,9 +106,14 @@ export const Fotobox = () => {
             {/* Kamera-Status */}
             <Box sx={{position: 'absolute', top: 20, left: 20}}>
                 <Chip
-                    icon={<FiberManualRecord sx={{fontSize: 12, color: state?.cameraConnected ? 'success.main' : 'error.main'}} />}
+                    icon={<FiberManualRecord sx={{fontSize: 12, color: 'white'}} />}
                     label={state?.cameraConnected ? (state.cameraModel || 'Kamera verbunden') : 'Keine Kamera'}
-                    sx={{bgcolor: 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12}}
+                    sx={{
+                        bgcolor: state?.cameraConnected ? 'success.dark' : 'error.dark',
+                        color: 'white',
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                    }}
                 />
             </Box>
 
