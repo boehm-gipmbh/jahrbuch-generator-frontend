@@ -3,22 +3,34 @@ import {
   Box, Button, Container, Paper, Table, TableBody, TableCell,
   TableHead, TableRow, Typography
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import {Layout} from '../layout';
 import {api} from './api';
+import {FotoboxSetupDialog} from './FotoboxSetupDialog';
 import {FotoboxTokenDialog} from './FotoboxTokenDialog';
 
 export const Groups = () => {
   const {data: groups} = api.endpoints.getGroups.useQuery();
+  const [setupOpen, setSetupOpen] = useState(false);
   const [tokenDialogGruppe, setTokenDialogGruppe] = useState(null);
 
   return (
     <Layout>
       <Container sx={{mt: 2}}>
         <Paper sx={{p: 2}}>
-          <Typography component="h2" variant="h6" color="primary" gutterBottom>
-            Gruppen
-          </Typography>
+          <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2}}>
+            <Typography component="h2" variant="h6" color="primary">
+              Gruppen
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setSetupOpen(true)}
+            >
+              Neue Fotobox-Veranstaltung
+            </Button>
+          </Box>
           <Table>
             <TableHead>
               <TableRow>
@@ -41,7 +53,7 @@ export const Groups = () => {
                         startIcon={<CameraAltIcon />}
                         onClick={() => setTokenDialogGruppe(gruppe)}
                       >
-                        Fotobox-Token
+                        Token neu generieren
                       </Button>
                     </Box>
                   </TableCell>
@@ -51,6 +63,10 @@ export const Groups = () => {
           </Table>
         </Paper>
       </Container>
+
+      {setupOpen && (
+        <FotoboxSetupDialog onClose={() => setSetupOpen(false)} />
+      )}
 
       {tokenDialogGruppe && (
         <FotoboxTokenDialog
