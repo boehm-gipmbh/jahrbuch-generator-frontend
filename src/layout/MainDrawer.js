@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Link, useMatch, useNavigate} from 'react-router-dom';
 import {
     Badge,
@@ -171,6 +171,27 @@ const Stories = ({drawerOpen, openNewStory, stories}) => {
     );
 };
 
+const VersionFooter = ({drawerOpen}) => {
+    const [backendVersion, setBackendVersion] = useState(null);
+    useEffect(() => {
+        fetch('/api/v1/info')
+            .then(r => r.json())
+            .then(d => setBackendVersion(d.version))
+            .catch(() => {});
+    }, []);
+
+    const fe = process.env.REACT_APP_VERSION;
+    const be = backendVersion;
+    if (!drawerOpen || (!fe && !be)) return null;
+    return (
+        <Typography variant='caption' sx={{p: 1, color: 'text.disabled', display: 'block', lineHeight: 1.6}}>
+            {fe && <span>fe: {fe}</span>}
+            {fe && be && <br />}
+            {be && <span>be: {be}</span>}
+        </Typography>
+    );
+};
+
 export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild, stories = [], bilder ={}}) => (
     <Drawer
         open={drawerOpen} onClose={toggleDrawer} variant='permanent'
@@ -200,10 +221,6 @@ export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild,
 
             </List>
         </Box>
-        {drawerOpen && process.env.REACT_APP_VERSION && (
-            <Typography variant='caption' sx={{p: 1, color: 'text.disabled', display: 'block'}}>
-                {process.env.REACT_APP_VERSION}
-            </Typography>
-        )}
+        <VersionFooter drawerOpen={drawerOpen} />
     </Drawer>
 );
