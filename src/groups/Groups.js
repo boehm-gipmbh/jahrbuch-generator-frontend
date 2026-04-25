@@ -5,15 +5,22 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import {Navigate} from 'react-router-dom';
 import {Layout} from '../layout';
 import {api} from './api';
+import {api as usersApi} from '../users';
 import {FotoboxSetupDialog} from './FotoboxSetupDialog';
 import {FotoboxTokenDialog} from './FotoboxTokenDialog';
 
 export const Groups = () => {
+  const {data: user} = usersApi.endpoints.getSelf.useQuery();
   const {data: groups} = api.endpoints.getGroups.useQuery();
   const [setupOpen, setSetupOpen] = useState(false);
   const [tokenDialogGruppe, setTokenDialogGruppe] = useState(null);
+
+  if (user && !user.roles?.includes('admin')) {
+    return <Navigate to='/bilder' replace />;
+  }
 
   return (
     <Layout>
