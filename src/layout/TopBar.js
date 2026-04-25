@@ -15,6 +15,8 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
   const navigate = useNavigate();
   const isAdmin = user?.roles?.includes('admin');
   const isGroupAdmin = user?.roles?.includes('group-admin');
+  const managesActiveGroup = user?.managedGroups?.some(g => g.id === user?.activeGroup?.id);
+  const showInvitations = isAdmin || (isGroupAdmin && managesActiveGroup);
 
   return (
     <AppBar
@@ -45,7 +47,7 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
           {title}
         </Typography>
         <GroupSwitcher />
-        {(isAdmin || isGroupAdmin) && (
+        {showInvitations && (
           <Tooltip title='Einladungen'>
             <IconButton color='inherit' onClick={() => navigate('/invitations')}>
               <PeopleOutlineIcon />
