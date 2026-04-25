@@ -14,12 +14,13 @@ import {FotoboxTokenDialog} from './FotoboxTokenDialog';
 
 export const Groups = () => {
   const {data: user} = usersApi.endpoints.getSelf.useQuery();
-  if (user && !user.roles?.includes('admin')) {
-    return <Navigate to='/bilder' replace />;
-  }
   const {data: groups} = api.endpoints.getGroups.useQuery();
   const [setupOpen, setSetupOpen] = useState(false);
   const [tokenDialogGruppe, setTokenDialogGruppe] = useState(null);
+
+  if (user && !user.roles?.includes('admin')) {
+    return <Navigate to='/bilder' replace />;
+  }
 
   return (
     <Layout>
