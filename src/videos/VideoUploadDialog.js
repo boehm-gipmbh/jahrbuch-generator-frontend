@@ -140,6 +140,10 @@ export const VideoUploadDialog = ({story}) => {
                 <DialogTitle>Video hochladen</DialogTitle>
                 <DialogContent>
                     <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, mt: 1}}>
+                        <Alert severity="info">
+                            Videos werden auf max. 1280px Breite verkleinert und in H.264 umgewandelt.
+                            Der Upload ist <strong>kein Backup</strong> — Originalaufnahmen bitte separat sichern.
+                        </Alert>
                         {error && <Alert severity="error">{error}</Alert>}
 
                         <Button variant="outlined" component="label" disabled={uploading}>
