@@ -157,9 +157,16 @@ export const VideoUploadDialog = ({story}) => {
                         </Button>
 
                         {selectedFile && (
-                            <Typography variant="body2">
-                                {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
-                            </Typography>
+                            <Box>
+                                <Typography variant="body2">
+                                    {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                                </Typography>
+                                {selectedFile.size > 200 * 1024 * 1024 && (
+                                    <Alert severity="warning" sx={{mt: 1}}>
+                                        Große Datei — der Upload und die Verarbeitung können mehrere Minuten dauern.
+                                    </Alert>
+                                )}
+                            </Box>
                         )}
 
                         <TextField
