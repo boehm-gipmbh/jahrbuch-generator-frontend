@@ -393,6 +393,8 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                         stories={storiesLoaded && !story ? stories : undefined}
                         storyFilter={storyFilter} setStoryFilter={setStoryFilter}
                         metadataFilter={metadataFilter} setMetadataFilter={setMetadataFilter}
+                        filteredCount={filteredBilder.length}
+                        totalCount={(data || []).length}
                     />
                 </Box>
 

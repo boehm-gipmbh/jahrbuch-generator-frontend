@@ -2,7 +2,7 @@ import React, {useState, useRef} from 'react';
 import {
     Box, TextField, ToggleButton, ToggleButtonGroup, IconButton, Tooltip,
     Button, Popover, MenuList, MenuItem, Checkbox, ListItemText, Divider, Badge,
-    Switch, FormControlLabel
+    Switch, FormControlLabel, Typography
 } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -75,6 +75,7 @@ export const FilterBar = ({
     sortField, setSortField, sortAsc, setSortAsc,
     stories, storyFilter, setStoryFilter,
     metadataFilter, setMetadataFilter,
+    filteredCount, totalCount,
 }) => (
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, mb: 2}}>
         <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center'}}>
@@ -152,6 +153,11 @@ export const FilterBar = ({
                         )}/>}
                     label="Ohne Story"
                 />
+                {filteredCount != null && (
+                    <Typography variant="body2" color="text.secondary" sx={{ml: 'auto'}}>
+                        {filteredCount}{totalCount != null && filteredCount !== totalCount ? ` / ${totalCount}` : ''} Bilder
+                    </Typography>
+                )}
             </Box>
         )}
     </Box>
