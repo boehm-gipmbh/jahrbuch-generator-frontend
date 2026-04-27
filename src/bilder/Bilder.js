@@ -325,7 +325,8 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
             if (metadataFilter.length > 0) {
                 const matchesNoTitle = metadataFilter.includes('noTitle') && !hasRealTitle(bild);
                 const matchesNoDesc = metadataFilter.includes('noDescription') && !hasRealDescription(bild);
-                if (!matchesNoTitle && !matchesNoDesc) return false;
+                const matchesNoStory = metadataFilter.includes('noStory') && !bild.story;
+                if (!matchesNoTitle && !matchesNoDesc && !matchesNoStory) return false;
             }
             return true;
         });

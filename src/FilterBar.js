@@ -57,11 +57,6 @@ const StoryFilterButton = ({stories, storyFilter, setStoryFilter}) => {
                 </Box>
                 <Divider/>
                 <MenuList dense sx={{maxHeight: 300, overflowY: 'auto'}}>
-                    <MenuItem onClick={() => toggle(NONE)} sx={{py: 0}}>
-                        <Checkbox checked={storyFilter.has(NONE)} size="small"/>
-                        <ListItemText primary="Ohne Story"/>
-                    </MenuItem>
-                    <Divider/>
                     {stories.map(s => (
                         <MenuItem key={s.id} onClick={() => toggle(s.id)} sx={{py: 0}}>
                             <Checkbox checked={storyFilter.has(s.id)} size="small"/>
@@ -134,6 +129,14 @@ export const FilterBar = ({
                         v ? [...prev, 'noDescription'] : prev.filter(x => x !== 'noDescription')
                     )}/>}
                 label="Ohne Beschreibung"
+            />
+            <FormControlLabel labelPlacement="start"
+                control={<Switch size="small"
+                    checked={metadataFilter.includes('noStory')}
+                    onChange={(_, v) => setMetadataFilter(prev =>
+                        v ? [...prev, 'noStory'] : prev.filter(x => x !== 'noStory')
+                    )}/>}
+                label="Ohne Story"
             />
         </>)}
         <ToggleButtonGroup value={sortField} exclusive size="small" onChange={(_, v) => v && setSortField(v)}>
