@@ -199,6 +199,12 @@ export const Register = () => {
               </Button>
             </Alert>
           )}
+          {tokenData?.group && (
+            <Button fullWidth variant="outlined" sx={{mt: 1}}
+              onClick={() => navigate(`/login?next=${encodeURIComponent(`/register?token=${token}`)}`)}>
+              Bereits einen Account? Anmelden und „{tokenData.group.name}" beitreten
+            </Button>
+          )}
         </Box>
       </Box>
       <Snackbar
