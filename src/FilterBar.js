@@ -77,7 +77,9 @@ export const FilterBar = ({
     search, setSearch,
     dateFrom, setDateFrom, dateTo, setDateTo,
     sortField, setSortField, sortAsc, setSortAsc,
-    stories, storyFilter, setStoryFilter
+    stories, storyFilter, setStoryFilter,
+    noTitle, setNoTitle,
+    noDescription, setNoDescription,
 }) => (
     <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center'}}>
         <TextField
@@ -115,6 +117,18 @@ export const FilterBar = ({
         />
         {stories && (
             <StoryFilterButton stories={stories} storyFilter={storyFilter} setStoryFilter={setStoryFilter}/>
+        )}
+        {setNoTitle && (
+            <ToggleButton value="noTitle" size="small" selected={!!noTitle}
+                onChange={() => setNoTitle(v => !v)}>
+                Ohne Titel
+            </ToggleButton>
+        )}
+        {setNoDescription && (
+            <ToggleButton value="noDescription" size="small" selected={!!noDescription}
+                onChange={() => setNoDescription(v => !v)}>
+                Ohne Beschreibung
+            </ToggleButton>
         )}
         <ToggleButtonGroup value={sortField} exclusive size="small" onChange={(_, v) => v && setSortField(v)}>
             <ToggleButton value="date">Datum</ToggleButton>
