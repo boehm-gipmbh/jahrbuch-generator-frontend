@@ -323,10 +323,13 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                 if (!storyFilter.has(key)) return false;
             }
             if (metadataFilter.length > 0) {
-                const matchesNoTitle = metadataFilter.includes('noTitle') && !hasRealTitle(bild);
-                const matchesNoDesc = metadataFilter.includes('noDescription') && !hasRealDescription(bild);
-                const matchesNoStory = metadataFilter.includes('noStory') && !bild.story;
-                if (!matchesNoTitle && !matchesNoDesc && !matchesNoStory) return false;
+                const hasTitleDescFilter = metadataFilter.includes('noTitle') || metadataFilter.includes('noDescription');
+                if (hasTitleDescFilter) {
+                    const matchesNoTitle = metadataFilter.includes('noTitle') && !hasRealTitle(bild);
+                    const matchesNoDesc = metadataFilter.includes('noDescription') && !hasRealDescription(bild);
+                    if (!matchesNoTitle && !matchesNoDesc) return false;
+                }
+                if (metadataFilter.includes('noStory') && bild.story) return false;
             }
             return true;
         });

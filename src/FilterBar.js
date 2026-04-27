@@ -76,78 +76,84 @@ export const FilterBar = ({
     stories, storyFilter, setStoryFilter,
     metadataFilter, setMetadataFilter,
 }) => (
-    <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center'}}>
-        <TextField
-            size="small" placeholder="Suchen…" value={search}
-            onChange={e => setSearch(e.target.value)}
-            sx={{minWidth: 160}}
-            InputProps={search ? {
-                endAdornment: (
-                    <IconButton size="small" onClick={() => setSearch('')} edge="end">
-                        <ClearIcon fontSize="small"/>
+    <Box sx={{display: 'flex', flexDirection: 'column', gap: 1, mb: 2}}>
+        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center'}}>
+            <TextField
+                size="small" placeholder="Suchen…" value={search}
+                onChange={e => setSearch(e.target.value)}
+                sx={{minWidth: 160}}
+                InputProps={search ? {
+                    endAdornment: (
+                        <IconButton size="small" onClick={() => setSearch('')} edge="end">
+                            <ClearIcon fontSize="small"/>
+                        </IconButton>
+                    )
+                } : undefined}
+            />
+            <TextField
+                size="small" type="datetime-local" label="Von"
+                value={dateFrom}
+                onChange={e => {
+                    const val = e.target.value;
+                    setDateFrom(val);
+                    if (val) {
+                        const next = new Date(val);
+                        next.setDate(next.getDate() + 1);
+                        const pad = n => String(n).padStart(2, '0');
+                        setDateTo(`${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}T${pad(next.getHours())}:${pad(next.getMinutes())}`);
+                    }
+                }}
+                InputLabelProps={{shrink: true}}
+            />
+            <TextField
+                size="small" type="datetime-local" label="Bis"
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+                InputLabelProps={{shrink: true}}
+            />
+            {stories && (
+                <StoryFilterButton stories={stories} storyFilter={storyFilter} setStoryFilter={setStoryFilter}/>
+            )}
+            <Box sx={{ml: 'auto', display: 'flex', gap: 0.5, alignItems: 'center'}}>
+                <ToggleButtonGroup value={sortField} exclusive size="small" onChange={(_, v) => v && setSortField(v)}>
+                    <ToggleButton value="date">Datum</ToggleButton>
+                    <ToggleButton value="priority">Priorität</ToggleButton>
+                </ToggleButtonGroup>
+                <Tooltip title={sortAsc ? 'Aufsteigend' : 'Absteigend'}>
+                    <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
+                        {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
                     </IconButton>
-                )
-            } : undefined}
-        />
-        <TextField
-            size="small" type="datetime-local" label="Von"
-            value={dateFrom}
-            onChange={e => {
-                const val = e.target.value;
-                setDateFrom(val);
-                if (val) {
-                    const next = new Date(val);
-                    next.setDate(next.getDate() + 1);
-                    const pad = n => String(n).padStart(2, '0');
-                    setDateTo(`${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}T${pad(next.getHours())}:${pad(next.getMinutes())}`);
-                }
-            }}
-            InputLabelProps={{shrink: true}}
-        />
-        <TextField
-            size="small" type="datetime-local" label="Bis"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-            InputLabelProps={{shrink: true}}
-        />
-        {stories && (
-            <StoryFilterButton stories={stories} storyFilter={storyFilter} setStoryFilter={setStoryFilter}/>
+                </Tooltip>
+            </Box>
+        </Box>
+        {setMetadataFilter && (
+            <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center'}}>
+                <FormControlLabel labelPlacement="start"
+                    control={<Switch size="small"
+                        checked={metadataFilter.includes('noTitle')}
+                        onChange={(_, v) => setMetadataFilter(prev =>
+                            v ? [...prev, 'noTitle'] : prev.filter(x => x !== 'noTitle')
+                        )}/>}
+                    label="Ohne Titel"
+                />
+                <FormControlLabel labelPlacement="start"
+                    control={<Switch size="small"
+                        checked={metadataFilter.includes('noDescription')}
+                        onChange={(_, v) => setMetadataFilter(prev =>
+                            v ? [...prev, 'noDescription'] : prev.filter(x => x !== 'noDescription')
+                        )}/>}
+                    label="Ohne Beschreibung"
+                />
+                <FormControlLabel labelPlacement="start"
+                    control={<Switch size="small"
+                        checked={metadataFilter.includes('noStory')}
+                        onChange={(_, v) => setMetadataFilter(prev =>
+                            v ? [...prev, 'noStory'] : prev.filter(x => x !== 'noStory')
+                        )}/>}
+                    label="Ohne Story"
+                />
+            </Box>
         )}
-        {setMetadataFilter && (<>
-            <FormControlLabel labelPlacement="start"
-                control={<Switch size="small"
-                    checked={metadataFilter.includes('noTitle')}
-                    onChange={(_, v) => setMetadataFilter(prev =>
-                        v ? [...prev, 'noTitle'] : prev.filter(x => x !== 'noTitle')
-                    )}/>}
-                label="Ohne Titel"
-            />
-            <FormControlLabel labelPlacement="start"
-                control={<Switch size="small"
-                    checked={metadataFilter.includes('noDescription')}
-                    onChange={(_, v) => setMetadataFilter(prev =>
-                        v ? [...prev, 'noDescription'] : prev.filter(x => x !== 'noDescription')
-                    )}/>}
-                label="Ohne Beschreibung"
-            />
-            <FormControlLabel labelPlacement="start"
-                control={<Switch size="small"
-                    checked={metadataFilter.includes('noStory')}
-                    onChange={(_, v) => setMetadataFilter(prev =>
-                        v ? [...prev, 'noStory'] : prev.filter(x => x !== 'noStory')
-                    )}/>}
-                label="Ohne Story"
-            />
-        </>)}
-        <ToggleButtonGroup value={sortField} exclusive size="small" onChange={(_, v) => v && setSortField(v)}>
-            <ToggleButton value="date">Datum</ToggleButton>
-            <ToggleButton value="priority">Priorität</ToggleButton>
-        </ToggleButtonGroup>
-        <Tooltip title={sortAsc ? 'Aufsteigend' : 'Absteigend'}>
-            <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
-                {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
-            </IconButton>
-        </Tooltip>
     </Box>
 );
 
