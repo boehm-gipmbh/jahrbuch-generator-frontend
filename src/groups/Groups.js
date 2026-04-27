@@ -5,18 +5,38 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {Navigate} from 'react-router-dom';
+import {useSelector} from 'react-redux';
 import {Layout} from '../layout';
 import {api} from './api';
 import {api as usersApi} from '../users';
 import {FotoboxSetupDialog} from './FotoboxSetupDialog';
 import {FotoboxTokenDialog} from './FotoboxTokenDialog';
 
+const useJahrbuchDownload = () => {
+  const jwt = useSelector(state => state.auth.jwt);
+  return async (gruppe) => {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/pdf/${gruppe.id}`, {
+      headers: {Authorization: `Bearer ${jwt}`}
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `jahrbuch-${gruppe.name}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+};
+
 export const Groups = () => {
   const {data: user} = usersApi.endpoints.getSelf.useQuery();
   const {data: groups} = api.endpoints.getGroups.useQuery();
   const [setupOpen, setSetupOpen] = useState(false);
   const [tokenDialogGruppe, setTokenDialogGruppe] = useState(null);
+  const downloadJahrbuch = useJahrbuchDownload();
 
   if (user && !user.roles?.includes('admin')) {
     return <Navigate to='/bilder' replace />;
@@ -55,6 +75,13 @@ export const Groups = () => {
                   </TableCell>
                   <TableCell align="right">
                     <Box sx={{display: 'flex', justifyContent: 'flex-end', gap: 1}}>
+                      <Button
+                        size="small"
+                        startIcon={<PictureAsPdfIcon />}
+                        onClick={() => downloadJahrbuch(gruppe)}
+                      >
+                        Jahrbuch exportieren
+                      </Button>
                       <Button
                         size="small"
                         startIcon={<CameraAltIcon />}
