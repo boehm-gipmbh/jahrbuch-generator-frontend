@@ -1,7 +1,8 @@
 import React, {useState, useRef} from 'react';
 import {
     Box, TextField, ToggleButton, ToggleButtonGroup, IconButton, Tooltip,
-    Button, Popover, MenuList, MenuItem, Checkbox, ListItemText, Divider, Badge
+    Button, Popover, MenuList, MenuItem, Checkbox, ListItemText, Divider, Badge,
+    Switch, FormControlLabel
 } from '@mui/material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -78,8 +79,7 @@ export const FilterBar = ({
     dateFrom, setDateFrom, dateTo, setDateTo,
     sortField, setSortField, sortAsc, setSortAsc,
     stories, storyFilter, setStoryFilter,
-    noTitle, setNoTitle,
-    noDescription, setNoDescription,
+    metadataFilter, setMetadataFilter,
 }) => (
     <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center'}}>
         <TextField
@@ -118,18 +118,24 @@ export const FilterBar = ({
         {stories && (
             <StoryFilterButton stories={stories} storyFilter={storyFilter} setStoryFilter={setStoryFilter}/>
         )}
-        {setNoTitle && (
-            <ToggleButton value="noTitle" size="small" selected={!!noTitle}
-                onChange={() => setNoTitle(v => !v)}>
-                Ohne Titel
-            </ToggleButton>
-        )}
-        {setNoDescription && (
-            <ToggleButton value="noDescription" size="small" selected={!!noDescription}
-                onChange={() => setNoDescription(v => !v)}>
-                Ohne Beschreibung
-            </ToggleButton>
-        )}
+        {setMetadataFilter && (<>
+            <FormControlLabel labelPlacement="start"
+                control={<Switch size="small"
+                    checked={metadataFilter.includes('noTitle')}
+                    onChange={(_, v) => setMetadataFilter(prev =>
+                        v ? [...prev, 'noTitle'] : prev.filter(x => x !== 'noTitle')
+                    )}/>}
+                label="Ohne Titel"
+            />
+            <FormControlLabel labelPlacement="start"
+                control={<Switch size="small"
+                    checked={metadataFilter.includes('noDescription')}
+                    onChange={(_, v) => setMetadataFilter(prev =>
+                        v ? [...prev, 'noDescription'] : prev.filter(x => x !== 'noDescription')
+                    )}/>}
+                label="Ohne Beschreibung"
+            />
+        </>)}
         <ToggleButtonGroup value={sortField} exclusive size="small" onChange={(_, v) => v && setSortField(v)}>
             <ToggleButton value="date">Datum</ToggleButton>
             <ToggleButton value="priority">Priorität</ToggleButton>
