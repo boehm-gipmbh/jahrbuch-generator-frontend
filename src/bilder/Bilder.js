@@ -306,8 +306,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [sortField, setSortField] = useState('date');
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());
-    const [noTitle, setNoTitle] = useState(false);
-    const [noDescription, setNoDescription] = useState(false);
+    const [metadataFilter, setMetadataFilter] = useState(['noTitle', 'noDescription']);
 
     const theme = useTheme();
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
@@ -323,15 +322,18 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                 const key = bild.story ? bild.story.id : STORY_FILTER_NONE;
                 if (!storyFilter.has(key)) return false;
             }
-            if (noTitle && hasRealTitle(bild)) return false;
-            if (noDescription && hasRealDescription(bild)) return false;
+            if (metadataFilter.length > 0) {
+                const matchesNoTitle = metadataFilter.includes('noTitle') && !hasRealTitle(bild);
+                const matchesNoDesc = metadataFilter.includes('noDescription') && !hasRealDescription(bild);
+                if (!matchesNoTitle && !matchesNoDesc) return false;
+            }
             return true;
         });
         const cmp = sortField === 'priority'
             ? (sortAsc ? (a, b) => (a.priority ?? 0) - (b.priority ?? 0) : (a, b) => (b.priority ?? 0) - (a.priority ?? 0))
             : (sortAsc ? byDateAsc : byDateDesc);
         return [...base].sort(cmp);
-    }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter, noTitle, noDescription]);
+    }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter, metadataFilter]);
 
     const rows = useMemo(() => {
         const result = [];
@@ -386,8 +388,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
                         sortAsc={sortAsc} setSortAsc={setSortAsc}
                         stories={storiesLoaded && !story ? stories : undefined}
                         storyFilter={storyFilter} setStoryFilter={setStoryFilter}
-                        noTitle={noTitle} setNoTitle={setNoTitle}
-                        noDescription={noDescription} setNoDescription={setNoDescription}
+                        metadataFilter={metadataFilter} setMetadataFilter={setMetadataFilter}
                     />
                 </Box>
 
