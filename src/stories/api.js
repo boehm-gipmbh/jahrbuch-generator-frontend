@@ -41,6 +41,14 @@ export const api = createApi({
         body: items
       }),
     }),
+    reorderStories: builder.mutation({
+      query: orderedIds => ({
+        url: '/reorder',
+        method: 'PUT',
+        body: orderedIds
+      }),
+      invalidatesTags: ['Story'],
+    }),
     restoreStory: builder.mutation({
       query: ({name, withContent}) => ({
         url: '/restore',
