@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {AppBar, IconButton, Toolbar, Tooltip, Typography} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
@@ -7,27 +7,10 @@ import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import GroupsIcon from '@mui/icons-material/Groups';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {useNavigate} from 'react-router-dom';
-import {useSelector} from 'react-redux';
 import {UserIcon} from "./UserIcon";
 import {GroupSwitcher} from "./GroupSwitcher";
 import {api} from '../users';
-
-const useJahrbuchDownload = () => {
-  const jwt = useSelector(state => state.auth.jwt);
-  return async (gruppe) => {
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/pdf/${gruppe.id}`, {
-      headers: {Authorization: `Bearer ${jwt}`}
-    });
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `jahrbuch-${gruppe.name}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-};
+import {PdfExportDialog} from '../pdf/PdfExportDialog';
 
 export const TopBar = ({goHome, newText, toggleDrawer}) => {
   const {data: user} = api.endpoints.getSelf.useQuery();
@@ -37,9 +20,10 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
   const isGroupAdmin = user?.roles?.includes('group-admin');
   const managesActiveGroup = user?.managedGroups?.some(g => g.id === user?.activeGroup?.id);
   const showInvitations = isAdmin || (isGroupAdmin && managesActiveGroup);
-  const downloadJahrbuch = useJahrbuchDownload();
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
 
   return (
+    <>
     <AppBar
       position='fixed'
       sx={{
@@ -70,7 +54,7 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
         <GroupSwitcher />
         {user?.activeGroup && (
           <Tooltip title='Jahrbuch exportieren'>
-            <IconButton color='inherit' onClick={() => downloadJahrbuch(user.activeGroup)}>
+            <IconButton color='inherit' onClick={() => setPdfDialogOpen(true)}>
               <PictureAsPdfIcon />
             </IconButton>
           </Tooltip>
@@ -100,6 +84,14 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
         <UserIcon />
       </Toolbar>
     </AppBar>
+
+    {pdfDialogOpen && user?.activeGroup && (
+      <PdfExportDialog
+        gruppe={user.activeGroup}
+        onClose={() => setPdfDialogOpen(false)}
+      />
+    )}
+  </>
   );
 };
 
