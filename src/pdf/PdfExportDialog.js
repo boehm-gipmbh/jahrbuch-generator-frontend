@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {
   Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControlLabel, IconButton, List, ListItem,
-  Switch, TextField, Typography
+  Switch, TextField, ToggleButton, ToggleButtonGroup, Typography
 } from '@mui/material';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import {
@@ -15,6 +15,56 @@ import {
 import {CSS} from '@dnd-kit/utilities';
 import {useSelector} from 'react-redux';
 import {api as storyApi} from '../stories';
+
+const PASSEPARTOUT_STYLES = [
+  {id: 'none',     label: 'Keiner'},
+  {id: 'gold',     label: 'Gold'},
+  {id: 'silber',   label: 'Silber'},
+  {id: 'vintage',  label: 'Vintage'},
+  {id: 'festlich', label: 'Festlich'},
+];
+
+const PassepartoutSvg = ({styleId}) => {
+  const W = 48, H = 68, bw = 7, ol = 2, cs = 2.2;
+  const cfg = {
+    none:     {primary: 'none',              fill: 'none',              lw: 0,   ol: false, diamonds: false, squares: false, circles: false, doubleInner: false},
+    gold:     {primary: 'rgba(189,143,20,',  fill: 'rgba(252,247,220,', lw: 1,   ol: true,  diamonds: true,  squares: false, circles: false, doubleInner: false},
+    silber:   {primary: 'rgba(153,153,163,', fill: 'rgba(235,235,240,', lw: 1.4, ol: true,  diamonds: false, squares: true,  circles: false, doubleInner: false},
+    vintage:  {primary: 'rgba(133,85,20,',   fill: 'rgba(247,234,208,', lw: 0.6, ol: false, diamonds: false, squares: false, circles: false, doubleInner: true},
+    festlich: {primary: 'rgba(110,10,20,',   fill: 'rgba(250,230,230,', lw: 1.8, ol: true,  diamonds: false, squares: false, circles: true,  doubleInner: false},
+  }[styleId] || {};
+
+  const p = (o) => `${cfg.primary}${o})`;
+  const f = (o) => `${cfg.fill}${o})`;
+  const corners = [[bw, bw], [W - bw, bw], [bw, H - bw], [W - bw, H - bw]];
+
+  return (
+    <svg width={W} height={H} style={{display: 'block', border: '1px solid #ddd', background: 'white'}}>
+      {cfg.fill !== 'none' && <>
+        <rect x={0} y={H - bw} width={W} height={bw} fill={f('0.55')} />
+        <rect x={0} y={0} width={W} height={bw} fill={f('0.55')} />
+        <rect x={0} y={bw} width={bw} height={H - 2 * bw} fill={f('0.55')} />
+        <rect x={W - bw} y={bw} width={bw} height={H - 2 * bw} fill={f('0.55')} />
+      </>}
+      {cfg.ol && <rect x={ol} y={ol} width={W - 2 * ol} height={H - 2 * ol} fill="none" stroke={p('0.45')} strokeWidth={0.5} />}
+      {cfg.primary !== 'none' && (
+        <rect x={bw} y={bw} width={W - 2 * bw} height={H - 2 * bw} fill="none" stroke={p('0.75')} strokeWidth={cfg.lw} />
+      )}
+      {cfg.doubleInner && (
+        <rect x={bw + 1.5} y={bw + 1.5} width={W - 2 * (bw + 1.5)} height={H - 2 * (bw + 1.5)} fill="none" stroke={p('0.6')} strokeWidth={0.5} />
+      )}
+      {cfg.diamonds && corners.map(([cx, cy], i) => (
+        <polygon key={i} points={`${cx},${cy - cs} ${cx + cs},${cy} ${cx},${cy + cs} ${cx - cs},${cy}`} fill={p('0.75')} />
+      ))}
+      {cfg.squares && corners.map(([cx, cy], i) => (
+        <rect key={i} x={cx - cs * 0.8} y={cy - cs * 0.8} width={cs * 1.6} height={cs * 1.6} fill={p('0.75')} />
+      ))}
+      {cfg.circles && corners.map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={cs * 0.85} fill={p('0.75')} />
+      ))}
+    </svg>
+  );
+};
 
 const SortableStoryItem = ({story, checked, onToggle}) => {
   const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: story.id});
@@ -54,6 +104,7 @@ export const PdfExportDialog = ({gruppe, onClose}) => {
   const [coverPage, setCoverPage] = useState(true);
   const [coverTitle, setCoverTitle] = useState(gruppe.name);
   const [pageNumbers, setPageNumbers] = useState(true);
+  const [passepartoutStyle, setPassepartoutStyle] = useState('gold');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -106,7 +157,8 @@ export const PdfExportDialog = ({gruppe, onClose}) => {
           includePendingTexte,
           coverPage,
           coverTitle: coverPage ? coverTitle : null,
-          pageNumbers
+          pageNumbers,
+          passepartoutStyle
         })
       });
 
@@ -193,6 +245,23 @@ export const PdfExportDialog = ({gruppe, onClose}) => {
             control={<Switch checked={pageNumbers} onChange={e => setPageNumbers(e.target.checked)} size="small" />}
             label="Seitenzahlen"
           />
+          <Box sx={{mt: 0.5}}>
+            <Typography variant="body2" sx={{mb: 0.75}}>Passepartout</Typography>
+            <ToggleButtonGroup
+              value={passepartoutStyle}
+              exclusive
+              onChange={(_, v) => v && setPassepartoutStyle(v)}
+              size="small"
+              sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5, '& .MuiToggleButtonGroup-grouped': {border: '1px solid rgba(0,0,0,0.18) !important', borderRadius: '4px !important', m: 0}}}
+            >
+              {PASSEPARTOUT_STYLES.map(s => (
+                <ToggleButton key={s.id} value={s.id} sx={{flexDirection: 'column', gap: 0.5, p: 0.75, minWidth: 64}}>
+                  <PassepartoutSvg styleId={s.id} />
+                  <Typography variant="caption" sx={{lineHeight: 1}}>{s.label}</Typography>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          </Box>
         </Box>
 
         {error && (
