@@ -38,8 +38,10 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
     return d.toISOString().slice(0, 10);
   });
   const [recipientEmail, setRecipientEmail] = useState('');
+  const emailInvalid = recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail);
 
   const handleCreate = () => {
+    if (emailInvalid) return;
     const body = {role, expiresAt: new Date(expiresAt).toISOString()};
     if (isAdmin) {
       if (label) body.label = label;
@@ -84,11 +86,12 @@ const NewInvitationDialog = ({onClose, isAdmin, groupName}) => {
         )}
         <TextField label="Einladungs-E-Mail senden an (optional)" value={recipientEmail}
           onChange={e => setRecipientEmail(e.target.value)} fullWidth type="email"
-          helperText="Wird ausgefüllt, sendet das System direkt eine Einladungsmail"/>
+          error={!!emailInvalid}
+          helperText={emailInvalid ? 'Bitte eine gültige E-Mail-Adresse eingeben' : 'Wird ausgefüllt, sendet das System direkt eine Einladungsmail'}/>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Abbrechen</Button>
-        <Button variant="contained" onClick={handleCreate}>Erstellen</Button>
+        <Button variant="contained" onClick={handleCreate} disabled={!!emailInvalid}>Erstellen</Button>
       </DialogActions>
     </Dialog>
   );
