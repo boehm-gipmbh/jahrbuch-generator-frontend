@@ -15,9 +15,40 @@ import {
     ListItemText,
 } from '@mui/material';
 import UploadIcon from '@mui/icons-material/Upload';
+import imageCompression from 'browser-image-compression';
 import {api as bilderApi} from './api';
 
 const CONCURRENCY = 3;
+const MAX_RETRIES = 3;
+const COMPRESSIBLE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
+const COMPRESS_TARGET_MB = 2;
+const COMPRESS_MAX_PX = 1920;
+
+async function compressIfNeeded(file) {
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!COMPRESSIBLE_TYPES.includes(ext)) return file;
+    if (file.size <= COMPRESS_TARGET_MB * 1024 * 1024) return file;
+    return imageCompression(file, {
+        maxSizeMB: COMPRESS_TARGET_MB,
+        maxWidthOrHeight: COMPRESS_MAX_PX,
+        useWebWorker: true,
+        fileType: file.type,
+    });
+}
+
+async function uploadWithRetry(uploadFn, maxRetries = MAX_RETRIES) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await uploadFn();
+        } catch (err) {
+            const status = err?.status ?? err?.originalStatus;
+            // 4xx-Fehler nicht wiederholen (Validierung schlägt immer fehl)
+            if (status >= 400 && status < 500) throw err;
+            if (attempt === maxRetries) throw err;
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+        }
+    }
+}
 
 export const BilderUploadDialog = ({ story }) => {
     const [open, setOpen] = useState(false);
@@ -25,7 +56,7 @@ export const BilderUploadDialog = ({ story }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [validationErrors, setValidationErrors] = useState([]);
-    const [progress, setProgress] = useState({ done: 0, total: 0, errors: [] });
+    const [progress, setProgress] = useState({ done: 0, total: 0, errors: [], status: '' });
     const [uploading, setUploading] = useState(false);
 
     const [uploadConfig, setUploadConfig] = useState({
@@ -41,9 +72,10 @@ export const BilderUploadDialog = ({ story }) => {
     }, [config]);
 
     const validateFile = (file) => {
-        if (file.size > uploadConfig.maxSize)
-            return `${file.name}: zu groß (max. ${uploadConfig.maxSize / 1024 / 1024} MB)`;
+        // Größenvalidierung überspringen für komprimierbare Typen — werden vor Upload verkleinert
         const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!COMPRESSIBLE_TYPES.includes(ext) && file.size > uploadConfig.maxSize)
+            return `${file.name}: zu groß (max. ${uploadConfig.maxSize / 1024 / 1024} MB)`;
         if (!uploadConfig.allowedTypes.includes(ext))
             return `${file.name}: Format nicht erlaubt (${uploadConfig.allowedTypes.join(', ')})`;
         return null;
@@ -53,7 +85,7 @@ export const BilderUploadDialog = ({ story }) => {
         const files = Array.from(event.target.files);
         setSelectedFiles(files);
         setValidationErrors(files.map(validateFile).filter(Boolean));
-        setProgress({ done: 0, total: 0, errors: [] });
+        setProgress({ done: 0, total: 0, errors: [], status: '' });
     };
 
     const handleClose = () => {
@@ -63,16 +95,17 @@ export const BilderUploadDialog = ({ story }) => {
         setTitle('');
         setDescription('');
         setValidationErrors([]);
-        setProgress({ done: 0, total: 0, errors: [] });
+        setProgress({ done: 0, total: 0, errors: [], status: '' });
     };
 
-    const uploadSingle = async (file) => {
+    const uploadSingle = async (file, isSingle) => {
+        const compressed = await compressIfNeeded(file);
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('title', selectedFiles.length === 1 ? title : file.name.replace(/\.[^/.]+$/, ''));
-        if (selectedFiles.length === 1) formData.append('description', description);
+        formData.append('file', compressed, file.name);
+        formData.append('title', isSingle ? title : file.name.replace(/\.[^/.]+$/, ''));
+        if (isSingle) formData.append('description', description);
         if (story?.id) formData.append('storyId', story.id);
-        await uploadBild(formData).unwrap();
+        await uploadWithRetry(() => uploadBild(formData).unwrap());
     };
 
     const handleUpload = async () => {
@@ -80,17 +113,18 @@ export const BilderUploadDialog = ({ story }) => {
         setUploading(true);
         const errors = [];
         let done = 0;
-        setProgress({ done: 0, total: selectedFiles.length, errors: [] });
+        const isSingle = selectedFiles.length === 1;
+        setProgress({ done: 0, total: selectedFiles.length, errors: [], status: 'Komprimiere...' });
 
         for (let i = 0; i < selectedFiles.length; i += CONCURRENCY) {
             const batch = selectedFiles.slice(i, i + CONCURRENCY);
-            const results = await Promise.allSettled(batch.map(f => uploadSingle(f)));
+            const results = await Promise.allSettled(batch.map(f => uploadSingle(f, isSingle)));
             results.forEach((r, idx) => {
                 if (r.status === 'rejected')
                     errors.push(`${batch[idx].name}: ${r.reason?.data?.message || 'Fehler'}`);
             });
             done += batch.length;
-            setProgress({ done, total: selectedFiles.length, errors: [...errors] });
+            setProgress({ done, total: selectedFiles.length, errors: [...errors], status: 'Lade hoch...' });
         }
 
         setUploading(false);
@@ -164,9 +198,12 @@ export const BilderUploadDialog = ({ story }) => {
                         {uploading && (
                             <Box>
                                 <Typography variant="body2" sx={{mb: 0.5}}>
-                                    {progress.done} von {progress.total} hochgeladen
+                                    {progress.status} {progress.total > 0 && `(${progress.done} / ${progress.total})`}
                                 </Typography>
-                                <LinearProgress variant="determinate" value={(progress.done / progress.total) * 100} />
+                                <LinearProgress
+                                    variant={progress.total > 0 ? 'determinate' : 'indeterminate'}
+                                    value={progress.total > 0 ? (progress.done / progress.total) * 100 : undefined}
+                                />
                             </Box>
                         )}
                     </Box>
