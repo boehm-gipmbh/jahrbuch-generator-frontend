@@ -34,6 +34,8 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignToStoryButton = ({text, stories}) => {
     const dispatch = useDispatch();
     const [updateText] = texteApi.endpoints.updateText.useMutation();
@@ -195,6 +197,11 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                         {text.description || 'Erinnerung hinzufügen …'}
                     </pre>
                     </Tooltip>
+                )}
+                {(text.user?.name || text.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
+                        {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
+                    </Typography>
                 )}
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}

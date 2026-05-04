@@ -29,6 +29,8 @@ import {BilderUploadDialog} from "./BilderUploadDialog";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignToStoryButton = ({bild, stories}) => {
     const dispatch = useDispatch();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
@@ -197,6 +199,11 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         </pre>
                         </Tooltip>
                     </Box>
+                )}
+                {(bild.user?.name || bild.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
+                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
+                    </Typography>
                 )}
                 {!Boolean(story) && (
                     <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
