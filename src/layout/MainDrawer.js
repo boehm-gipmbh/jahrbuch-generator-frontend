@@ -152,7 +152,7 @@ const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
                     <ListItemText
                         primary={s.name}
                         secondary={drawerOpen && (s.user?.name || s.created) ? [s.user?.name, fmtDate(s.created)].filter(Boolean).join(' · ') : undefined}
-                        secondaryTypographyProps={{variant: 'caption', noWrap: true}}
+                        secondaryTypographyProps={{variant: 'caption', noWrap: true, sx: {fontSize: '0.65rem'}}}
                     />
                 </ListItemButton>
             </ListItem>
