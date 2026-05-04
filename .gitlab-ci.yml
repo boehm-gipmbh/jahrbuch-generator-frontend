@@ -1,2 +1,16 @@
-# CI läuft auf GitHub Actions.
-# Diese Datei deaktiviert GitLab Auto DevOps.
+stages:
+  - test
+
+test:
+  stage: test
+  image: node:20
+  before_script:
+    - npm ci
+  script:
+    - npm run build
+    - npx eslint src/ --max-warnings=0
+    - npm test -- --watchAll=false
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
