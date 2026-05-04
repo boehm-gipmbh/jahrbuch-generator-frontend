@@ -33,6 +33,8 @@ import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
 import {api as videoApi} from '../videos/api';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const PapierkorbItem = ({disableTooltip}) => {
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
     const {data: texteDeleted = []} = texteApi.endpoints.getPapierkorb.useQuery();
@@ -147,7 +149,11 @@ const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
                     <Tooltip title={s.name} placement='right' disableHoverListener={drawerOpen}>
                         <ListItemIcon><CircleIcon fontSize='small'/></ListItemIcon>
                     </Tooltip>
-                    <ListItemText primary={s.name}/>
+                    <ListItemText
+                        primary={s.name}
+                        secondary={drawerOpen && (s.user?.name || s.created) ? [s.user?.name, fmtDate(s.created)].filter(Boolean).join(' · ') : undefined}
+                        secondaryTypographyProps={{variant: 'caption', noWrap: true}}
+                    />
                 </ListItemButton>
             </ListItem>
             {confirmDelete && <DeleteStoryDialog story={s} onClose={() => setConfirmDelete(false)}/>}

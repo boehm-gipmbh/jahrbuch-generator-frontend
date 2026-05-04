@@ -19,6 +19,8 @@ import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignBildToStoryButton = ({bild, stories}) => {
     const dispatch = useDispatch();
     const [updateBild] = api.endpoints.updateBild.useMutation();
@@ -252,6 +254,13 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                         )}
                     </Box>
                 </Box>
+
+                {/* Erstellt von */}
+                {(bild.user?.name || bild.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
+                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
+                    </Typography>
+                )}
 
                 {/* Aktionen unten rechts */}
                 <Box sx={{
