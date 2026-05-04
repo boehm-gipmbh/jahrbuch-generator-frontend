@@ -19,6 +19,8 @@ import {api as storyApi} from '../stories';
 import {useDispatch} from 'react-redux';
 import {api as videoApi} from './api';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignVideoToStoryButton = ({video, stories}) => {
     const dispatch = useDispatch();
     const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
@@ -179,6 +181,11 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                                 {video.description || 'Beschreibung hinzufügen …'}
                             </pre>
                         </Tooltip>
+                    )}
+                    {(video.user?.name || video.created) && (
+                        <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
+                            {[video.user?.name, fmtDate(video.created)].filter(Boolean).join(' · ')}
+                        </Typography>
                     )}
                     {!Boolean(story) && video.story && (
                         <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
