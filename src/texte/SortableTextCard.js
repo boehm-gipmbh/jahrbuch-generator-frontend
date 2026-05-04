@@ -18,6 +18,8 @@ import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignTextToStoryButton = ({text, stories}) => {
     const dispatch = useDispatch();
     const [updateText] = api.endpoints.updateText.useMutation();
@@ -242,6 +244,13 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                         </Tooltip>
                     )}
                 </Box>
+
+                {/* Erstellt von */}
+                {(text.user?.name || text.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
+                        {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
+                    </Typography>
+                )}
 
                 <Box sx={{
                     position: 'absolute',
