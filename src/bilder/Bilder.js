@@ -167,12 +167,9 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     </Typography>
                     </Tooltip>
                 )}
-                {(bild.user?.name || bild.capturedAt || bild.created) && (
+                {(bild.user?.name || bild.created) && (
                     <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
-                        {[bild.user?.name,
-                            bild.capturedAt ? `Aufnahme ${fmtDate(bild.capturedAt)}` : null,
-                            bild.created ? `Upload ${fmtDate(bild.created)}` : null
-                        ].filter(Boolean).join(' · ')}
+                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
                     </Typography>
                 )}
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
