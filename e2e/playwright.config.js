@@ -20,7 +20,9 @@ module.exports = defineConfig({
     fullyParallel: false,
     workers: 1,
     retries: 0,
-    reporter: 'html',
+    reporter: process.env.CI
+        ? [['junit', {outputFile: 'test-results/results.xml'}], ['html', {open: 'never'}]]
+        : 'html',
     use: {
         baseURL: 'http://localhost:3000',
         trace: 'on-first-retry',
