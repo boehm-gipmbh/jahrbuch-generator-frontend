@@ -168,6 +168,11 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                             </Tooltip>
                         )}
                         {!Boolean(story) && <StoryChip text={text} size='small'/>}
+                        {(text.user?.name || text.created) && (
+                            <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.25, lineHeight: 1.4}}>
+                                {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
+                            </Typography>
+                        )}
                     </Box>
                     <Box>
                         <span onClick={() => isComplete && setLockMsg(true)}>
@@ -197,11 +202,6 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                         {text.description || 'Erinnerung hinzufügen …'}
                     </pre>
                     </Tooltip>
-                )}
-                {(text.user?.name || text.created) && (
-                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
-                        {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
-                    </Typography>
                 )}
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
