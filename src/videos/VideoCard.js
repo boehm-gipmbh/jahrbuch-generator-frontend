@@ -150,9 +150,12 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             </Typography>
                         </Tooltip>
                     )}
-                    {(video.user?.name || video.created) && (
+                    {(video.user?.name || video.capturedAt || video.created) && (
                         <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
-                            {[video.user?.name, fmtDate(video.created)].filter(Boolean).join(' · ')}
+                            {[video.user?.name,
+                                video.capturedAt ? `Aufnahme ${fmtDate(video.capturedAt)}` : null,
+                                video.created ? `Upload ${fmtDate(video.created)}` : null
+                            ].filter(Boolean).join(' · ')}
                         </Typography>
                     )}
                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
