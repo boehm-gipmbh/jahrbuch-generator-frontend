@@ -160,12 +160,17 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
                 ) : (
                     <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
-                    <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                    <Typography variant="subtitle1" component="div" sx={{mb: 0.5, fontWeight: 'medium', textAlign: 'center',
                         cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                         onClick={() => startEdit('title')}>
                         {bild.title || 'Kein Titel'}
                     </Typography>
                     </Tooltip>
+                )}
+                {(bild.user?.name || bild.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
+                    </Typography>
                 )}
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                     <AuthImage
@@ -199,11 +204,6 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         </pre>
                         </Tooltip>
                     </Box>
-                )}
-                {(bild.user?.name || bild.created) && (
-                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
-                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
-                    </Typography>
                 )}
                 {!Boolean(story) && (
                     <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>

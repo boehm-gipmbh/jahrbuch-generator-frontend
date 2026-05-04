@@ -197,7 +197,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                             color="primary"
                             onClick={() => startEdit('title')}
                             sx={{
-                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                mb: 0.5, fontWeight: 'bold', textAlign: 'center',
                                 cursor: isComplete ? 'default' : 'text',
                                 '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
                             }}
@@ -206,6 +206,11 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                             {!Boolean(story) && <StoryChip text={text} size='small'/>}
                         </Typography>
                         </Tooltip>
+                    )}
+                    {(text.user?.name || text.created) && (
+                        <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                            {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
+                        </Typography>
                     )}
 
                     {/* Text */}
@@ -245,12 +250,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                     )}
                 </Box>
 
-                {/* Erstellt von */}
-                {(text.user?.name || text.created) && (
-                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', mt: 0.5, lineHeight: 1.4}}>
-                        {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
-                    </Typography>
-                )}
+
 
                 <Box sx={{
                     position: 'absolute',
