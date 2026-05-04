@@ -18,6 +18,8 @@ import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignTextToStoryButton = ({text, stories}) => {
     const dispatch = useDispatch();
     const [updateText] = api.endpoints.updateText.useMutation();
@@ -195,7 +197,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                             color="primary"
                             onClick={() => startEdit('title')}
                             sx={{
-                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                mb: 0.5, fontWeight: 'bold', textAlign: 'center',
                                 cursor: isComplete ? 'default' : 'text',
                                 '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
                             }}
@@ -204,6 +206,11 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                             {!Boolean(story) && <StoryChip text={text} size='small'/>}
                         </Typography>
                         </Tooltip>
+                    )}
+                    {(text.user?.name || text.created) && (
+                        <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                            {[text.user?.name, fmtDate(text.created)].filter(Boolean).join(' · ')}
+                        </Typography>
                     )}
 
                     {/* Text */}
@@ -242,6 +249,8 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                         </Tooltip>
                     )}
                 </Box>
+
+
 
                 <Box sx={{
                     position: 'absolute',

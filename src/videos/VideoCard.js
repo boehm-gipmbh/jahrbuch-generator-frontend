@@ -19,6 +19,8 @@ import {api as storyApi} from '../stories';
 import {useDispatch} from 'react-redux';
 import {api as videoApi} from './api';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignVideoToStoryButton = ({video, stories}) => {
     const dispatch = useDispatch();
     const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
@@ -140,13 +142,18 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                     ) : (
                         <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
                             <Typography variant="subtitle1" component="div"
-                                sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                                sx={{mb: 0.5, fontWeight: 'medium', textAlign: 'center',
                                     cursor: isComplete ? 'default' : 'text',
                                     '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                                 onClick={() => startEdit('title')}>
                                 {video.title || 'Kein Titel'}
                             </Typography>
                         </Tooltip>
+                    )}
+                    {(video.user?.name || video.created) && (
+                        <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                            {[video.user?.name, fmtDate(video.created)].filter(Boolean).join(' · ')}
+                        </Typography>
                     )}
                     <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                         <AuthVideo

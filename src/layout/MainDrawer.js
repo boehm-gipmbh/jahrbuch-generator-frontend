@@ -16,20 +16,24 @@ import {
     Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import Typography from '@mui/material/Typography';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import {DndContext, closestCenter, PointerSensor, useSensor, useSensors} from '@dnd-kit/core';
+import {SortableContext, verticalListSortingStrategy, useSortable, arrayMove} from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
 import {api as storyApi} from '../stories';
 import {api as bilderApi} from '../bilder/api';
 import {api as texteApi} from '../texte/api';
 import {api as videoApi} from '../videos/api';
+
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
 const PapierkorbItem = ({disableTooltip}) => {
     const {data: bilderDeleted = []} = bilderApi.endpoints.getPapierkorb.useQuery();
@@ -97,23 +101,59 @@ const DeleteStoryDialog = ({story, onClose}) => {
     );
 };
 
-const StoryItem = ({s, drawerOpen}) => {
+const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
+        id: s.id,
+        disabled: isDragDisabled,
+    });
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
     return (
         <>
-            <ListItem disablePadding secondaryAction={drawerOpen &&
-                <Tooltip title="Story löschen">
-                    <IconButton edge="end" size="small" onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}>
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
-                </Tooltip>
-            }>
+            <ListItem
+                ref={setNodeRef}
+                style={style}
+                disablePadding
+                secondaryAction={drawerOpen &&
+                    <Tooltip title="Story löschen">
+                        <IconButton edge="end" size="small" onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}>
+                            <DeleteIcon fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                }
+            >
+                {drawerOpen && !isDragDisabled && (
+                    <Box
+                        {...attributes}
+                        {...listeners}
+                        sx={{
+                            display: 'flex', alignItems: 'center',
+                            pl: 0.5, cursor: 'grab',
+                            color: 'text.disabled',
+                            touchAction: 'none',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <DragHandleIcon fontSize="small"/>
+                    </Box>
+                )}
                 <ListItemButton component={Link} to={`/bilder/story/${s.id}`}
-                    selected={Boolean(useMatch(`/bilder/story/${s.id}`))}>
+                    selected={Boolean(useMatch(`/bilder/story/${s.id}`))}
+                    sx={{flex: 1, minWidth: 0}}
+                >
                     <Tooltip title={s.name} placement='right' disableHoverListener={drawerOpen}>
                         <ListItemIcon><CircleIcon fontSize='small'/></ListItemIcon>
                     </Tooltip>
-                    <ListItemText primary={s.name}/>
+                    <ListItemText
+                        primary={s.name}
+                        secondary={drawerOpen && (s.user?.name || s.created) ? [s.user?.name, fmtDate(s.created)].filter(Boolean).join(' · ') : undefined}
+                        secondaryTypographyProps={{variant: 'caption', noWrap: true, sx: {fontSize: '0.65rem'}}}
+                    />
                 </ListItemButton>
             </ListItem>
             {confirmDelete && <DeleteStoryDialog story={s} onClose={() => setConfirmDelete(false)}/>}
@@ -123,11 +163,31 @@ const StoryItem = ({s, drawerOpen}) => {
 
 const Stories = ({drawerOpen, openNewStory, stories}) => {
     const [search, setSearch] = useState('');
-    const [sortAsc, setSortAsc] = useState(true);
+    const [orderedStories, setOrderedStories] = useState([]);
+    const [reorderStories] = storyApi.endpoints.reorderStories.useMutation();
 
-    const filtered = Array.from(stories)
-        .filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase()))
-        .sort((a, b) => sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+    const sensors = useSensors(useSensor(PointerSensor, {
+        activationConstraint: {distance: 5},
+    }));
+
+    useEffect(() => {
+        setOrderedStories([...stories].sort((a, b) => (a.orderPosition ?? 0) - (b.orderPosition ?? 0)));
+    }, [stories]);
+
+    const filtered = search
+        ? orderedStories.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
+        : orderedStories;
+
+    const handleDragEnd = ({active, over}) => {
+        if (!over || active.id === over.id) return;
+        setOrderedStories(prev => {
+            const oldIndex = prev.findIndex(s => s.id === active.id);
+            const newIndex = prev.findIndex(s => s.id === over.id);
+            const next = arrayMove(prev, oldIndex, newIndex);
+            reorderStories(next.map(s => s.id));
+            return next;
+        });
+    };
 
     return (
         <>
@@ -140,11 +200,6 @@ const Stories = ({drawerOpen, openNewStory, stories}) => {
             </ListItem>
             {drawerOpen && (
                 <Box sx={{px: 1, pb: 1, display: 'flex', gap: 0.5, alignItems: 'center'}}>
-                    <Tooltip title={sortAsc ? 'A→Z' : 'Z→A'}>
-                        <IconButton size="small" onClick={() => setSortAsc(v => !v)}>
-                            {sortAsc ? <ArrowUpwardIcon fontSize="small"/> : <ArrowDownwardIcon fontSize="small"/>}
-                        </IconButton>
-                    </Tooltip>
                     <TextField
                         size="small" placeholder="Suchen…" value={search}
                         onChange={e => setSearch(e.target.value)}
@@ -164,9 +219,13 @@ const Stories = ({drawerOpen, openNewStory, stories}) => {
                     </Tooltip>
                 </Box>
             )}
-            {filtered.map(s => (
-                <StoryItem key={s.id} s={s} drawerOpen={drawerOpen}/>
-            ))}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={filtered.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                    {filtered.map(s => (
+                        <SortableStoryItem key={s.id} s={s} drawerOpen={drawerOpen} isDragDisabled={!!search}/>
+                    ))}
+                </SortableContext>
+            </DndContext>
         </>
     );
 };

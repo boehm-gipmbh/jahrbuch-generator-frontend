@@ -29,6 +29,8 @@ import {SortableTextCard} from '../texte/SortableTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const multiColCollision = (args) => {
     const activeId = args.active.id;
     // Primary: pointer within a droppable (reliable for columns)
@@ -376,9 +378,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         <Container sx={{mt: theme => theme.spacing(2)}}>
             <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.default', pt: 1, pb: 1, mb: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
                 <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1}}>
-                    <Typography component="h2" variant="h6" color="primary">
-                        {title}
-                    </Typography>
+                    <Box>
+                        <Typography component="h2" variant="h6" color="primary">
+                            {title}
+                        </Typography>
+                        {story && (story.user?.name || story.created) && (
+                            <Typography variant="caption" color="text.disabled">
+                                {[story.user?.name, fmtDate(story.created)].filter(Boolean).join(' · ')}
+                            </Typography>
+                        )}
+                    </Box>
                     <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
                         <ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton>
                         <ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton>

@@ -29,6 +29,8 @@ import {BilderUploadDialog} from "./BilderUploadDialog";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignToStoryButton = ({bild, stories}) => {
     const dispatch = useDispatch();
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
@@ -158,12 +160,17 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         onBlur={commitEdit} onKeyDown={handleKeyDown} fullWidth sx={{mb: 1}}/>
                 ) : (
                     <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
-                    <Typography variant="subtitle1" component="div" sx={{mb: 1, fontWeight: 'medium', textAlign: 'center',
+                    <Typography variant="subtitle1" component="div" sx={{mb: 0.5, fontWeight: 'medium', textAlign: 'center',
                         cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                         onClick={() => startEdit('title')}>
                         {bild.title || 'Kein Titel'}
                     </Typography>
                     </Tooltip>
+                )}
+                {(bild.user?.name || bild.created) && (
+                    <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                        {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
+                    </Typography>
                 )}
                 <Box sx={{display: 'flex', justifyContent: 'center', mb: 2}}>
                     <AuthImage

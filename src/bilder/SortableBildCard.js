@@ -19,6 +19,8 @@ import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
 const AssignBildToStoryButton = ({bild, stories}) => {
     const dispatch = useDispatch();
     const [updateBild] = api.endpoints.updateBild.useMutation();
@@ -195,7 +197,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                             color="primary"
                             onClick={() => startEdit('title')}
                             sx={{
-                                mb: 1, fontWeight: 'bold', textAlign: 'center',
+                                mb: 0.5, fontWeight: 'bold', textAlign: 'center',
                                 cursor: isComplete ? 'default' : 'text',
                                 '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}
                             }}
@@ -203,6 +205,11 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                             {bild.title || 'Kein Titel'}
                         </Typography>
                         </Tooltip>
+                    )}
+                    {(bild.user?.name || bild.created) && (
+                        <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
+                            {[bild.user?.name, fmtDate(bild.created)].filter(Boolean).join(' · ')}
+                        </Typography>
                     )}
 
                     {/* Bild */}
