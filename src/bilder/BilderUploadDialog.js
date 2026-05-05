@@ -24,6 +24,52 @@ const COMPRESSIBLE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 const COMPRESS_TARGET_MB = 2;
 const COMPRESS_MAX_PX = 1920;
 
+async function readExifDate(file) {
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!['.jpg', '.jpeg'].includes(ext)) return null;
+    try {
+        const buf = await file.slice(0, 65536).arrayBuffer();
+        const view = new DataView(buf);
+        if (view.getUint16(0) !== 0xFFD8) return null;
+        let off = 2;
+        while (off < buf.byteLength - 4) {
+            if (view.getUint8(off) !== 0xFF) return null;
+            const marker = view.getUint8(off + 1);
+            const segLen = view.getUint16(off + 2);
+            if (marker === 0xE1 && view.getUint32(off + 4) === 0x45786966) {
+                const tb = off + 10;
+                const le = view.getUint16(tb) === 0x4949;
+                const ri = (o) => le ? view.getUint32(o, true) : view.getUint32(o);
+                const rs = (o) => le ? view.getUint16(o, true) : view.getUint16(o);
+                const ifd0 = tb + ri(tb + 4);
+                const findTag = (ifdOff, tag) => {
+                    const n = rs(ifdOff);
+                    for (let i = 0; i < n; i++) {
+                        const e = ifdOff + 2 + i * 12;
+                        if (rs(e) === tag) {
+                            const type = rs(e + 2), comps = ri(e + 4);
+                            if (type === 2) {
+                                const absOff = comps > 4 ? tb + ri(e + 8) : e + 8;
+                                return new TextDecoder().decode(new Uint8Array(buf, absOff, comps - 1));
+                            }
+                            if (type === 4 || type === 9) return ri(e + 8);
+                        }
+                    }
+                    return null;
+                };
+                let dt = findTag(ifd0, 0x9003);
+                if (!dt) {
+                    const subOff = findTag(ifd0, 0x8769);
+                    if (subOff != null) dt = findTag(tb + subOff, 0x9003);
+                }
+                if (typeof dt === 'string') return dt;
+            } else if (marker === 0xDA) break;
+            off += 2 + segLen;
+        }
+    } catch (_) {}
+    return null;
+}
+
 async function compressIfNeeded(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     if (!COMPRESSIBLE_TYPES.includes(ext)) return file;
@@ -100,12 +146,13 @@ export const BilderUploadDialog = ({ story }) => {
     };
 
     const uploadSingle = async (file, isSingle) => {
-        const compressed = await compressIfNeeded(file);
+        const [compressed, exifDate] = await Promise.all([compressIfNeeded(file), readExifDate(file)]);
         const formData = new FormData();
         formData.append('file', compressed, file.name);
         formData.append('title', isSingle ? title : file.name.replace(/\.[^/.]+$/, ''));
         if (isSingle) formData.append('description', description);
         if (story?.id) formData.append('storyId', story.id);
+        if (exifDate) formData.append('capturedAt', exifDate);
         await uploadWithRetry(() => uploadBild(formData).unwrap());
     };
 
