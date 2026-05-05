@@ -33,6 +33,7 @@ async function compressIfNeeded(file) {
         maxWidthOrHeight: COMPRESS_MAX_PX,
         useWebWorker: true,
         fileType: file.type,
+        preserveExifData: true,
     });
 }
 
