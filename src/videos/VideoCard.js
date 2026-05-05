@@ -20,6 +20,11 @@ import {useDispatch} from 'react-redux';
 import {api as videoApi} from './api';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+const isSameDay = (a, b) => {
+    if (!a || !b) return false;
+    const da = new Date(a), db = new Date(b);
+    return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
+};
 
 const AssignVideoToStoryButton = ({video, stories}) => {
     const dispatch = useDispatch();
@@ -150,10 +155,10 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             </Typography>
                         </Tooltip>
                     )}
-                    {(video.user?.name || video.capturedAt || video.created) && (
+                    {(video.user?.name || video.created) && (
                         <Typography variant="caption" color="text.disabled" sx={{display: 'block', textAlign: 'center', mb: 1, lineHeight: 1.4}}>
                             {[video.user?.name,
-                                video.capturedAt ? `Aufnahme ${fmtDate(video.capturedAt)}` : null,
+                                !isSameDay(video.capturedAt, video.created) && video.capturedAt ? `Aufnahme ${fmtDate(video.capturedAt)}` : null,
                                 video.created ? `Upload ${fmtDate(video.created)}` : null
                             ].filter(Boolean).join(' · ')}
                         </Typography>
