@@ -24,50 +24,112 @@ const COMPRESSIBLE_TYPES = ['.jpg', '.jpeg', '.png', '.webp'];
 const COMPRESS_TARGET_MB = 2;
 const COMPRESS_MAX_PX = 1920;
 
-async function readExifDate(file) {
+async function readExifData(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
-    if (!['.jpg', '.jpeg'].includes(ext)) return null;
+    if (!['.jpg', '.jpeg'].includes(ext)) return {};
     try {
-        const buf = await file.slice(0, 65536).arrayBuffer();
+        const buf = await file.slice(0, 131072).arrayBuffer();
         const view = new DataView(buf);
-        if (view.getUint16(0) !== 0xFFD8) return null;
+        if (view.getUint16(0) !== 0xFFD8) return {};
         let off = 2;
         while (off < buf.byteLength - 4) {
-            if (view.getUint8(off) !== 0xFF) return null;
+            if (view.getUint8(off) !== 0xFF) return {};
             const marker = view.getUint8(off + 1);
             const segLen = view.getUint16(off + 2);
             if (marker === 0xE1 && view.getUint32(off + 4) === 0x45786966) {
-                const tb = off + 10;
-                const le = view.getUint16(tb) === 0x4949;
-                const ri = (o) => le ? view.getUint32(o, true) : view.getUint32(o);
-                const rs = (o) => le ? view.getUint16(o, true) : view.getUint16(o);
-                const ifd0 = tb + ri(tb + 4);
-                const findTag = (ifdOff, tag) => {
-                    const n = rs(ifdOff);
-                    for (let i = 0; i < n; i++) {
-                        const e = ifdOff + 2 + i * 12;
-                        if (rs(e) === tag) {
-                            const type = rs(e + 2), comps = ri(e + 4);
-                            if (type === 2) {
-                                const absOff = comps > 4 ? tb + ri(e + 8) : e + 8;
-                                return new TextDecoder().decode(new Uint8Array(buf, absOff, comps - 1));
-                            }
-                            if (type === 4 || type === 9) return ri(e + 8);
-                        }
-                    }
-                    return null;
-                };
-                let dt = findTag(ifd0, 0x9003);
-                if (!dt) {
-                    const subOff = findTag(ifd0, 0x8769);
-                    if (subOff != null) dt = findTag(tb + subOff, 0x9003);
-                }
-                if (typeof dt === 'string') return dt;
+                return parseExifSegment(buf, view, off + 10);
             } else if (marker === 0xDA) break;
             off += 2 + segLen;
         }
     } catch (_) {}
-    return null;
+    return {};
+}
+
+function parseExifSegment(buf, view, tb) {
+    const le = view.getUint16(tb) === 0x4949;
+    const ri = (o) => le ? view.getUint32(o, true) : view.getUint32(o);
+    const rs = (o) => le ? view.getUint16(o, true) : view.getUint16(o);
+
+    const readTag = (ifdOff, tag) => {
+        const n = rs(ifdOff);
+        for (let i = 0; i < n; i++) {
+            const e = ifdOff + 2 + i * 12;
+            if (e + 12 > buf.byteLength) break;
+            if (rs(e) !== tag) continue;
+            const type = rs(e + 2), comps = ri(e + 4), valOff = e + 8;
+            if (type === 1) return view.getUint8(valOff);
+            if (type === 2) {
+                const absOff = comps > 4 ? tb + ri(valOff) : valOff;
+                return new TextDecoder().decode(new Uint8Array(buf, absOff, Math.max(0, comps - 1))).trim();
+            }
+            if (type === 3) return le ? view.getUint16(valOff, true) : view.getUint16(valOff);
+            if (type === 4 || type === 9) return ri(valOff);
+            if (type === 5 || type === 10) {
+                const absOff = tb + ri(valOff);
+                const vals = [];
+                for (let c = 0; c < comps && c < 3; c++) {
+                    const pos = absOff + c * 8;
+                    if (pos + 8 > buf.byteLength) break;
+                    const num = ri(pos), den = ri(pos + 4);
+                    vals.push(den !== 0 ? num / den : 0);
+                }
+                return comps === 1 ? vals[0] : vals;
+            }
+        }
+        return null;
+    };
+
+    const result = {};
+    const ifd0 = tb + ri(tb + 4);
+
+    // IFD0
+    const dt0 = readTag(ifd0, 0x9003);
+    if (dt0) result.capturedAt = dt0;
+    const make = readTag(ifd0, 0x010F);
+    if (make) result.make = make;
+    const model = readTag(ifd0, 0x0110);
+    if (model) result.model = model;
+    const orientation = readTag(ifd0, 0x0112);
+    if (orientation != null) result.orientation = orientation;
+
+    // ExifIFD
+    const subOff = readTag(ifd0, 0x8769);
+    if (subOff != null) {
+        const exifIfd = tb + subOff;
+        const dtOrig = readTag(exifIfd, 0x9003);
+        if (dtOrig && !result.capturedAt) result.capturedAt = dtOrig;
+        const iso = readTag(exifIfd, 0x8827);
+        if (iso != null) result.iso = iso;
+        const expTime = readTag(exifIfd, 0x829A);
+        if (expTime != null) result.exposureTime = expTime;
+        const fNumber = readTag(exifIfd, 0x829D);
+        if (fNumber != null) result.fNumber = fNumber;
+        const focalLen = readTag(exifIfd, 0x920A);
+        if (focalLen != null) result.focalLength = focalLen;
+    }
+
+    // GPS IFD
+    const gpsOff = readTag(ifd0, 0x8825);
+    if (gpsOff != null) {
+        const gpsIfd = tb + gpsOff;
+        const latRef = readTag(gpsIfd, 0x0001);
+        const lat    = readTag(gpsIfd, 0x0002);
+        const lonRef = readTag(gpsIfd, 0x0003);
+        const lon    = readTag(gpsIfd, 0x0004);
+        const altRef = readTag(gpsIfd, 0x0005);
+        const alt    = readTag(gpsIfd, 0x0006);
+        if (Array.isArray(lat) && Array.isArray(lon)) {
+            const toDeg = ([d, m, s]) => d + m / 60 + s / 3600;
+            let latDeg = toDeg(lat), lonDeg = toDeg(lon);
+            if (latRef === 'S') latDeg = -latDeg;
+            if (lonRef === 'W') lonDeg = -lonDeg;
+            result.gpsLat = Math.round(latDeg * 1e7) / 1e7;
+            result.gpsLon = Math.round(lonDeg * 1e7) / 1e7;
+            if (alt != null) result.gpsAlt = Math.round((altRef === 1 ? -alt : alt) * 10) / 10;
+        }
+    }
+
+    return result;
 }
 
 async function compressIfNeeded(file) {
@@ -146,13 +208,14 @@ export const BilderUploadDialog = ({ story }) => {
     };
 
     const uploadSingle = async (file, isSingle) => {
-        const [compressed, exifDate] = await Promise.all([compressIfNeeded(file), readExifDate(file)]);
+        const [compressed, exif] = await Promise.all([compressIfNeeded(file), readExifData(file)]);
         const formData = new FormData();
         formData.append('file', compressed, file.name);
         formData.append('title', isSingle ? title : file.name.replace(/\.[^/.]+$/, ''));
         if (isSingle) formData.append('description', description);
         if (story?.id) formData.append('storyId', story.id);
-        if (exifDate) formData.append('capturedAt', exifDate);
+        if (exif.capturedAt) formData.append('capturedAt', exif.capturedAt);
+        if (Object.keys(exif).length > 0) formData.append('exifData', JSON.stringify(exif));
         await uploadWithRetry(() => uploadBild(formData).unwrap());
     };
 
