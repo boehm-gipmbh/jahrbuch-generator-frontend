@@ -28,6 +28,7 @@ import {StoryChip} from './StoryChip';
 import {BilderUploadDialog} from "./BilderUploadDialog";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
+import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -189,6 +190,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         style={{maxWidth: '100%', maxHeight: 200, objectFit: 'contain'}}
                     />
                 </Box>
+                <MetaInfoPanel jsonString={bild.exifData}/>
                 {/* Beschreibung */}
                 {editField === 'description' ? (
                     <TextField autoFocus size="small" multiline value={editValue} onChange={e => setEditValue(e.target.value)}
