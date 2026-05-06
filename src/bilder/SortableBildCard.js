@@ -12,6 +12,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 import {useDispatch} from 'react-redux';
 import AuthImage from './AuthImage';
 import {EditBildPriority} from './Priority';
@@ -229,6 +230,8 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                             style={{width: '100%', height: 'auto', display: 'block'}}
                         />
                     </Box>
+
+                    <MetaInfoPanel jsonString={bild.exifData}/>
 
                     {/* Beschreibung */}
                     <Box sx={{mt: 'auto', mb: 5}}>

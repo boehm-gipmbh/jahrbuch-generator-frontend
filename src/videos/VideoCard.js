@@ -13,6 +13,7 @@ import AddLinkIcon from '@mui/icons-material/AddLink';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 import {EditBildPriority} from '../bilder/Priority';
 import AuthVideo from './AuthVideo';
 import {api as storyApi} from '../stories';
@@ -169,6 +170,9 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             style={{maxWidth: '100%', maxHeight: 200}}
                         />
                     </Box>
+
+                    <MetaInfoPanel jsonString={video.metadata}/>
+
                     {editField === 'description' ? (
                         <TextField autoFocus size="small" multiline value={editValue}
                             onChange={e => setEditValue(e.target.value)}
