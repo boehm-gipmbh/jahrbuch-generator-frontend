@@ -79,18 +79,28 @@ function parseExifSegment(buf, view, tb) {
         return null;
     };
 
+    const EXPOSURE_PROGRAM = ['Unbekannt','Manuell','Programm-Auto','Blendenvorwahl','Zeitvorwahl','Kreativ','Action','Porträt','Landschaft'];
+    const METERING_MODE    = ['Unbekannt','Mittelwert','Mittenbetont','Spot','Multi-Spot','Mehrfeld','Selektiv'];
+    const EXPOSURE_MODE    = ['Auto','Manuell','Auto-Bracket'];
+    const WHITE_BALANCE    = ['Auto','Manuell'];
+    const SCENE_CAPTURE    = ['Standard','Landschaft','Porträt','Nacht'];
+
+    const set = (key, val) => { if (val != null && val !== '' && val !== 0) result[key] = val; };
+    const setStr = (key, val) => { if (val) result[key] = val; };
+    const setEnum = (key, val, map) => { if (val != null && map[val] !== undefined) result[key] = map[val]; };
+
     const result = {};
     const ifd0 = tb + ri(tb + 4);
 
     // IFD0
-    const dt0 = readTag(ifd0, 0x9003);
-    if (dt0) result.capturedAt = dt0;
-    const make = readTag(ifd0, 0x010F);
-    if (make) result.make = make;
-    const model = readTag(ifd0, 0x0110);
-    if (model) result.model = model;
-    const orientation = readTag(ifd0, 0x0112);
-    if (orientation != null) result.orientation = orientation;
+    setStr('capturedAt', readTag(ifd0, 0x9003));
+    setStr('make',       readTag(ifd0, 0x010F));
+    setStr('model',      readTag(ifd0, 0x0110));
+    set(   'orientation',readTag(ifd0, 0x0112));
+    setStr('software',   readTag(ifd0, 0x0131));
+    setStr('dateTime',   readTag(ifd0, 0x0132));
+    setStr('artist',     readTag(ifd0, 0x013B));
+    setStr('copyright',  readTag(ifd0, 0x8298));
 
     // ExifIFD
     const subOff = readTag(ifd0, 0x8769);
@@ -98,14 +108,24 @@ function parseExifSegment(buf, view, tb) {
         const exifIfd = tb + subOff;
         const dtOrig = readTag(exifIfd, 0x9003);
         if (dtOrig && !result.capturedAt) result.capturedAt = dtOrig;
-        const iso = readTag(exifIfd, 0x8827);
-        if (iso != null) result.iso = iso;
-        const expTime = readTag(exifIfd, 0x829A);
-        if (expTime != null) result.exposureTime = expTime;
-        const fNumber = readTag(exifIfd, 0x829D);
-        if (fNumber != null) result.fNumber = fNumber;
-        const focalLen = readTag(exifIfd, 0x920A);
-        if (focalLen != null) result.focalLength = focalLen;
+        set(   'iso',            readTag(exifIfd, 0x8827));
+        set(   'exposureTime',   readTag(exifIfd, 0x829A));
+        set(   'fNumber',        readTag(exifIfd, 0x829D));
+        set(   'focalLength',    readTag(exifIfd, 0x920A));
+        set(   'exposureBias',   readTag(exifIfd, 0x9204));
+        setEnum('exposureProgram', readTag(exifIfd, 0x8822), EXPOSURE_PROGRAM);
+        setEnum('meteringMode',    readTag(exifIfd, 0x9207), METERING_MODE);
+        setEnum('exposureMode',    readTag(exifIfd, 0xA402), EXPOSURE_MODE);
+        setEnum('whiteBalance',    readTag(exifIfd, 0xA403), WHITE_BALANCE);
+        setEnum('sceneCaptureType',readTag(exifIfd, 0xA406), SCENE_CAPTURE);
+        const flash = readTag(exifIfd, 0x9209);
+        if (flash != null) result.flash = (flash & 1) ? 'Ja' : 'Nein';
+        set('focalLength35mm', readTag(exifIfd, 0xA405));
+        setStr('lensModel',    readTag(exifIfd, 0xA434));
+        set(   'pixelWidth',   readTag(exifIfd, 0xA002));
+        set(   'pixelHeight',  readTag(exifIfd, 0xA003));
+        const zoom = readTag(exifIfd, 0xA404);
+        if (zoom != null && zoom !== 1) result.digitalZoom = zoom;
     }
 
     // GPS IFD
@@ -118,6 +138,12 @@ function parseExifSegment(buf, view, tb) {
         const lon    = readTag(gpsIfd, 0x0004);
         const altRef = readTag(gpsIfd, 0x0005);
         const alt    = readTag(gpsIfd, 0x0006);
+        const spdRef = readTag(gpsIfd, 0x000C);
+        const spd    = readTag(gpsIfd, 0x000D);
+        const dirRef = readTag(gpsIfd, 0x0010);
+        const dir    = readTag(gpsIfd, 0x0011);
+        if (spd != null) result.gpsSpeed = `${spd.toFixed(1)} ${spdRef || 'km/h'}`;
+        if (dir != null) result.gpsDirection = `${dir.toFixed(1)}° ${dirRef || ''}`.trim();
         if (Array.isArray(lat) && Array.isArray(lon)) {
             const toDeg = ([d, m, s]) => d + m / 60 + s / 3600;
             let latDeg = toDeg(lat), lonDeg = toDeg(lon);
