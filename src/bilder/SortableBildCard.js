@@ -2,7 +2,7 @@ import {useState, memo} from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import {Paper, Box, Typography, Tooltip, Checkbox, IconButton, TextField, Snackbar, InputAdornment,
-    MenuItem, Popover, MenuList, Divider, Collapse} from '@mui/material';
+    MenuItem, Popover, MenuList, Divider} from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LockIcon from '@mui/icons-material/Lock';
@@ -12,7 +12,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 import {useDispatch} from 'react-redux';
 import AuthImage from './AuthImage';
 import {EditBildPriority} from './Priority';
@@ -104,10 +104,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
     const [lockMsg, setLockMsg] = useState(false);
-    const [showExif, setShowExif] = useState(false);
     const isComplete = Boolean(bild.complete);
-
-    const exif = bild.exifData ? (() => { try { return JSON.parse(bild.exifData); } catch { return null; } })() : null;
 
     const startEdit = (field) => {
         if (isComplete) { setLockMsg(true); return; }
@@ -234,24 +231,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                         />
                     </Box>
 
-                    {/* EXIF-Info */}
-                    {exif && (
-                        <Box sx={{mb: 1}}>
-                            <Box sx={{display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'text.secondary'}}
-                                 onClick={() => setShowExif(v => !v)}>
-                                <InfoOutlinedIcon sx={{fontSize: 14, mr: 0.5}}/>
-                                <Typography variant="caption">EXIF</Typography>
-                            </Box>
-                            <Collapse in={showExif}>
-                                <Box sx={{mt: 0.5, p: 1, bgcolor: 'grey.50', borderRadius: 1, fontSize: '0.7rem', fontFamily: 'monospace', lineHeight: 1.6}}>
-                                    {exif.make && <div><b>Kamera:</b> {exif.make} {exif.model}</div>}
-                                    {exif.iso && <div><b>ISO:</b> {exif.iso}{exif.fNumber ? `  f/${exif.fNumber.toFixed(1)}` : ''}{exif.exposureTime ? `  1/${Math.round(1/exif.exposureTime)}s` : ''}{exif.focalLength ? `  ${exif.focalLength.toFixed(0)}mm` : ''}</div>}
-                                    {exif.gpsLat != null && <div><b>GPS:</b> {exif.gpsLat.toFixed(6)}, {exif.gpsLon.toFixed(6)}{exif.gpsAlt != null ? ` (${exif.gpsAlt}m)` : ''}</div>}
-                                    {exif.capturedAt && <div><b>EXIF-Datum:</b> {exif.capturedAt}</div>}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <MetaInfoPanel jsonString={bild.exifData}/>
 
                     {/* Beschreibung */}
                     <Box sx={{mt: 'auto', mb: 5}}>

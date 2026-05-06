@@ -1,19 +1,19 @@
 import React, {memo, useState} from 'react';
 import {
-    Box, Button, ButtonGroup, Checkbox, Chip, Collapse, Dialog, DialogActions, DialogContent,
+    Box, Button, ButtonGroup, Checkbox, Chip, Dialog, DialogActions, DialogContent,
     DialogContentText, DialogTitle, IconButton, InputAdornment, Paper, Snackbar, TextField,
     Tooltip, Typography, MenuItem, Popover, MenuList, Divider
 } from '@mui/material';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 import {EditBildPriority} from '../bilder/Priority';
 import AuthVideo from './AuthVideo';
 import {api as storyApi} from '../stories';
@@ -94,10 +94,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
     const [deleteConfirm, setDeleteConfirm] = useState(false);
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
-    const [showMeta, setShowMeta] = useState(false);
     const isComplete = Boolean(video.complete);
-
-    const meta = video.metadata ? (() => { try { return JSON.parse(video.metadata); } catch { return null; } })() : null;
 
     const startEdit = (field) => {
         if (isComplete) { setLockMsg(true); return; }
@@ -174,25 +171,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         />
                     </Box>
 
-                    {/* Metadaten-Info */}
-                    {meta && (
-                        <Box sx={{mb: 1}}>
-                            <Box sx={{display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'text.secondary'}}
-                                 onClick={() => setShowMeta(v => !v)}>
-                                <InfoOutlinedIcon sx={{fontSize: 14, mr: 0.5}}/>
-                                <Typography variant="caption">Metadaten</Typography>
-                            </Box>
-                            <Collapse in={showMeta}>
-                                <Box sx={{mt: 0.5, p: 1, bgcolor: 'grey.50', borderRadius: 1, fontSize: '0.7rem', fontFamily: 'monospace', lineHeight: 1.6}}>
-                                    {meta.make && <div><b>Kamera:</b> {meta.make} {meta.model}</div>}
-                                    {meta.codec && <div><b>Video:</b> {meta.codec}{meta.width ? ` ${meta.width}×${meta.height}` : ''}{meta.fps ? ` @ ${meta.fps} fps` : ''}</div>}
-                                    {meta.duration != null && <div><b>Dauer:</b> {Math.floor(meta.duration / 60)}:{String(meta.duration % 60).padStart(2, '0')} min</div>}
-                                    {meta.gpsLat != null && <div><b>GPS:</b> {meta.gpsLat.toFixed(6)}, {meta.gpsLon.toFixed(6)}{meta.gpsAlt != null ? ` (${meta.gpsAlt}m)` : ''}</div>}
-                                    {meta.creationTime && <div><b>Aufnahme:</b> {meta.creationTime}</div>}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    )}
+                    <MetaInfoPanel jsonString={video.metadata}/>
 
                     {editField === 'description' ? (
                         <TextField autoFocus size="small" multiline value={editValue}
