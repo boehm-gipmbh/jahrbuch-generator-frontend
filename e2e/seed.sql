@@ -18,7 +18,7 @@ DELETE FROM stories WHERE name = 'DnD-Testalbum' AND id != 1801;
 -- Strategie: erst UPDATE (wenn vorhanden), dann INSERT mit MAX(id)+100 (wenn nicht vorhanden).
 -- email_verified=TRUE und active=TRUE damit Login nach V12/V13-Migrationen funktioniert.
 UPDATE users
-    SET password      = '$2b$10$R0qDk4bSm1zEZt47IEFKrOf.51rb2phLHA5O71oYejvcEQoAtm7q2',
+    SET password      = '$2a$10$R0qDk4bSm1zEZt47IEFKrOf.51rb2phLHA5O71oYejvcEQoAtm7q2',
         email_verified = TRUE,
         active         = TRUE
     WHERE name = 'e2etestuser';
@@ -26,7 +26,7 @@ UPDATE users
 INSERT INTO users (id, name, email, password, created, version, email_verified, active)
 SELECT (SELECT COALESCE(MAX(id), 0) + 100 FROM users),
        'e2etestuser', 'e2etestuser@test.local',
-       '$2b$10$R0qDk4bSm1zEZt47IEFKrOf.51rb2phLHA5O71oYejvcEQoAtm7q2',
+       '$2a$10$R0qDk4bSm1zEZt47IEFKrOf.51rb2phLHA5O71oYejvcEQoAtm7q2',
        NOW(), 0, TRUE, TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE name = 'e2etestuser');
 
