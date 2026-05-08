@@ -1,5 +1,6 @@
 stages:
   - test
+  - update-backend
 
 test:
   stage: test
@@ -14,3 +15,33 @@ test:
     key: npm-$CI_COMMIT_REF_SLUG
     paths:
       - node_modules/
+
+# Aktualisiert den Submodul-Pointer im Backend-Repo nach jedem Push auf master.
+# Voraussetzung: CI/CD-Variable BACKEND_PAT = GitLab-PAT mit write_repository-Scope
+#                für jamsintown/jahrbuch-generator/jahrbuch-generator.
+update-backend-pointer:
+  stage: update-backend
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - BACKEND_URL="${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator.git"
+    - git clone --no-recurse-submodules "$BACKEND_URL" backend
+    - cd backend
+    - git config user.name "gitlab-ci[bot]"
+    - git config user.email "gitlab-ci[bot]@noreply.local"
+    - git submodule init
+    - git config submodule.src/main/frontend.url "${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator-frontend.git"
+    - git submodule update
+    - git -C src/main/frontend fetch origin
+    - git -C src/main/frontend checkout "$CI_COMMIT_SHA"
+    - git add src/main/frontend
+    - |
+      if git diff --cached --quiet; then
+        echo "Kein Pointer-Update nötig (Pointer bereits aktuell)"
+      else
+        SHORT_SHA=$(echo "$CI_COMMIT_SHA" | cut -c1-7)
+        git commit -m "Chore: Submodul-Pointer automatisch auf Frontend ${SHORT_SHA}"
+        git push "$BACKEND_URL" HEAD:main
+      fi

@@ -1,8 +1,8 @@
 name: Submodul-Pointer im Backend aktualisieren
 
 on:
-  push:
-    branches: [master]
+  # Deaktiviert — Pointer-Update läuft via GitLab-Pipeline (update-backend-pointer job).
+  workflow_dispatch:
 
 jobs:
   update-pointer:
