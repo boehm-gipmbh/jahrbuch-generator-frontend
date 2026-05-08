@@ -61,7 +61,7 @@ function parseExifSegment(buf, view, tb) {
             if (type === 1) return view.getUint8(valOff);
             if (type === 2) {
                 const absOff = comps > 4 ? tb + ri(valOff) : valOff;
-                return new TextDecoder().decode(new Uint8Array(buf, absOff, Math.max(0, comps - 1))).trim();
+                return new TextDecoder().decode(new Uint8Array(buf, absOff, Math.max(0, comps - 1))).replace(/\0/g, '').trim();
             }
             if (type === 3) return le ? view.getUint16(valOff, true) : view.getUint16(valOff);
             if (type === 4 || type === 9) return ri(valOff);
