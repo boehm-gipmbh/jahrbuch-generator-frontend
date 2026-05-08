@@ -26,7 +26,8 @@ const COMPRESS_MAX_PX = 1920;
 
 async function readExifData(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
-    if (!['.jpg', '.jpeg'].includes(ext)) return {};
+    const isJpeg = ['.jpg', '.jpeg'].includes(ext) || file.type === 'image/jpeg';
+    if (!isJpeg) return {};
     try {
         const buf = await file.slice(0, 131072).arrayBuffer();
         const view = new DataView(buf);
@@ -158,17 +159,28 @@ function parseExifSegment(buf, view, tb) {
     return result;
 }
 
-async function compressIfNeeded(file) {
+const MIME_TO_EXT = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/gif': '.gif'};
+
+function effectiveExt(file) {
     const ext = '.' + file.name.split('.').pop().toLowerCase();
-    if (!COMPRESSIBLE_TYPES.includes(ext)) return file;
+    return COMPRESSIBLE_TYPES.includes(ext) ? ext : (MIME_TO_EXT[file.type] || ext);
+}
+
+async function compressIfNeeded(file) {
+    if (!COMPRESSIBLE_TYPES.includes(effectiveExt(file))) return file;
     if (file.size <= COMPRESS_TARGET_MB * 1024 * 1024) return file;
-    return imageCompression(file, {
-        maxSizeMB: COMPRESS_TARGET_MB,
-        maxWidthOrHeight: COMPRESS_MAX_PX,
-        useWebWorker: true,
-        fileType: file.type,
-        preserveExif: true,
-    });
+    try {
+        return await imageCompression(file, {
+            maxSizeMB: COMPRESS_TARGET_MB,
+            maxWidthOrHeight: COMPRESS_MAX_PX,
+            useWebWorker: true,
+            fileType: file.type || 'image/jpeg',
+            preserveExif: true,
+        });
+    } catch (_) {
+        // Fallback: Originaldatei senden wenn Komprimierung fehlschlägt
+        return file;
+    }
 }
 
 async function uploadWithRetry(uploadFn, maxRetries = MAX_RETRIES) {
@@ -207,8 +219,7 @@ export const BilderUploadDialog = ({ story }) => {
     }, [config]);
 
     const validateFile = (file) => {
-        // Größenvalidierung überspringen für komprimierbare Typen — werden vor Upload verkleinert
-        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        const ext = effectiveExt(file);
         if (!COMPRESSIBLE_TYPES.includes(ext) && file.size > uploadConfig.maxSize)
             return `${file.name}: zu groß (max. ${uploadConfig.maxSize / 1024 / 1024} MB)`;
         if (!uploadConfig.allowedTypes.includes(ext))
@@ -288,7 +299,7 @@ export const BilderUploadDialog = ({ story }) => {
                             Dateien auswählen
                             <input
                                 type="file"
-                                accept={uploadConfig.allowedTypes.join(',')}
+                                accept="image/*"
                                 hidden
                                 multiple
                                 onChange={handleFileChange}
