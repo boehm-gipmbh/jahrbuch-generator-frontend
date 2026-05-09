@@ -7,8 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle,
-  TextField
+  DialogTitle
 } from '@mui/material';
 import {PasswordField} from '../auth/PasswordField';
 import {useForm} from '../useForm';
