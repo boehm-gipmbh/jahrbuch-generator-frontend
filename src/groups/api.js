@@ -24,6 +24,12 @@ export const api = createApi({
         method: 'POST',
         body: {validFrom, validTo, ...(recipientEmail && {recipientEmail})}
       })
+    }),
+    revokeToken: builder.mutation({
+      query: ({id}) => ({
+        url: `/${id}/fotobox-token`,
+        method: 'DELETE'
+      })
     })
   })
 });
