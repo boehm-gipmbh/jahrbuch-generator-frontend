@@ -10,6 +10,7 @@ import {
   DialogTitle,
   TextField
 } from '@mui/material';
+import {PasswordField} from '../auth/PasswordField';
 import {useForm} from '../useForm';
 import {api} from './';
 import {closeChangePassword} from "../layout";
@@ -44,18 +45,18 @@ export const ChangePasswordDialog = () => {
           Change your user password.
         </DialogContentText>
         {Boolean(error) && <Alert severity='error'>{error}</Alert>}
-        <TextField type='password' fullWidth margin='dense' variant='standard' label='Current password'
+        <PasswordField fullWidth margin='dense' variant='standard' label='Current password'
           name='currentPassword' value={values.currentPassword} onChange={onChange}
           required error={Boolean(invalid.currentPassword)}
           autoFocus
         />
-        <TextField type='password' fullWidth margin='dense' variant='standard' label='New password'
+        <PasswordField fullWidth margin='dense' variant='standard' label='New password'
           name='newPassword' value={values.newPassword} onChange={onChange}
           required error={Boolean(invalid.newPassword)}
         />
-        <TextField type='password' fullWidth margin='dense' variant='standard' label='Confirm new password'
-                   name='confirmPassword' value={values.confirmPassword} onChange={onChange}
-                   required error={Boolean(invalid.confirmPassword)}
+        <PasswordField fullWidth margin='dense' variant='standard' label='Confirm new password'
+          name='confirmPassword' value={values.confirmPassword} onChange={onChange}
+          required error={Boolean(invalid.confirmPassword)}
         />
       </DialogContent>
       <DialogActions>

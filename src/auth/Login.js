@@ -1,6 +1,7 @@
 import React from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router-dom';
 import {Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
+import {PasswordField} from './PasswordField';
 import {useDispatch} from 'react-redux';
 import {login} from './redux';
 import {useForm} from '../useForm';
@@ -45,7 +46,7 @@ export const Login = () => {
           <TextField margin='normal' required fullWidth autoFocus
             label='Username oder E-Mail' name='username' onChange={onChange} value={values.username}
           />
-          <TextField type='password' margin='normal' required fullWidth
+          <PasswordField margin='normal' required fullWidth
             label='Password' name='password' onChange={onChange} value={values.password}
             onKeyDown={e => e.key === 'Enter' && sendLogin()}
           />
