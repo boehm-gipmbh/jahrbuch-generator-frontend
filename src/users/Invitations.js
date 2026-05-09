@@ -677,7 +677,7 @@ const GroupSection = ({label, invs, self, isAdmin, isGroupAdmin, groupId: parent
   const uniqueMembers = [...memberMap.values()];
   const groupId = parentGroupId ?? invs.find(inv => inv.group?.id)?.group?.id ?? null;
   const groupKey = `group_${label}`;
-  const isOpen = expanded[groupKey] !== false;
+  const isOpen = expanded[groupKey] === true;
   const canAct = isAdmin || isGroupAdmin;
 
   return (
