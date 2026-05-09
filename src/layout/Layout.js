@@ -5,7 +5,7 @@ import {
     Alert, Box, Collapse, IconButton, Toolbar
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import {newText, newBild, toggleDrawer, openNewStory} from './';
+import {newBild, toggleDrawer, openNewStory} from './';
 import {TopBar} from './TopBar';
 import {MainDrawer} from './MainDrawer';
 import {api, NewStoryDialog} from '../stories';
@@ -64,7 +64,6 @@ export const Layout = ({children}) => {
             <TopBar
                 goHome={() => navigate('/')}
                 newBild={() => dispatch(newBild())}
-                newText={() => dispatch(newText())}
                 toggleDrawer={doToggleDrawer} drawerOpen={drawerOpen}
             />
             <MainDrawer

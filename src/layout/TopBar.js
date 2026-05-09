@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {AppBar, IconButton, Toolbar, Tooltip, Typography} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
@@ -12,7 +11,7 @@ import {GroupSwitcher} from "./GroupSwitcher";
 import {api} from '../users';
 import {PdfExportDialog} from '../pdf/PdfExportDialog';
 
-export const TopBar = ({goHome, newText, toggleDrawer}) => {
+export const TopBar = ({goHome, toggleDrawer}) => {
   const {data: user} = api.endpoints.getSelf.useQuery();
   const title = user?.activeGroup?.name ?? 'Jahrbuch-Generator';
   const navigate = useNavigate();
@@ -73,14 +72,6 @@ export const TopBar = ({goHome, newText, toggleDrawer}) => {
             </IconButton>
           </Tooltip>
         )}
-        <Tooltip title='Quick Add'>
-          <IconButton
-            color='inherit'
-            onClick={newText}
-          >
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
         <UserIcon />
       </Toolbar>
     </AppBar>
