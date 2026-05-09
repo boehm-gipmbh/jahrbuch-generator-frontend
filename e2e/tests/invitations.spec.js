@@ -106,10 +106,12 @@ test('group-admin erscheint als Mitglied im group-admin Token', async ({page}) =
     const ddetJwt = await getJwt('ddet', 'Ddet9999#');
     await goToInvitations(page, ddetJwt);
 
-    // Rolle "group-admin" in der Tabelle — immer sichtbar
+    // Sektion aufklappen
+    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+
+    // Rolle "group-admin" in der Tabelle
     await expect(page.getByText('group-admin').first()).toBeVisible({timeout: 8_000});
-    // ddet erscheint direkt als Member-Listeneintrag (GroupSection standardmäßig geöffnet)
-    // Kein exact: Name-Box enthält auch den Rollen-Chip ("ddet group-admin")
+    // ddet erscheint als Member-Listeneintrag
     await expect(page.getByText('ddet').first()).toBeVisible({timeout: 8_000});
 });
 
@@ -125,6 +127,9 @@ test('group-admin erstellt neuen user-Einladungslink über Dialog', async ({page
     await page.getByRole('button', {name: 'Erstellen'}).click();
     await expect(dialog).not.toBeVisible({timeout: 5_000});
 
+    // Sektion aufklappen um Tabelle sichtbar zu machen
+    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+
     // Neuer Token erscheint in der Tabelle als aktiv
     await expect(page.getByText('Aktiv').first()).toBeVisible({timeout: 8_000});
 });
@@ -137,7 +142,9 @@ test('neu registrierter user erscheint in der Mitgliederliste', async ({page}) =
 
     await goToInvitations(page, ddetJwt);
 
-    // User erscheint direkt als Member-Listeneintrag (Name immer sichtbar, kein Expand nötig)
+    // Sektion aufklappen
+    await page.locator('[data-testid="ExpandMoreIcon"]').first().click();
+
     await expect(page.getByText('pwtest_neueruser').first()).toBeVisible({timeout: 8_000});
 });
 
