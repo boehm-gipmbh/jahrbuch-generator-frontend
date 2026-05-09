@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import {Avatar, Box, Button, Container, Snackbar, TextField, Typography, Alert} from '@mui/material';
+import {Avatar, Box, Button, Container, Snackbar, Typography, Alert} from '@mui/material';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import {PasswordField} from './PasswordField';
 
