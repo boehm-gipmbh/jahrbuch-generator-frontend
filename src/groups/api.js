@@ -11,18 +11,18 @@ export const api = createApi({
       providesTags: ['Group']
     }),
     setupFotobox: builder.mutation({
-      query: ({groupName, validFrom, validTo}) => ({
+      query: ({groupName, validFrom, validTo, recipientEmail}) => ({
         url: '/fotobox-setup',
         method: 'POST',
-        body: {groupName, validFrom, validTo}
+        body: {groupName, validFrom, validTo, ...(recipientEmail && {recipientEmail})}
       }),
       invalidatesTags: ['Group']
     }),
     generateFotoboxToken: builder.mutation({
-      query: ({id, validFrom, validTo}) => ({
+      query: ({id, validFrom, validTo, recipientEmail}) => ({
         url: `/${id}/fotobox-token`,
         method: 'POST',
-        body: {validFrom, validTo}
+        body: {validFrom, validTo, ...(recipientEmail && {recipientEmail})}
       })
     })
   })
