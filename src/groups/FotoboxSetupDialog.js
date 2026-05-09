@@ -17,12 +17,14 @@ export const FotoboxSetupDialog = ({onClose}) => {
   const [groupName, setGroupName] = useState('');
   const [validFrom, setValidFrom] = useState(today());
   const [validTo, setValidTo] = useState(tomorrow());
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
   const [setupFotobox, {isLoading}] = api.endpoints.setupFotobox.useMutation();
+  const emailInvalid = recipientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail);
 
   const handleSetup = () => {
-    setupFotobox({groupName, validFrom, validTo})
+    setupFotobox({groupName, validFrom, validTo, recipientEmail: recipientEmail || undefined})
       .unwrap()
       .then(res => setResult(res));
   };
@@ -66,6 +68,16 @@ export const FotoboxSetupDialog = ({onClose}) => {
               disabled={!!result}
             />
           </Box>
+          <TextField
+            label="Token per E-Mail senden an (optional)"
+            type="email"
+            value={recipientEmail}
+            onChange={e => setRecipientEmail(e.target.value)}
+            fullWidth
+            disabled={!!result}
+            error={!!emailInvalid}
+            helperText={emailInvalid ? 'Bitte eine gültige E-Mail-Adresse eingeben' : ''}
+          />
 
           {result && (
             <Box sx={{bgcolor: 'grey.100', p: 2, borderRadius: 1, position: 'relative'}}>
@@ -100,7 +112,7 @@ export const FotoboxSetupDialog = ({onClose}) => {
           <Button
             onClick={handleSetup}
             variant="contained"
-            disabled={isLoading || !groupName.trim() || !validFrom || !validTo}
+            disabled={isLoading || !groupName.trim() || !validFrom || !validTo || !!emailInvalid}
           >
             Gruppe + Token erstellen
           </Button>
