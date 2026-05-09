@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import {Avatar, Box, Button, Container, Snackbar, TextField, Typography, Alert} from '@mui/material';
+import {Avatar, Box, Button, Container, Snackbar, Typography, Alert} from '@mui/material';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import {PasswordField} from './PasswordField';
 
 const validatePassword = (p) => {
   if (!p) return null;
@@ -72,17 +73,17 @@ export const ResetPassword = () => {
           Neues Passwort setzen
         </Typography>
         <Box noValidate sx={{mt: 2, width: '100%'}}>
-          <TextField
+          <PasswordField
             margin="normal" required fullWidth autoFocus
-            label="Neues Passwort" name="password" type="password"
+            label="Neues Passwort" name="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             error={Boolean(password && passwordError)}
             helperText={(password && passwordError) || '8+ Zeichen, Groß-/Kleinbuchstabe, Zahl, Sonderzeichen'}
           />
-          <TextField
+          <PasswordField
             margin="normal" required fullWidth
-            label="Passwort bestätigen" name="confirm" type="password"
+            label="Passwort bestätigen" name="confirm"
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && sendReset()}

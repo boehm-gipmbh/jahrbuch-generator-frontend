@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate, useSearchParams} from 'react-router-dom';
 import {Alert, Avatar, Box, Button, Container, Snackbar, TextField, Typography} from '@mui/material';
+import {PasswordField} from './PasswordField';
 import GroupsIcon from '@mui/icons-material/Groups';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
@@ -182,8 +183,8 @@ export const Register = () => {
           <TextField margin="normal" required fullWidth
             label="E-Mail" name="email" type="email" onChange={onChange} value={values.email}
           />
-          <TextField margin="normal" required fullWidth
-            label="Passwort" name="password" type="password" onChange={onChange} value={values.password}
+          <PasswordField margin="normal" required fullWidth
+            label="Passwort" name="password" onChange={onChange} value={values.password}
             onKeyDown={e => e.key === 'Enter' && sendRegister()}
             error={Boolean(values.password && passwordError)}
             helperText={(values.password && passwordError) || '8+ Zeichen, Groß-/Kleinbuchstabe, Zahl, Sonderzeichen'}
