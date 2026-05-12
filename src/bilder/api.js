@@ -64,6 +64,16 @@ export const api = createApi({
                     }),
                     invalidatesTags: ['Bild'],
                 }),
+            setHauptbild:
+                builder.mutation({
+                    query: ({bild, hauptbild}) => ({
+                        url: `/${bild.id}/hauptbild`,
+                        method: 'PUT',
+                        body: JSON.stringify(hauptbild),
+                        headers: {'Content-Type': 'application/json'}
+                    }),
+                    invalidatesTags: ['Bild'],
+                }),
             getUploadConfig:
                 builder.query({
                     query: () => '/uploadconfig',

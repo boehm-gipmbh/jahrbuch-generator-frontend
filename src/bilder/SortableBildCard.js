@@ -12,6 +12,8 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {MetaInfoPanel} from '../shared/MetaInfoPanel';
 import {useDispatch} from 'react-redux';
 import AuthImage from './AuthImage';
@@ -100,6 +102,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
 
     const [updateBild] = api.endpoints.updateBild.useMutation();
     const [deleteBild] = api.endpoints.deleteBild.useMutation();
+    const [setHauptbild] = api.endpoints.setHauptbild.useMutation();
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(bild.priority);
@@ -283,6 +286,15 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                     display: 'flex'
                 }}>
                     {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
+                    <Tooltip title={bild.hauptbild ? "Hauptbild (im PDF hervorgehoben) – klicken zum Entfernen" : "Als Hauptbild markieren (wird im PDF groß dargestellt)"}>
+                        <IconButton
+                            size="small"
+                            onClick={(e) => { e.stopPropagation(); setHauptbild({bild, hauptbild: !bild.hauptbild}); }}
+                            sx={bild.hauptbild ? {color: 'warning.main'} : {}}
+                        >
+                            {bild.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
                     <Tooltip title="Aus Story entfernen">
                         <span onClick={() => isComplete && setLockMsg(true)}>
                             <IconButton
@@ -318,6 +330,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
     );
 }, (prev, next) =>
     prev.bild === next.bild &&
+    prev.bild?.hauptbild === next.bild?.hauptbild &&
     prev.story === next.story &&
     prev.storiesLoaded === next.storiesLoaded &&
     prev.stories === next.stories
