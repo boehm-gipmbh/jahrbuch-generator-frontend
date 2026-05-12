@@ -476,10 +476,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         )}
                     </Box>
                     <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
-                        <Tooltip title="1 Spalte"><ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton></Tooltip>
-                        <Tooltip title="2 Spalten"><ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton></Tooltip>
-                        <Tooltip title="Raster (3 Spalten)"><ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton></Tooltip>
-                        <Tooltip title="Scrapbook (Polaroid-Layout)"><ToggleButton value="scrapbook"><AutoAwesomeMosaicIcon fontSize="small"/></ToggleButton></Tooltip>
+                        <ToggleButton value="1col"><Tooltip title="1 Spalte"><ViewAgendaIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="2col"><Tooltip title="2 Spalten"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="grid"><Tooltip title="Raster (3 Spalten)"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="scrapbook"><Tooltip title="Scrapbook (Polaroid-Layout)"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
