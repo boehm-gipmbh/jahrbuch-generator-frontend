@@ -43,5 +43,6 @@ update-backend-pointer:
       else
         SHORT_SHA=$(echo "$CI_COMMIT_SHA" | cut -c1-7)
         git commit -m "Chore: Submodul-Pointer automatisch auf Frontend ${SHORT_SHA}"
+        git pull --rebase "$BACKEND_URL" main
         git push "$BACKEND_URL" HEAD:main
       fi
