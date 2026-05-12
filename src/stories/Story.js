@@ -9,6 +9,8 @@ import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import GridViewIcon from '@mui/icons-material/GridView';
+import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
+import StarIcon from '@mui/icons-material/Star';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -22,8 +24,9 @@ import {
     DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
     PointerSensor, useSensor, useSensors, useDroppable
 } from '@dnd-kit/core';
-import {SortableContext, arrayMove, verticalListSortingStrategy} from '@dnd-kit/sortable';
-import {restrictToVerticalAxis} from '@dnd-kit/modifiers';
+import {SortableContext, arrayMove, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable';
+import {restrictToVerticalAxis, restrictToWindowEdges} from '@dnd-kit/modifiers';
+import {CSS} from '@dnd-kit/utilities';
 import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
@@ -96,6 +99,81 @@ const DroppableColumn = ({id, children}) => {
     );
 };
 
+const ScrapbookDropZone = ({id, label, color, children}) => {
+    const {setNodeRef, isOver} = useDroppable({id});
+    return (
+        <Box ref={setNodeRef} sx={{mb: 3}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 1.5}}>
+                <Box sx={{height: 3, width: 32, borderRadius: 2, bgcolor: color}}/>
+                <Typography variant="overline" sx={{color, fontWeight: 'bold', lineHeight: 1}}>
+                    {label}
+                </Typography>
+                <Box sx={{flex: 1, height: 1, bgcolor: 'divider'}}/>
+            </Box>
+            <Box
+                sx={{
+                    minHeight: 80,
+                    borderRadius: 2,
+                    p: 1,
+                    outline: '2px dashed',
+                    outlineColor: isOver ? color : 'transparent',
+                    transition: 'outline-color 0.15s',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: 2,
+                    alignItems: 'start',
+                }}
+            >
+                {children}
+            </Box>
+        </Box>
+    );
+};
+
+const ScrapbookBildCard = ({bild, onToggleHero}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `scrap-${bild.id}`});
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+    };
+    return (
+        <Box ref={setNodeRef} style={style} sx={{position: 'relative'}}>
+            <Box {...attributes} {...listeners} sx={{cursor: 'grab'}}>
+                <AuthImage
+                    src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
+                    alt={bild.title || ''}
+                    thumb
+                    style={{
+                        width: '100%', height: 140, objectFit: 'cover', display: 'block', borderRadius: 6,
+                        boxShadow: bild.hauptbild ? '0 0 0 3px #f59e0b' : '0 1px 4px rgba(0,0,0,0.18)',
+                    }}
+                />
+                <Typography variant="caption" sx={{
+                    display: 'block', textAlign: 'center', mt: 0.5,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                    {bild.title || '–'}
+                </Typography>
+            </Box>
+            <Box
+                onClick={() => onToggleHero(bild)}
+                sx={{
+                    position: 'absolute', top: 4, right: 4,
+                    bgcolor: bild.hauptbild ? 'warning.main' : 'rgba(255,255,255,0.85)',
+                    borderRadius: '50%', width: 26, height: 26,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', boxShadow: 1,
+                    '&:hover': {transform: 'scale(1.15)'},
+                    transition: 'transform 0.1s',
+                }}
+            >
+                <StarIcon sx={{fontSize: 16, color: bild.hauptbild ? 'white' : 'text.disabled'}}/>
+            </Box>
+        </Box>
+    );
+};
+
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
     const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -110,10 +188,14 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [layout, setLayout] = useState('2col');
     useEffect(() => { if (story?.layout) setLayout(story.layout); }, [story?.layout]); // eslint-disable-line react-hooks/exhaustive-deps
     const [updateStory] = storyApi.endpoints.updateStory.useMutation();
+    const [setHauptbild] = bilderApi.endpoints.setHauptbild.useMutation();
     const handleLayout = (_, newLayout) => {
         if (!newLayout) return;
         setLayout(newLayout);
         if (story) updateStory({...story, layout: newLayout});
+    };
+    const handleToggleHero = (bild) => {
+        setHauptbild({bild, hauptbild: !bild.hauptbild});
     };
 
     const dispatch = useDispatch();
@@ -165,6 +247,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const serverItems = [...bildItems, ...textItems, ...videoItems];
     const activeItems = dragItems || serverItems;
 
+    const isScrapbook = layout === 'scrapbook';
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
@@ -392,6 +475,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         <ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton>
                         <ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton>
                         <ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton>
+                        <ToggleButton value="scrapbook"><AutoAwesomeMosaicIcon fontSize="small"/></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
@@ -415,6 +499,38 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             </Box>
 
             <Paper sx={{p: 2}}>
+                {isScrapbook ? (() => {
+                    const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
+                    const gridBilder = bildItems.filter(i => !i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
+                    return (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToWindowEdges]}>
+                            <ScrapbookDropZone id="zone-hero" label="Hero · Hauptbilder" color="#f59e0b">
+                                <SortableContext items={heroBilder.map(i => `scrap-${i.item.id}`)} strategy={verticalListSortingStrategy}>
+                                    {heroBilder.length === 0 && (
+                                        <Typography variant="body2" color="text.disabled" sx={{p: 2, gridColumn: '1/-1'}}>
+                                            Stern ★ an einem Bild klicken um es als Hero zu markieren
+                                        </Typography>
+                                    )}
+                                    {heroBilder.map(({item}) => (
+                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}/>
+                                    ))}
+                                </SortableContext>
+                            </ScrapbookDropZone>
+                            <ScrapbookDropZone id="zone-grid" label="Grid · Weitere Bilder" color="#6366f1">
+                                <SortableContext items={gridBilder.map(i => `scrap-${i.item.id}`)} strategy={verticalListSortingStrategy}>
+                                    {gridBilder.length === 0 && (
+                                        <Typography variant="body2" color="text.disabled" sx={{p: 2, gridColumn: '1/-1'}}>
+                                            Keine weiteren Bilder
+                                        </Typography>
+                                    )}
+                                    {gridBilder.map(({item}) => (
+                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}/>
+                                    ))}
+                                </SortableContext>
+                            </ScrapbookDropZone>
+                        </DndContext>
+                    );
+                })() : (
                 <DndContext
                     sensors={sensors}
                     collisionDetection={is1col ? closestCenter : multiColCollision}
@@ -495,6 +611,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         )}
                     </DragOverlay>
                 </DndContext>
+                )}
             </Paper>
         </Container>
 
