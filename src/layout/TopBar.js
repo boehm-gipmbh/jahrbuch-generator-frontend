@@ -1,17 +1,15 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {AppBar, IconButton, Toolbar, Tooltip, Typography} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import GroupsIcon from '@mui/icons-material/Groups';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {useNavigate} from 'react-router-dom';
 import {UserIcon} from "./UserIcon";
 import {GroupSwitcher} from "./GroupSwitcher";
 import {api} from '../users';
-import {PdfExportDialog} from '../pdf/PdfExportDialog';
 
-export const TopBar = ({goHome, toggleDrawer}) => {
+export const TopBar = ({goHome, newText, toggleDrawer}) => {
   const {data: user} = api.endpoints.getSelf.useQuery();
   const title = user?.activeGroup?.name ?? 'Jahrbuch-Generator';
   const navigate = useNavigate();
@@ -19,10 +17,8 @@ export const TopBar = ({goHome, toggleDrawer}) => {
   const isGroupAdmin = user?.roles?.includes('group-admin');
   const managesActiveGroup = user?.managedGroups?.some(g => g.id === user?.activeGroup?.id);
   const showInvitations = isAdmin || (isGroupAdmin && managesActiveGroup);
-  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
 
   return (
-    <>
     <AppBar
       position='fixed'
       sx={{
@@ -51,13 +47,6 @@ export const TopBar = ({goHome, toggleDrawer}) => {
           {title}
         </Typography>
         <GroupSwitcher />
-        {user?.activeGroup && (
-          <Tooltip title='Jahrbuch exportieren'>
-            <IconButton color='inherit' onClick={() => setPdfDialogOpen(true)}>
-              <PictureAsPdfIcon />
-            </IconButton>
-          </Tooltip>
-        )}
         {showInvitations && (
           <Tooltip title='Einladungen'>
             <IconButton color='inherit' onClick={() => navigate('/invitations')}>
@@ -65,24 +54,17 @@ export const TopBar = ({goHome, toggleDrawer}) => {
             </IconButton>
           </Tooltip>
         )}
-        {isAdmin && (
-          <Tooltip title='Gruppen'>
-            <IconButton color='inherit' onClick={() => navigate('/groups')}>
-              <GroupsIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+        <Tooltip title='Quick Add'>
+          <IconButton
+            color='inherit'
+            onClick={newText}
+          >
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
         <UserIcon />
       </Toolbar>
     </AppBar>
-
-    {pdfDialogOpen && user?.activeGroup && (
-      <PdfExportDialog
-        gruppe={user.activeGroup}
-        onClose={() => setPdfDialogOpen(false)}
-      />
-    )}
-  </>
   );
 };
 
