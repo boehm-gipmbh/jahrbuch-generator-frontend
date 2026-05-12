@@ -2,7 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, Paper, ToggleButton, ToggleButtonGroup, Typography
+    Box, Button, Container, Paper, ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
@@ -11,6 +11,7 @@ import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import GridViewIcon from '@mui/icons-material/GridView';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -157,18 +158,21 @@ const ScrapbookBildCard = ({bild, onToggleHero}) => {
                 </Typography>
             </Box>
             <Box
-                onClick={() => onToggleHero(bild)}
+                onClick={(e) => { e.stopPropagation(); onToggleHero(bild); }}
                 sx={{
-                    position: 'absolute', top: 4, right: 4,
+                    position: 'absolute', top: 4, right: 4, zIndex: 1,
                     bgcolor: bild.hauptbild ? 'warning.main' : 'rgba(255,255,255,0.85)',
                     borderRadius: '50%', width: 26, height: 26,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', boxShadow: 1,
-                    '&:hover': {transform: 'scale(1.15)'},
-                    transition: 'transform 0.1s',
+                    '&:hover': {bgcolor: bild.hauptbild ? 'warning.dark' : 'rgba(255,255,255,1)', transform: 'scale(1.15)'},
+                    transition: 'transform 0.1s, background-color 0.1s',
                 }}
             >
-                <StarIcon sx={{fontSize: 16, color: bild.hauptbild ? 'white' : 'text.disabled'}}/>
+                {bild.hauptbild
+                    ? <StarIcon sx={{fontSize: 16, color: 'white'}}/>
+                    : <StarBorderIcon sx={{fontSize: 16, color: 'text.secondary'}}/>
+                }
             </Box>
         </Box>
     );
@@ -472,10 +476,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         )}
                     </Box>
                     <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
-                        <ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton>
-                        <ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton>
-                        <ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton>
-                        <ToggleButton value="scrapbook"><AutoAwesomeMosaicIcon fontSize="small"/></ToggleButton>
+                        <Tooltip title="1 Spalte"><ToggleButton value="1col"><ViewAgendaIcon fontSize="small"/></ToggleButton></Tooltip>
+                        <Tooltip title="2 Spalten"><ToggleButton value="2col"><ViewColumnIcon fontSize="small"/></ToggleButton></Tooltip>
+                        <Tooltip title="Raster (3 Spalten)"><ToggleButton value="grid"><GridViewIcon fontSize="small"/></ToggleButton></Tooltip>
+                        <Tooltip title="Scrapbook (Polaroid-Layout)"><ToggleButton value="scrapbook"><AutoAwesomeMosaicIcon fontSize="small"/></ToggleButton></Tooltip>
                     </ToggleButtonGroup>
                 </Box>
 
