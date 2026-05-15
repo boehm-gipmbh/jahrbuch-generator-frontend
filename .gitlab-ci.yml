@@ -16,13 +16,16 @@ test:
     paths:
       - node_modules/
 
-# Aktualisiert den Submodul-Pointer im Backend-Repo nach jedem Push auf master.
+# Aktualisiert den Submodul-Pointer im Backend-Repo.
+# - Feature-Branch: sucht passenden Backend-Branch anhand der ClickUp-ID und trägt Pointer dort ein.
+# - Main: pusht direkt auf Backend-main (bisheriges Verhalten).
 # Voraussetzung: CI/CD-Variable BACKEND_PAT = GitLab-PAT mit write_repository-Scope
 #                für jamsintown/jahrbuch-generator/jahrbuch-generator.
 update-backend-pointer:
   stage: update-backend
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH =~ /^feature\//
   variables:
     GIT_STRATEGY: none
   script:
@@ -31,6 +34,20 @@ update-backend-pointer:
     - cd backend
     - git config user.name "gitlab-ci[bot]"
     - git config user.email "gitlab-ci[bot]@noreply.local"
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "main" ]; then
+        CLICKUP_ID=$(echo "$CI_COMMIT_BRANCH" | sed -n 's|^feature/\([a-z0-9]*\)-.*|\1|p')
+        if [ -n "$CLICKUP_ID" ]; then
+          BACKEND_BRANCH=$(git ls-remote --heads origin "feature/${CLICKUP_ID}-*" | head -1 | sed 's|.*refs/heads/||')
+        fi
+        if [ -n "$BACKEND_BRANCH" ]; then
+          echo "Passender Backend-Branch gefunden: $BACKEND_BRANCH"
+          git checkout "$BACKEND_BRANCH"
+        else
+          echo "Kein passender Backend-Branch gefunden — kein Update."
+          exit 0
+        fi
+      fi
     - git submodule init
     - git config submodule.src/main/frontend.url "${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator-frontend.git"
     - git submodule update
@@ -42,7 +59,8 @@ update-backend-pointer:
         echo "Kein Pointer-Update nötig (Pointer bereits aktuell)"
       else
         SHORT_SHA=$(echo "$CI_COMMIT_SHA" | cut -c1-7)
-        git commit -m "Chore: Submodul-Pointer automatisch auf Frontend ${SHORT_SHA}"
-        git pull --rebase "$BACKEND_URL" main
-        git push "$BACKEND_URL" HEAD:main
+        TARGET_BRANCH=${BACKEND_BRANCH:-main}
+        git commit -m "chore: Submodul-Pointer auf Frontend ${SHORT_SHA}"
+        git pull --rebase "$BACKEND_URL" "$TARGET_BRANCH"
+        git push "$BACKEND_URL" "HEAD:${TARGET_BRANCH}"
       fi
