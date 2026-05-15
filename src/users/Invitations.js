@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {BatchInviteDialog} from './BatchInviteDialog';
+import AnnouncementDialog from '../announcement/AnnouncementDialog';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box, Button, Chip, Collapse, Container, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -733,6 +734,7 @@ export const Invitations = () => {
   const [deleteInvitation] = api.endpoints.deleteInvitation.useMutation();
   const [showNew, setShowNew] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
@@ -789,6 +791,11 @@ export const Invitations = () => {
               <Button variant="outlined" size="small" onClick={() => setShowBatch(true)}>
                 Batch-Einladung
               </Button>
+              {isAdmin && (
+                <Button variant="outlined" size="small" onClick={() => setShowAnnouncement(true)}>
+                  Ankündigung
+                </Button>
+              )}
               {(!isGroupAdmin || invitations.length === 0) && (
                 <Button startIcon={<AddIcon/>} variant="contained" size="small"
                   onClick={() => setShowNew(true)}>
@@ -839,6 +846,7 @@ export const Invitations = () => {
           groupName={groupName}
         />
       )}
+      <AnnouncementDialog open={showAnnouncement} onClose={() => setShowAnnouncement(false)}/>
       <Snackbar open={copied} message="Link in Zwischenablage kopiert"
         autoHideDuration={3000} onClose={() => setCopied(false)}/>
     </Layout>
