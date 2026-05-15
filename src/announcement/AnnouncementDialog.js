@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogTitle, Divider, FormControl, FormControlLabel,
@@ -9,11 +9,14 @@ import PeopleIcon from '@mui/icons-material/People';
 import {usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AnnouncementDialog({open, onClose}) {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [recipientFilter, setRecipientFilter] = useState('ALL');
   const [groupId, setGroupId] = useState('');
+  const [externalEmailsText, setExternalEmailsText] = useState('');
   const [recipients, setRecipients] = useState(null);
   const [result, setResult] = useState(null);
 
@@ -21,11 +24,22 @@ export default function AnnouncementDialog({open, onClose}) {
   const [previewRecipients, {isLoading: isPreviewing}] = usePreviewRecipientsMutation();
   const [sendAnnouncement, {isLoading: isSending}] = useSendAnnouncementMutation();
 
+  const externalEmails = useMemo(() =>
+    externalEmailsText.split('\n').map(l => l.trim()).filter(l => l.length > 0),
+    [externalEmailsText]
+  );
+  const invalidEmails = externalEmails.filter(e => !EMAIL_RE.test(e));
+
+  const isReady = subject && body
+    && (recipientFilter !== 'GROUP' || groupId)
+    && (recipientFilter !== 'EXTERNAL' || (externalEmails.length > 0 && invalidEmails.length === 0));
+
   const buildRequest = () => ({
     subject,
     body,
     recipientFilter,
     groupId: recipientFilter === 'GROUP' ? Number(groupId) : null,
+    externalEmails: recipientFilter === 'EXTERNAL' ? externalEmails : null,
   });
 
   const handlePreview = async () => {
@@ -47,6 +61,7 @@ export default function AnnouncementDialog({open, onClose}) {
     setBody('');
     setRecipientFilter('ALL');
     setGroupId('');
+    setExternalEmailsText('');
     setRecipients(null);
     setResult(null);
     onClose();
@@ -78,6 +93,7 @@ export default function AnnouncementDialog({open, onClose}) {
             <RadioGroup value={recipientFilter} onChange={e => { setRecipientFilter(e.target.value); setRecipients(null); }}>
               <FormControlLabel value="ALL" control={<Radio/>} label="Alle aktiven Nutzer"/>
               <FormControlLabel value="GROUP" control={<Radio/>} label="Gruppe"/>
+              <FormControlLabel value="EXTERNAL" control={<Radio/>} label="Externe E-Mail-Liste"/>
             </RadioGroup>
           </FormControl>
 
@@ -90,12 +106,28 @@ export default function AnnouncementDialog({open, onClose}) {
             </FormControl>
           )}
 
+          {recipientFilter === 'EXTERNAL' && (
+            <TextField
+              label="E-Mail-Adressen (eine pro Zeile)"
+              value={externalEmailsText}
+              onChange={e => { setExternalEmailsText(e.target.value); setRecipients(null); }}
+              fullWidth
+              multiline
+              rows={5}
+              placeholder="max@muster.de&#10;anna@beispiel.de"
+              error={invalidEmails.length > 0}
+              helperText={invalidEmails.length > 0
+                ? `Ungültige Adressen: ${invalidEmails.join(', ')}`
+                : externalEmails.length > 0 ? `${externalEmails.length} Adresse(n)` : ''}
+            />
+          )}
+
           <Box>
             <Button
               variant="outlined"
               startIcon={isPreviewing ? <CircularProgress size={16}/> : <PeopleIcon/>}
               onClick={handlePreview}
-              disabled={isPreviewing || !subject || !body || (recipientFilter === 'GROUP' && !groupId)}
+              disabled={isPreviewing || !isReady}
             >
               Empfänger anzeigen
             </Button>
@@ -108,8 +140,13 @@ export default function AnnouncementDialog({open, onClose}) {
                 {recipients.length} Empfänger
               </Typography>
               <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
-                {recipients.map(r => (
-                  <Chip key={r.id} label={`${r.name} <${r.email}>`} size="small" variant="outlined"/>
+                {recipients.map((r, i) => (
+                  <Chip
+                    key={r.id ?? i}
+                    label={r.name ? `${r.name} <${r.email}>` : r.email}
+                    size="small"
+                    variant="outlined"
+                  />
                 ))}
               </Box>
             </Box>
@@ -129,7 +166,7 @@ export default function AnnouncementDialog({open, onClose}) {
           variant="contained"
           startIcon={isSending ? <CircularProgress size={16}/> : <SendIcon/>}
           onClick={handleSend}
-          disabled={isSending || !subject || !body || (recipientFilter === 'GROUP' && !groupId) || !!result}
+          disabled={isSending || !isReady || !!result}
         >
           Senden
         </Button>
