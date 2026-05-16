@@ -52,9 +52,12 @@ export default function AnnouncementDialog({open, onClose}) {
 
   const handleSend = async () => {
     const res = await sendAnnouncement(buildRequest());
-    if (!res.error) {
+    if (res.error) {
+      setResult({sent: 0, failed: -1, errors: [res.error?.data?.error ?? 'Unbekannter Fehler']});
+    } else {
       setResult(res.data);
       setRecipients(null);
+      setTimeout(handleClose, 2000);
     }
   };
 
@@ -187,9 +190,11 @@ export default function AnnouncementDialog({open, onClose}) {
           )}
 
           {result && (
-            <Alert severity={result.failed === 0 ? 'success' : 'warning'}>
-              {result.sent} gesendet, {result.failed} fehlgeschlagen.
-              {result.errors?.length > 0 && <Box>{result.errors.join(', ')}</Box>}
+            <Alert severity={result.failed === -1 ? 'error' : result.failed === 0 ? 'success' : 'warning'}>
+              {result.failed === -1
+                ? `Fehler: ${result.errors?.join(', ')}`
+                : `${result.sent} gesendet, ${result.failed} fehlgeschlagen.`}
+              {result.failed >= 0 && result.errors?.length > 0 && <Box>{result.errors.join(', ')}</Box>}
             </Alert>
           )}
         </Stack>
