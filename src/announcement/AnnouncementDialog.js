@@ -2,13 +2,14 @@ import React, {useMemo, useRef, useState} from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogTitle, Divider, FormControl, FormControlLabel,
-  InputLabel, MenuItem, Radio, RadioGroup, Select, Stack, TextField, Typography
+  InputLabel, MenuItem, Radio, RadioGroup, Select, Stack, Table,
+  TableBody, TableCell, TableHead, TableRow, TextField, Typography
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import PeopleIcon from '@mui/icons-material/People';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import {usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
+import {useGetAnnouncementHistoryQuery, usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,6 +30,7 @@ export default function AnnouncementDialog({open, onClose}) {
   const emailFileInputRef = useRef(null);
   const attachmentFileInputRef = useRef(null);
   const {data: groups = []} = groupApi.endpoints.getGroups.useQuery();
+  const {data: history = []} = useGetAnnouncementHistoryQuery();
   const [previewRecipients, {isLoading: isPreviewing}] = usePreviewRecipientsMutation();
   const [sendAnnouncement, {isLoading: isSending}] = useSendAnnouncementMutation();
 
@@ -264,6 +266,40 @@ export default function AnnouncementDialog({open, onClose}) {
                 : `${result.sent} gesendet, ${result.failed} fehlgeschlagen.`}
               {result.failed >= 0 && result.errors?.length > 0 && <Box>{result.errors.join(', ')}</Box>}
             </Alert>
+          )}
+
+          {history.length > 0 && (
+            <>
+              <Divider/>
+              <Typography variant="subtitle2">Verlauf</Typography>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Datum</TableCell>
+                    <TableCell>Betreff</TableCell>
+                    <TableCell>Empfänger</TableCell>
+                    <TableCell align="right">Gesendet</TableCell>
+                    <TableCell>Anhang</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.map(h => (
+                    <TableRow key={h.id}>
+                      <TableCell sx={{whiteSpace: 'nowrap'}}>
+                        {new Date(h.sentAt).toLocaleString('de-DE', {dateStyle: 'short', timeStyle: 'short'})}
+                      </TableCell>
+                      <TableCell>{h.subject}</TableCell>
+                      <TableCell>{h.recipientDescription}</TableCell>
+                      <TableCell align="right">
+                        {h.sentCount}
+                        {h.failedCount > 0 && <Typography component="span" color="warning.main"> ({h.failedCount} ✗)</Typography>}
+                      </TableCell>
+                      <TableCell>{h.attachmentFilename ?? '–'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </Stack>
       </DialogContent>
