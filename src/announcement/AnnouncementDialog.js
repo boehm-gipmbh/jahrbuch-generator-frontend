@@ -263,7 +263,7 @@ export default function AnnouncementDialog({open, onClose}) {
             <Alert severity={result.failed === -1 ? 'error' : result.failed === 0 ? 'success' : 'warning'}>
               {result.failed === -1
                 ? `Fehler: ${result.errors?.join(', ')}`
-                : `${result.sent} gesendet, ${result.failed} fehlgeschlagen.`}
+                : <>{result.sent} gesendet, {result.failed} fehlgeschlagen. <a href="https://resend.com/emails" target="_blank" rel="noreferrer">Zustellstatus im Resend-Dashboard</a></>}
               {result.failed >= 0 && result.errors?.length > 0 && <Box>{result.errors.join(', ')}</Box>}
             </Alert>
           )}
