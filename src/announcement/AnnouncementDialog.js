@@ -7,6 +7,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import PeopleIcon from '@mui/icons-material/People';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import {usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
 
@@ -21,7 +22,12 @@ export default function AnnouncementDialog({open, onClose}) {
   const [recipients, setRecipients] = useState(null);
   const [result, setResult] = useState(null);
 
-  const fileInputRef = useRef(null);
+  const [attachmentMode, setAttachmentMode] = useState('NONE');
+  const [attachmentFile, setAttachmentFile] = useState(null);   // {filename, content (base64)}
+  const [attachmentGroupId, setAttachmentGroupId] = useState('');
+
+  const emailFileInputRef = useRef(null);
+  const attachmentFileInputRef = useRef(null);
   const {data: groups = []} = groupApi.endpoints.getGroups.useQuery();
   const [previewRecipients, {isLoading: isPreviewing}] = usePreviewRecipientsMutation();
   const [sendAnnouncement, {isLoading: isSending}] = useSendAnnouncementMutation();
@@ -34,7 +40,9 @@ export default function AnnouncementDialog({open, onClose}) {
 
   const isReady = subject && body
     && (recipientFilter !== 'GROUP' || groupId)
-    && (recipientFilter !== 'EXTERNAL' || (externalEmails.length > 0 && invalidEmails.length === 0));
+    && (recipientFilter !== 'EXTERNAL' || (externalEmails.length > 0 && invalidEmails.length === 0))
+    && (attachmentMode !== 'FILE' || attachmentFile != null)
+    && (attachmentMode !== 'GROUP_PDF' || attachmentGroupId);
 
   const buildRequest = () => ({
     subject,
@@ -42,6 +50,9 @@ export default function AnnouncementDialog({open, onClose}) {
     recipientFilter,
     groupId: recipientFilter === 'GROUP' ? Number(groupId) : null,
     externalEmails: recipientFilter === 'EXTERNAL' ? externalEmails : null,
+    attachmentFilename: attachmentMode === 'FILE' ? attachmentFile?.filename : null,
+    attachmentContent: attachmentMode === 'FILE' ? attachmentFile?.content : null,
+    attachmentGroupId: attachmentMode === 'GROUP_PDF' ? Number(attachmentGroupId) : null,
   });
 
   const handlePreview = async () => {
@@ -61,7 +72,7 @@ export default function AnnouncementDialog({open, onClose}) {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleEmailFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -74,6 +85,18 @@ export default function AnnouncementDialog({open, onClose}) {
     e.target.value = '';
   };
 
+  const handleAttachmentFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target.result.split(',')[1];
+      setAttachmentFile({filename: file.name, content: base64});
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const handleClose = () => {
     setSubject('');
     setBody('');
@@ -82,6 +105,9 @@ export default function AnnouncementDialog({open, onClose}) {
     setExternalEmailsText('');
     setRecipients(null);
     setResult(null);
+    setAttachmentMode('NONE');
+    setAttachmentFile(null);
+    setAttachmentGroupId('');
     onClose();
   };
 
@@ -141,22 +167,64 @@ export default function AnnouncementDialog({open, onClose}) {
               />
               <Box>
                 <input
-                  ref={fileInputRef}
+                  ref={emailFileInputRef}
                   type="file"
                   accept=".txt,text/plain"
                   style={{display: 'none'}}
-                  onChange={handleFileUpload}
+                  onChange={handleEmailFileUpload}
                 />
                 <Button
                   variant="outlined"
                   size="small"
                   startIcon={<UploadFileIcon/>}
-                  onClick={() => fileInputRef.current.click()}
+                  onClick={() => emailFileInputRef.current.click()}
                 >
                   TXT-Datei laden
                 </Button>
               </Box>
             </>
+          )}
+
+          <Divider/>
+
+          <FormControl>
+            <Typography variant="subtitle2" gutterBottom>Anhang (optional)</Typography>
+            <RadioGroup value={attachmentMode} onChange={e => { setAttachmentMode(e.target.value); setAttachmentFile(null); setAttachmentGroupId(''); }}>
+              <FormControlLabel value="NONE" control={<Radio/>} label="Kein Anhang"/>
+              <FormControlLabel value="FILE" control={<Radio/>} label="Datei hochladen"/>
+              <FormControlLabel value="GROUP_PDF" control={<Radio/>} label="Gruppen-PDF generieren"/>
+            </RadioGroup>
+          </FormControl>
+
+          {attachmentMode === 'FILE' && (
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+              <input
+                ref={attachmentFileInputRef}
+                type="file"
+                style={{display: 'none'}}
+                onChange={handleAttachmentFileUpload}
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AttachFileIcon/>}
+                onClick={() => attachmentFileInputRef.current.click()}
+              >
+                Datei auswählen
+              </Button>
+              {attachmentFile && (
+                <Typography variant="body2" color="text.secondary">{attachmentFile.filename}</Typography>
+              )}
+            </Box>
+          )}
+
+          {attachmentMode === 'GROUP_PDF' && (
+            <FormControl fullWidth>
+              <InputLabel>Gruppe für PDF</InputLabel>
+              <Select value={attachmentGroupId} onChange={e => setAttachmentGroupId(e.target.value)} label="Gruppe für PDF">
+                {groups.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}
+              </Select>
+            </FormControl>
           )}
 
           <Box>
