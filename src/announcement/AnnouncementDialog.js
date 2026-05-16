@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogTitle, Divider, FormControl, FormControlLabel,
@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import PeopleIcon from '@mui/icons-material/People';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import {usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
 
@@ -20,6 +21,7 @@ export default function AnnouncementDialog({open, onClose}) {
   const [recipients, setRecipients] = useState(null);
   const [result, setResult] = useState(null);
 
+  const fileInputRef = useRef(null);
   const {data: groups = []} = groupApi.endpoints.getGroups.useQuery();
   const [previewRecipients, {isLoading: isPreviewing}] = usePreviewRecipientsMutation();
   const [sendAnnouncement, {isLoading: isSending}] = useSendAnnouncementMutation();
@@ -54,6 +56,19 @@ export default function AnnouncementDialog({open, onClose}) {
       setResult(res.data);
       setRecipients(null);
     }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      setExternalEmailsText(prev => prev ? prev + '\n' + text.trim() : text.trim());
+      setRecipients(null);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleClose = () => {
@@ -107,19 +122,38 @@ export default function AnnouncementDialog({open, onClose}) {
           )}
 
           {recipientFilter === 'EXTERNAL' && (
-            <TextField
-              label="E-Mail-Adressen (eine pro Zeile)"
-              value={externalEmailsText}
-              onChange={e => { setExternalEmailsText(e.target.value); setRecipients(null); }}
-              fullWidth
-              multiline
-              rows={5}
-              placeholder="max@muster.de&#10;anna@beispiel.de"
-              error={invalidEmails.length > 0}
-              helperText={invalidEmails.length > 0
-                ? `Ungültige Adressen: ${invalidEmails.join(', ')}`
-                : externalEmails.length > 0 ? `${externalEmails.length} Adresse(n)` : ''}
-            />
+            <>
+              <TextField
+                label="E-Mail-Adressen (eine pro Zeile)"
+                value={externalEmailsText}
+                onChange={e => { setExternalEmailsText(e.target.value); setRecipients(null); }}
+                fullWidth
+                multiline
+                rows={5}
+                placeholder="max@muster.de&#10;anna@beispiel.de"
+                error={invalidEmails.length > 0}
+                helperText={invalidEmails.length > 0
+                  ? `Ungültige Adressen: ${invalidEmails.join(', ')}`
+                  : externalEmails.length > 0 ? `${externalEmails.length} Adresse(n)` : ''}
+              />
+              <Box>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,text/plain"
+                  style={{display: 'none'}}
+                  onChange={handleFileUpload}
+                />
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<UploadFileIcon/>}
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  TXT-Datei laden
+                </Button>
+              </Box>
+            </>
           )}
 
           <Box>
