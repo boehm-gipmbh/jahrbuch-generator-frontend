@@ -249,12 +249,11 @@ export default function AnnouncementDialog({open, onClose}) {
                   >
                     PDF konfigurieren…
                   </Button>
-                  {pdfOptions && (
-                    <Typography variant="body2" color="text.secondary">
-                      {pdfOptions.storyIds?.length ?? '?'} Stories · {pdfOptions.passepartoutStyle}
-                      {pdfOptions.coverPage ? ' · Deckblatt' : ''}
-                    </Typography>
-                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    {pdfOptions
+                      ? `${pdfOptions.storyIds?.length ?? '?'} Stories · ${pdfOptions.passepartoutStyle}${pdfOptions.coverPage ? ' · Deckblatt' : ''}`
+                      : 'optional – Standard-Einstellungen werden verwendet'}
+                  </Typography>
                 </Box>
               )}
             </Stack>

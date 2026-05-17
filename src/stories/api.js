@@ -10,6 +10,10 @@ export const api = createApi({
       query: () => '/',
       providesTags: ['Story'],
     }),
+    getStoriesByGroup: builder.query({
+      query: (groupId) => `/by-group/${groupId}`,
+      providesTags: ['Story'],
+    }),
     addStory: builder.mutation({
       query: story => ({
         url: '/',

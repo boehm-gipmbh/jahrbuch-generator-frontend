@@ -15,6 +15,7 @@ import {
 import {CSS} from '@dnd-kit/utilities';
 import {useSelector} from 'react-redux';
 import {api as storyApi} from '../stories';
+import {api as storyAdminApi} from '../stories/api';
 
 const PASSEPARTOUT_STYLES = [
   {id: 'none',     label: 'Keiner'},
@@ -100,7 +101,9 @@ const SortableStoryItem = ({story, checked, onToggle}) => {
 };
 
 export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected}) => {
-  const {data: allStories = []} = storyApi.endpoints.getStories.useQuery();
+  const {data: userStories = []} = storyApi.endpoints.getStories.useQuery(undefined, {skip: !!onOptionsSelected});
+  const {data: groupStories = []} = storyAdminApi.endpoints.getStoriesByGroup.useQuery(gruppe?.id, {skip: !onOptionsSelected || !gruppe?.id});
+  const allStories = onOptionsSelected ? groupStories : userStories;
   const jwt = useSelector(state => state.auth.jwt);
 
   const [orderedStories, setOrderedStories] = useState([]);
