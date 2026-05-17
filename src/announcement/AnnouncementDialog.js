@@ -11,6 +11,8 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import {useGetAnnouncementHistoryQuery, usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
+import {PdfExportDialog} from '../pdf/PdfExportDialog';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -26,6 +28,8 @@ export default function AnnouncementDialog({open, onClose}) {
   const [attachmentMode, setAttachmentMode] = useState('NONE');
   const [attachmentFile, setAttachmentFile] = useState(null);   // {filename, content (base64)}
   const [attachmentGroupId, setAttachmentGroupId] = useState('');
+  const [pdfOptions, setPdfOptions] = useState(null);
+  const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
 
   const emailFileInputRef = useRef(null);
   const attachmentFileInputRef = useRef(null);
@@ -55,6 +59,7 @@ export default function AnnouncementDialog({open, onClose}) {
     attachmentFilename: attachmentMode === 'FILE' ? attachmentFile?.filename : null,
     attachmentContent: attachmentMode === 'FILE' ? attachmentFile?.content : null,
     attachmentGroupId: attachmentMode === 'GROUP_PDF' ? Number(attachmentGroupId) : null,
+    pdfOptions: attachmentMode === 'GROUP_PDF' ? pdfOptions : null,
   });
 
   const handlePreview = async () => {
@@ -110,6 +115,8 @@ export default function AnnouncementDialog({open, onClose}) {
     setAttachmentMode('NONE');
     setAttachmentFile(null);
     setAttachmentGroupId('');
+    setPdfOptions(null);
+    setPdfConfigOpen(false);
     onClose();
   };
 
@@ -221,12 +228,44 @@ export default function AnnouncementDialog({open, onClose}) {
           )}
 
           {attachmentMode === 'GROUP_PDF' && (
-            <FormControl fullWidth>
-              <InputLabel>Gruppe für PDF</InputLabel>
-              <Select value={attachmentGroupId} onChange={e => setAttachmentGroupId(e.target.value)} label="Gruppe für PDF">
-                {groups.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}
-              </Select>
-            </FormControl>
+            <Stack spacing={1}>
+              <FormControl fullWidth>
+                <InputLabel>Gruppe für PDF</InputLabel>
+                <Select
+                  value={attachmentGroupId}
+                  onChange={e => { setAttachmentGroupId(e.target.value); setPdfOptions(null); }}
+                  label="Gruppe für PDF"
+                >
+                  {groups.map(g => <MenuItem key={g.id} value={g.id}>{g.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+              {attachmentGroupId && (
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<SettingsIcon/>}
+                    onClick={() => setPdfConfigOpen(true)}
+                  >
+                    PDF konfigurieren…
+                  </Button>
+                  {pdfOptions && (
+                    <Typography variant="body2" color="text.secondary">
+                      {pdfOptions.storyIds?.length ?? '?'} Stories · {pdfOptions.passepartoutStyle}
+                      {pdfOptions.coverPage ? ' · Deckblatt' : ''}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Stack>
+          )}
+
+          {pdfConfigOpen && attachmentGroupId && (
+            <PdfExportDialog
+              gruppe={groups.find(g => g.id === Number(attachmentGroupId)) ?? {id: Number(attachmentGroupId), name: ''}}
+              onClose={() => setPdfConfigOpen(false)}
+              onOptionsSelected={(opts) => { setPdfOptions(opts); setPdfConfigOpen(false); }}
+            />
           )}
 
           <Box>

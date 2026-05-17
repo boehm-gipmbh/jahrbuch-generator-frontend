@@ -99,7 +99,7 @@ const SortableStoryItem = ({story, checked, onToggle}) => {
   );
 };
 
-export const PdfExportDialog = ({gruppe, onClose}) => {
+export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected}) => {
   const {data: allStories = []} = storyApi.endpoints.getStories.useQuery();
   const jwt = useSelector(state => state.auth.jwt);
 
@@ -148,25 +148,33 @@ export const PdfExportDialog = ({gruppe, onClose}) => {
   };
 
   const handleGenerate = async () => {
+    const storyIds = orderedStories.filter(s => checkedIds.has(s.id)).map(s => s.id);
+    const options = {
+      storyIds,
+      includePendingBilder,
+      includePendingTexte,
+      coverPage,
+      coverTitle: coverPage ? coverTitle : null,
+      pageNumbers,
+      passepartoutStyle
+    };
+
+    if (onOptionsSelected) {
+      onOptionsSelected(options);
+      onClose();
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const storyIds = orderedStories.filter(s => checkedIds.has(s.id)).map(s => s.id);
       const res = await fetch(`${process.env.REACT_APP_API_URL}/pdf/${gruppe.id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwt}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          storyIds,
-          includePendingBilder,
-          includePendingTexte,
-          coverPage,
-          coverTitle: coverPage ? coverTitle : null,
-          pageNumbers,
-          passepartoutStyle
-        })
+        body: JSON.stringify(options)
       });
 
       if (!res.ok) {
@@ -283,7 +291,7 @@ export const PdfExportDialog = ({gruppe, onClose}) => {
           disabled={loading || noneSelected}
           startIcon={loading ? <CircularProgress size={16} color="inherit" /> : null}
         >
-          Generieren
+          {onOptionsSelected ? 'Übernehmen' : 'Generieren'}
         </Button>
       </DialogActions>
     </Dialog>
