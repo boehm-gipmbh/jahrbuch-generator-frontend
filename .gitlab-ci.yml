@@ -48,19 +48,38 @@ update-backend-pointer:
           exit 0
         fi
       fi
-    - git submodule init
-    - git config submodule.src/main/frontend.url "${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator-frontend.git"
-    - git submodule update
-    - git -C src/main/frontend fetch origin
-    - git -C src/main/frontend checkout "$CI_COMMIT_SHA"
-    - git add src/main/frontend
     - |
-      if git diff --cached --quiet; then
-        echo "Kein Pointer-Update nötig (Pointer bereits aktuell)"
+      SHORT_SHA=$(echo "$CI_COMMIT_SHA" | cut -c1-7)
+      TARGET_BRANCH=${BACKEND_BRANCH:-main}
+      if [ "$TARGET_BRANCH" = "main" ]; then
+        # Protected branch: GitLab Submodule API verwenden (kein direkter git push nötig)
+        ENCODED_PROJECT="jamsintown%2Fjahrbuch-generator%2Fjahrbuch-generator"
+        ENCODED_SUBMODULE="src%2Fmain%2Ffrontend"
+        HTTP_STATUS=$(curl -s -o /tmp/api_response.json -w "%{http_code}" \
+          --request PUT \
+          --header "PRIVATE-TOKEN: ${BACKEND_PAT}" \
+          --header "Content-Type: application/json" \
+          --data "{\"branch\":\"main\",\"commit_sha\":\"${CI_COMMIT_SHA}\",\"commit_message\":\"chore: Submodul-Pointer auf Frontend ${SHORT_SHA}\"}" \
+          "${CI_SERVER_URL}/api/v4/projects/${ENCODED_PROJECT}/repository/submodules/${ENCODED_SUBMODULE}")
+        echo "API-Antwort (HTTP ${HTTP_STATUS}):"
+        cat /tmp/api_response.json
+        if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+          echo "Fehler: Submodul-Pointer konnte nicht aktualisiert werden"
+          exit 1
+        fi
+        echo "Submodul-Pointer erfolgreich auf ${SHORT_SHA} gesetzt"
       else
-        SHORT_SHA=$(echo "$CI_COMMIT_SHA" | cut -c1-7)
-        TARGET_BRANCH=${BACKEND_BRANCH:-main}
-        git commit -m "chore: Submodul-Pointer auf Frontend ${SHORT_SHA}"
-        git pull --rebase "$BACKEND_URL" "$TARGET_BRANCH"
-        git push "$BACKEND_URL" "HEAD:${TARGET_BRANCH}"
+        git submodule init
+        git config submodule.src/main/frontend.url "${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator-frontend.git"
+        git submodule update
+        git -C src/main/frontend fetch origin
+        git -C src/main/frontend checkout "$CI_COMMIT_SHA"
+        git add src/main/frontend
+        if git diff --cached --quiet; then
+          echo "Kein Pointer-Update nötig (Pointer bereits aktuell)"
+        else
+          git commit -m "chore: Submodul-Pointer auf Frontend ${SHORT_SHA}"
+          git pull --rebase "$BACKEND_URL" "$TARGET_BRANCH"
+          git push "$BACKEND_URL" "HEAD:${TARGET_BRANCH}"
+        fi
       fi
