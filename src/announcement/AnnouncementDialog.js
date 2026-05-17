@@ -75,7 +75,6 @@ export default function AnnouncementDialog({open, onClose}) {
     } else {
       setResult(res.data);
       setRecipients(null);
-      setTimeout(handleClose, 2000);
     }
   };
 
