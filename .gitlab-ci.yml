@@ -30,6 +30,7 @@ update-backend-pointer:
     GIT_STRATEGY: none
   script:
     - BACKEND_URL="${CI_SERVER_PROTOCOL}://oauth2:${BACKEND_PAT}@${CI_SERVER_HOST}/jamsintown/jahrbuch-generator/jahrbuch-generator.git"
+    - rm -rf backend
     - git clone --no-recurse-submodules "$BACKEND_URL" backend
     - cd backend
     - git config user.name "gitlab-ci[bot]"
