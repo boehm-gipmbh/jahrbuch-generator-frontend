@@ -8,6 +8,7 @@ import {api as textApi} from './texte';
 import {api as videoApi} from './videos/api';
 import {api as groupApi} from './groups/api';
 import {api as announcementApi} from './announcement/api';
+import {api as reactionApi} from './reactions/api';
 
 const appReducer = combineReducers({
     auth: authReducer,
@@ -19,6 +20,7 @@ const appReducer = combineReducers({
     [videoApi.reducerPath]: videoApi.reducer,
     [groupApi.reducerPath]: groupApi.reducer,
     [announcementApi.reducerPath]: announcementApi.reducer,
+    [reactionApi.reducerPath]: reactionApi.reducer,
 });
 
 const rootReducer = (state, action) => {
@@ -38,5 +40,6 @@ export const store = configureStore({
         .concat(videoApi.middleware)
         .concat(groupApi.middleware)
         .concat(announcementApi.middleware)
+        .concat(reactionApi.middleware)
 });
 

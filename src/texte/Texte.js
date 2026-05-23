@@ -33,6 +33,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
+import {ReactionButtons} from '../reactions/ReactionButtons';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -203,10 +204,13 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                     </Tooltip>
                 )}
                 {!Boolean(story) && (
-                    <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
+                    <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
                         <StoryChip text={text} size='small' onDelete={() => onUpdate({...text, story: null})}/>
                     </Box>
                 )}
+                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
+                    <ReactionButtons targetType="TEXT" targetId={text.id}/>
+                </Box>
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
                     <Tooltip title="Erinnerung löschen">
