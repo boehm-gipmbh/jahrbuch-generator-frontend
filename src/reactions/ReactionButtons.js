@@ -3,7 +3,6 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import {useSelector} from 'react-redux';
 import {api} from './api';
 
@@ -47,29 +46,23 @@ export const ReactionButtons = ({targetType, targetId}) => {
                 </IconButton>
             </Tooltip>
             {data?.likeCount > 0 && (
-                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12}}>
-                    {data.likeCount}
-                </Typography>
-            )}
-            {likeInfo && (
                 <Tooltip title={likeInfo} placement="top">
-                    <InfoOutlinedIcon sx={{fontSize: 12, color: 'text.disabled', cursor: 'default'}}/>
+                    <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                        {data.likeCount}
+                    </Typography>
                 </Tooltip>
             )}
 
-            <Tooltip title={hasVote ? 'Empfehlung entfernen' : 'Empfehlen'}>
+            <Tooltip title={hasVote ? 'Empfehlung entfernen' : 'Für Jahrbuch empfehlen'}>
                 <IconButton size="small" onClick={toggle('VOTE')} sx={hasVote ? {color: 'primary.main'} : {}}>
                     {hasVote ? <ThumbUpIcon fontSize="small"/> : <ThumbUpOutlinedIcon fontSize="small"/>}
                 </IconButton>
             </Tooltip>
             {data?.voteCount > 0 && (
-                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12}}>
-                    {data.voteCount}
-                </Typography>
-            )}
-            {voteInfo && (
                 <Tooltip title={voteInfo} placement="top">
-                    <InfoOutlinedIcon sx={{fontSize: 12, color: 'text.disabled', cursor: 'default'}}/>
+                    <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                        {data.voteCount}
+                    </Typography>
                 </Tooltip>
             )}
         </Box>
