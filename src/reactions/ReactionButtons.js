@@ -8,7 +8,9 @@ import {api} from './api';
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : '';
 
 const reactorTooltip = (list) =>
-    list?.length ? list.map(r => `${r.userName} · ${fmtDate(r.createdAt)}`).join('\n') : '';
+    list?.length
+        ? <Box>{list.map((r, i) => <Box key={i}>{r.userName} · {fmtDate(r.createdAt)}</Box>)}</Box>
+        : '';
 
 export const ReactionButtons = ({targetType, targetId}) => {
     const {data} = api.endpoints.getCounts.useQuery({targetType, targetId});
