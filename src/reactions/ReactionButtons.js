@@ -5,6 +5,11 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {api} from './api';
 
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : '';
+
+const reactorTooltip = (list) =>
+    list?.length ? list.map(r => `${r.userName} · ${fmtDate(r.createdAt)}`).join('\n') : '';
+
 export const ReactionButtons = ({targetType, targetId}) => {
     const {data} = api.endpoints.getCounts.useQuery({targetType, targetId});
     const [toggleReaction] = api.endpoints.toggleReaction.useMutation();
@@ -25,9 +30,11 @@ export const ReactionButtons = ({targetType, targetId}) => {
                 </IconButton>
             </Tooltip>
             {data?.likeCount > 0 && (
-                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12}}>
-                    {data.likeCount}
-                </Typography>
+                <Tooltip title={reactorTooltip(data.likes)} placement="top">
+                    <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                        {data.likeCount}
+                    </Typography>
+                </Tooltip>
             )}
             <Tooltip title={hasFavorit ? 'Favorit entfernen' : 'Als Favorit markieren'}>
                 <IconButton size="small" onClick={toggle('FAVORIT')} sx={hasFavorit ? {color: 'warning.main'} : {}}>
@@ -35,9 +42,11 @@ export const ReactionButtons = ({targetType, targetId}) => {
                 </IconButton>
             </Tooltip>
             {data?.favoritCount > 0 && (
-                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12}}>
-                    {data.favoritCount}
-                </Typography>
+                <Tooltip title={reactorTooltip(data.favoriten)} placement="top">
+                    <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                        {data.favoritCount}
+                    </Typography>
+                </Tooltip>
             )}
         </Box>
     );
