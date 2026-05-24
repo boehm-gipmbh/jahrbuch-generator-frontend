@@ -329,7 +329,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [sortField, setSortField] = useState('date');
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());
-    const [metadataFilter, setMetadataFilter] = useState(['noTitle', 'noDescription']);
+    const [metadataFilter, setMetadataFilter] = useState(['noTitle', 'noDescription', 'noStory']);
 
     const theme = useTheme();
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
