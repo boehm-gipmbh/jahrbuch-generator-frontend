@@ -49,6 +49,7 @@ export const Videos = ({title = 'Deine Videos', filter = () => true}) => {
     const [sortField, setSortField] = useState('date');
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());
+    const [metadataFilter, setMetadataFilter] = useState(['noStory']);
 
     const theme = useTheme();
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
@@ -65,13 +66,14 @@ export const Videos = ({title = 'Deine Videos', filter = () => true}) => {
                 const key = video.story ? video.story.id : STORY_FILTER_NONE;
                 if (!storyFilter.has(key)) return false;
             }
+            if (metadataFilter.includes('noStory') && video.story) return false;
             return true;
         });
         const cmp = sortField === 'priority'
             ? (sortAsc ? (a, b) => (a.priority ?? 0) - (b.priority ?? 0) : (a, b) => (b.priority ?? 0) - (a.priority ?? 0))
             : (sortAsc ? byDateAsc : byDateDesc);
         return [...base].sort(cmp);
-    }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter]);
+    }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter, metadataFilter]);
 
     const rows = useMemo(() => {
         const result = [];
@@ -118,6 +120,7 @@ export const Videos = ({title = 'Deine Videos', filter = () => true}) => {
                             sortAsc={sortAsc} setSortAsc={setSortAsc}
                             stories={storiesLoaded && !story ? stories : undefined}
                             storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+                            metadataFilter={metadataFilter} setMetadataFilter={setMetadataFilter}
                         />
                     </Box>
 
