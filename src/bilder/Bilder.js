@@ -218,7 +218,9 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     </Box>
                 )}
                 {!Boolean(story) && (
-                    <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
+                    <Box sx={{width: 'fit-content', mb: 0.5}}>
+                        <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
+                    </Box>
                 )}
             </Box>
 

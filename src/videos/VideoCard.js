@@ -201,11 +201,13 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         </Tooltip>
                     )}
                     {!Boolean(story) && video.story && (
-                        <Chip
-                            label={video.story.name}
-                            size="small"
-                            onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
-                        />
+                        <Box sx={{width: 'fit-content', mb: 0.5}}>
+                            <Chip
+                                label={video.story.name}
+                                size="small"
+                                onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
+                            />
+                        </Box>
                     )}
                 </Box>
 
