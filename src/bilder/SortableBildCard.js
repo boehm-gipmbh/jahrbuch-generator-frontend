@@ -22,6 +22,7 @@ import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -278,6 +279,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                 {/* Reaktionen unten links */}
                 <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
                     <ReactionButtons targetType="BILD" targetId={bild.id}/>
+                    <CommentThread targetType="BILD" targetId={bild.id}/>
                 </Box>
 
                 {/* Aktionen unten rechts */}

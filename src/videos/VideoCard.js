@@ -20,6 +20,7 @@ import {api as storyApi} from '../stories';
 import {useDispatch} from 'react-redux';
 import {api as videoApi} from './api';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -213,6 +214,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
 
                 <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
                     <ReactionButtons targetType="VIDEO" targetId={video.id}/>
+                    <CommentThread targetType="VIDEO" targetId={video.id}/>
                 </Box>
 
                 {/* Aktionen unten rechts */}

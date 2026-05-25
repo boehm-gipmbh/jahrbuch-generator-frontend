@@ -34,6 +34,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -210,6 +211,7 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                 )}
                 <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
                     <ReactionButtons targetType="TEXT" targetId={text.id}/>
+                    <CommentThread targetType="TEXT" targetId={text.id}/>
                 </Box>
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}

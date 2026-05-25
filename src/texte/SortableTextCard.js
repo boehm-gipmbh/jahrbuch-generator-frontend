@@ -18,6 +18,7 @@ import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -253,6 +254,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
 
                 <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
                     <ReactionButtons targetType="TEXT" targetId={text.id}/>
+                    <CommentThread targetType="TEXT" targetId={text.id}/>
                 </Box>
 
                 <Box sx={{
