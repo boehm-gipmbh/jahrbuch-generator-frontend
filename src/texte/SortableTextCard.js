@@ -17,6 +17,7 @@ import {EditTextPriority} from './Priority';
 import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
+import {ReactionButtons} from '../reactions/ReactionButtons';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -250,7 +251,9 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                     )}
                 </Box>
 
-
+                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
+                    <ReactionButtons targetType="TEXT" targetId={text.id}/>
+                </Box>
 
                 <Box sx={{
                     position: 'absolute',

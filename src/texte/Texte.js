@@ -33,6 +33,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
+import {ReactionButtons} from '../reactions/ReactionButtons';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -203,10 +204,13 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                     </Tooltip>
                 )}
                 {!Boolean(story) && (
-                    <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
+                    <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
                         <StoryChip text={text} size='small' onDelete={() => onUpdate({...text, story: null})}/>
                     </Box>
                 )}
+                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
+                    <ReactionButtons targetType="TEXT" targetId={text.id}/>
+                </Box>
                 <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
                     {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
                     <Tooltip title="Erinnerung löschen">
@@ -282,6 +286,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
   const [sortField, setSortField] = useState('date');
   const [sortAsc, setSortAsc] = useState(false);
   const [storyFilter, setStoryFilter] = useState(new Set());
+  const [metadataFilter, setMetadataFilter] = useState(['noStory']);
 
   const q = search.toLowerCase();
   const filteredTexte = useMemo(() => {
@@ -293,13 +298,14 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
         const key = text.story ? text.story.id : STORY_FILTER_NONE;
         if (!storyFilter.has(key)) return false;
       }
+      if (metadataFilter.includes('noStory') && text.story) return false;
       return true;
     });
     const cmp = sortField === 'priority'
       ? (sortAsc ? (a, b) => (a.priority ?? 0) - (b.priority ?? 0) : (a, b) => (b.priority ?? 0) - (a.priority ?? 0))
       : (sortAsc ? byDateAsc : byDateDesc);
     return [...base].sort(cmp);
-  }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter]);
+  }, [data, filter, q, dateFrom, dateTo, sortField, sortAsc, storyFilter, metadataFilter]);
 
   return <Layout>
     <Box sx={{mt: 2}}>
@@ -321,6 +327,7 @@ export const Texte = ({title = 'Erinnerungen', filter = () => true}) => {
             sortAsc={sortAsc} setSortAsc={setSortAsc}
             stories={storiesLoaded && !story ? stories : undefined}
             storyFilter={storyFilter} setStoryFilter={setStoryFilter}
+            metadataFilter={metadataFilter} setMetadataFilter={setMetadataFilter}
           />
         </Box>
         <Table size='small'>

@@ -29,6 +29,7 @@ import {BilderUploadDialog} from "./BilderUploadDialog";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 import {MetaInfoPanel} from '../shared/MetaInfoPanel';
+import {ReactionButtons} from '../reactions/ReactionButtons';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -216,10 +217,15 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     </Box>
                 )}
                 {!Boolean(story) && (
-                    <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
+                    <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
                         <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
                     </Box>
                 )}
+            </Box>
+
+            {/* Reaktionen unten links */}
+            <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
+                <ReactionButtons targetType="BILD" targetId={bild.id}/>
             </Box>
 
             {/* Aktionen unten rechts */}
@@ -323,7 +329,7 @@ export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const [sortField, setSortField] = useState('date');
     const [sortAsc, setSortAsc] = useState(false);
     const [storyFilter, setStoryFilter] = useState(new Set());
-    const [metadataFilter, setMetadataFilter] = useState(['noTitle', 'noDescription']);
+    const [metadataFilter, setMetadataFilter] = useState(['noTitle', 'noDescription', 'noStory']);
 
     const theme = useTheme();
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'));

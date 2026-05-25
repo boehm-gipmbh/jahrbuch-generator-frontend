@@ -19,6 +19,7 @@ import AuthVideo from './AuthVideo';
 import {api as storyApi} from '../stories';
 import {useDispatch} from 'react-redux';
 import {api as videoApi} from './api';
+import {ReactionButtons} from '../reactions/ReactionButtons';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -200,7 +201,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         </Tooltip>
                     )}
                     {!Boolean(story) && video.story && (
-                        <Box sx={{position: 'absolute', left: 8, bottom: 8, zIndex: 2}}>
+                        <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
                             <Chip
                                 label={video.story.name}
                                 size="small"
@@ -208,6 +209,10 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                             />
                         </Box>
                     )}
+                </Box>
+
+                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
+                    <ReactionButtons targetType="VIDEO" targetId={video.id}/>
                 </Box>
 
                 {/* Aktionen unten rechts */}
