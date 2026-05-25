@@ -43,6 +43,16 @@ const CommentInput = ({onSubmit, placeholder = 'Kommentar schreiben …', autoFo
 const SingleComment = ({comment, targetType, depth = 0, onReply}) => {
     const [deleteComment] = api.endpoints.deleteComment.useMutation();
 
+    if (comment.deleted) {
+        return (
+            <Box sx={{ml: depth > 0 ? 2 : 0, mt: 0.5}}>
+                <Typography variant="caption" color="text.disabled" sx={{fontStyle: 'italic'}}>
+                    [Kommentar gelöscht]
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ml: depth > 0 ? 2 : 0, mt: 0.5}}>
             <Box sx={{display: 'flex', alignItems: 'flex-start', gap: 0.5}}>
