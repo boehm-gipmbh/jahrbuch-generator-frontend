@@ -192,7 +192,6 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                             <pre className="wrap-pre" onClick={() => startEdit('description')}
                                 style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
-                                    marginBottom: 40,
                                     border: !video.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                     borderRadius: 4,
                                     padding: '8.5px 14px',
@@ -202,45 +201,41 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                         </Tooltip>
                     )}
                     {!Boolean(story) && video.story && (
-                        <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
-                            <Chip
-                                label={video.story.name}
-                                size="small"
-                                onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
-                            />
-                        </Box>
+                        <Chip
+                            label={video.story.name}
+                            size="small"
+                            onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
+                        />
                     )}
                 </Box>
 
-                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
-                    <ReactionButtons targetType="VIDEO" targetId={video.id}/>
-                    <CommentThread targetType="VIDEO" targetId={video.id}/>
-                </Box>
-
-                {/* Aktionen unten rechts */}
-                <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px', zIndex: 1}}>
-                    <ButtonGroup size="small">
-                        {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
-                        {video.story && onRemoveFromStory && (
-                            <Tooltip title="Aus Story entfernen">
+                <CommentThread
+                    targetType="VIDEO" targetId={video.id}
+                    prefix={<ReactionButtons targetType="VIDEO" targetId={video.id}/>}
+                    actionButtons={
+                        <ButtonGroup size="small">
+                            {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
+                            {video.story && onRemoveFromStory && (
+                                <Tooltip title="Aus Story entfernen">
+                                    <span onClick={() => isComplete && setLockMsg(true)}>
+                                        <IconButton disabled={isComplete} size="small"
+                                            onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
+                                            <LinkOffIcon fontSize="small"/>
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            )}
+                            <Tooltip title="Video löschen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>
                                     <IconButton disabled={isComplete} size="small"
-                                                onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
-                                        <LinkOffIcon fontSize="small"/>
+                                        onClick={e => { e.stopPropagation(); setDeleteConfirm(true); }}>
+                                        <DeleteIcon fontSize="small"/>
                                     </IconButton>
                                 </span>
                             </Tooltip>
-                        )}
-                        <Tooltip title="Video löschen">
-                            <span onClick={() => isComplete && setLockMsg(true)}>
-                                <IconButton disabled={isComplete} size="small"
-                                            onClick={e => { e.stopPropagation(); setDeleteConfirm(true); }}>
-                                    <DeleteIcon fontSize="small"/>
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </ButtonGroup>
-                </Box>
+                        </ButtonGroup>
+                    }
+                />
             </Paper>
             <Snackbar open={lockMsg} autoHideDuration={2500} onClose={() => setLockMsg(false)}
                       message="Entsperren zum Bearbeiten"

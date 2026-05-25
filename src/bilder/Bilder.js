@@ -204,7 +204,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                             </InputAdornment>
                         ) : null}}/>
                 ) : (
-                    <Box sx={{mt: 'auto', mb: 5}}>
+                    <Box sx={{mt: 'auto', mb: 1}}>
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                         <pre className="wrap-pre" onClick={() => startEdit('description')}
                             style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
@@ -218,46 +218,42 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     </Box>
                 )}
                 {!Boolean(story) && (
-                    <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
-                        <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
-                    </Box>
+                    <StoryChip bild={bild} size='small' onDelete={() => onUpdate({...bild, story: null})}/>
                 )}
             </Box>
 
-            {/* Reaktionen unten links */}
-            <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
-                <ReactionButtons targetType="BILD" targetId={bild.id}/>
-                <CommentThread targetType="BILD" targetId={bild.id}/>
-            </Box>
-
-            {/* Aktionen unten rechts */}
-            <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px', zIndex: 1}}>
-                <ButtonGroup size="small">
-                    <Tooltip title="90° links drehen">
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(-90); }}>
-                            <RotateLeftIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="90° rechts drehen">
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(90); }}>
-                            <RotateRightIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="180° drehen">
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(180); }}>
-                            <SettingsBackupRestoreIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
-                    {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
-                    <Tooltip title="Bild löschen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
-                                <DeleteIcon fontSize="small"/>
+            <CommentThread
+                targetType="BILD" targetId={bild.id}
+                prefix={<ReactionButtons targetType="BILD" targetId={bild.id}/>}
+                actionButtons={
+                    <ButtonGroup size="small">
+                        <Tooltip title="90° links drehen">
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(-90); }}>
+                                <RotateLeftIcon fontSize="small"/>
                             </IconButton>
-                        </span>
-                    </Tooltip>
-                </ButtonGroup>
-            </Box>
+                        </Tooltip>
+                        <Tooltip title="90° rechts drehen">
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(90); }}>
+                                <RotateRightIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="180° drehen">
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); onRotate(180); }}>
+                                <SettingsBackupRestoreIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                        {storiesLoaded && <AssignToStoryButton bild={bild} stories={stories}/>}
+                        <Tooltip title="Bild löschen">
+                            <span onClick={() => isComplete && setLockMsg(true)}>
+                                <IconButton disabled={isComplete} size="small"
+                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </ButtonGroup>
+                }
+            />
         </Paper>
         <Snackbar
             open={lockMsg}
