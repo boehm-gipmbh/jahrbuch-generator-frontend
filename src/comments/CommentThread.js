@@ -70,7 +70,7 @@ const SingleComment = ({comment, targetType, depth = 0, onReply}) => {
                         )}
                     </Box>
                 </Box>
-                {comment.mine && (
+                {comment.canDelete && (
                     <Tooltip title="Kommentar löschen">
                         <IconButton size="small" sx={{color: 'text.disabled', flexShrink: 0}}
                             onClick={() => deleteComment({commentId: comment.id, targetType, targetId: comment.targetId})}>
