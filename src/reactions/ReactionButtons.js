@@ -3,6 +3,8 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import {useSelector} from 'react-redux';
 import {api} from './api';
 
@@ -29,6 +31,7 @@ export const ReactionButtons = ({targetType, targetId}) => {
 
     const hasLike = data?.myReactions?.includes('LIKE');
     const hasVote = data?.myReactions?.includes('VOTE');
+    const hasDislike = data?.myReactions?.includes('DISLIKE');
 
     const toggle = (reactionType) => (e) => {
         e.stopPropagation();
@@ -64,6 +67,17 @@ export const ReactionButtons = ({targetType, targetId}) => {
                         {data.voteCount}
                     </Typography>
                 </Tooltip>
+            )}
+
+            <Tooltip title={hasDislike ? 'Ablehnung zurückziehen' : 'Nicht ins Jahrbuch'}>
+                <IconButton size="small" onClick={toggle('DISLIKE')} sx={hasDislike ? {color: 'warning.main'} : {}}>
+                    {hasDislike ? <ThumbDownIcon fontSize="small"/> : <ThumbDownOutlinedIcon fontSize="small"/>}
+                </IconButton>
+            </Tooltip>
+            {data?.dislikeCount > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                    {data.dislikeCount}
+                </Typography>
             )}
         </Box>
     );

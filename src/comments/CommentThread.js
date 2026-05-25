@@ -3,6 +3,7 @@ import {Box, Typography, IconButton, TextField, Button, Tooltip, Divider, Collap
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ReplyIcon from '@mui/icons-material/Reply';
 import CommentIcon from '@mui/icons-material/Comment';
+import BlockIcon from '@mui/icons-material/Block';
 import {useSelector} from 'react-redux';
 import {api} from './api';
 import {ReactionButtons} from '../reactions/ReactionButtons';
@@ -70,6 +71,11 @@ const SingleComment = ({comment, targetType, depth = 0, onReply}) => {
                     </Typography>
                     <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
                         <ReactionButtons targetType="COMMENT" targetId={comment.id}/>
+                        {comment.excludedFromPdf && (
+                            <Tooltip title="Vom Jahrbuch ausgeschlossen">
+                                <BlockIcon sx={{fontSize: '0.85rem', color: 'warning.main'}}/>
+                            </Tooltip>
+                        )}
                         {depth === 0 && (
                             <Tooltip title="Antworten">
                                 <IconButton size="small" onClick={() => onReply(comment.id)}
