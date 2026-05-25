@@ -107,9 +107,7 @@ export const CommentThread = ({targetType, targetId, prefix, actionButtons}) => 
     );
     const [addComment] = api.endpoints.addComment.useMutation();
 
-    const total = open
-        ? comments.reduce((n, c) => n + 1 + (c.replies?.length ?? 0), 0)
-        : 0;
+    const total = comments.reduce((n, c) => n + 1 + (c.replies?.length ?? 0), 0);
 
     const submit = (content, parentId = null) => {
         addComment({targetType, targetId, content, parentId});
