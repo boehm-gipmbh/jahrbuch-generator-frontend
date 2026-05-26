@@ -22,6 +22,7 @@ import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 const isSameDay = (a, b) => {
@@ -238,7 +239,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                     <MetaInfoPanel jsonString={bild.exifData}/>
 
                     {/* Beschreibung */}
-                    <Box sx={{mt: 'auto', mb: 5}}>
+                    <Box sx={{mt: 'auto', mb: 1}}>
                         {editField === 'description' ? (
                             <TextField
                                 autoFocus
@@ -275,55 +276,38 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                     </Box>
                 </Box>
 
-                {/* Reaktionen unten links */}
-                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
-                    <ReactionButtons targetType="BILD" targetId={bild.id}/>
-                </Box>
-
-                {/* Aktionen unten rechts */}
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: 4,
-                    backgroundColor: 'rgba(255,255,255,0.7)',
-                    borderRadius: 1,
-                    padding: '2px',
-                    zIndex: 1,
-                    display: 'flex'
-                }}>
-                    {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
-                    <Tooltip title={bild.hauptbild ? "Hauptbild (im PDF hervorgehoben) – klicken zum Entfernen" : "Als Hauptbild markieren (wird im PDF groß dargestellt)"}>
-                        <IconButton
-                            size="small"
-                            onClick={(e) => { e.stopPropagation(); setHauptbild({bild, hauptbild: !bild.hauptbild}); }}
-                            sx={bild.hauptbild ? {color: 'warning.main'} : {}}
-                        >
-                            {bild.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Aus Story entfernen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton
-                                disabled={isComplete}
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); onRemoveFromStory(bild); }}
-                            >
-                                <LinkOffIcon fontSize="small"/>
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                    <Tooltip title="In Papierkorb legen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton
-                                disabled={isComplete}
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); deleteBild(bild); }}
-                            >
-                                <DeleteOutlineIcon fontSize="small"/>
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                </Box>
+                <CommentThread
+                    targetType="BILD" targetId={bild.id}
+                    prefix={<ReactionButtons targetType="BILD" targetId={bild.id}/>}
+                    actionButtons={
+                        <>
+                            {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
+                            <Tooltip title={bild.hauptbild ? "Hauptbild – klicken zum Entfernen" : "Als Hauptbild markieren"}>
+                                <IconButton size="small"
+                                    onClick={(e) => { e.stopPropagation(); setHauptbild({bild, hauptbild: !bild.hauptbild}); }}
+                                    sx={bild.hauptbild ? {color: 'warning.main'} : {}}>
+                                    {bild.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Aus Story entfernen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                        onClick={(e) => { e.stopPropagation(); onRemoveFromStory(bild); }}>
+                                        <LinkOffIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                            <Tooltip title="In Papierkorb legen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                        onClick={(e) => { e.stopPropagation(); deleteBild(bild); }}>
+                                        <DeleteOutlineIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        </>
+                    }
+                />
             </Paper>
             <Snackbar
                 open={lockMsg}

@@ -34,6 +34,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import {byDateDesc, byDateAsc, matchesSearch, matchesDateRange, computeDateRange} from '../sortUtils';
 import {FilterBar, STORY_FILTER_NONE} from '../FilterBar';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -197,30 +198,31 @@ const TextRow = memo(({text, story, storiesLoaded, stories, onSetComplete, onUpd
                             border: !text.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                             borderRadius: 4,
                             padding: '8.5px 14px',
-                            marginBottom: 40,
                             color: text.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
                         {text.description || 'Erinnerung hinzufügen …'}
                     </pre>
                     </Tooltip>
                 )}
                 {!Boolean(story) && (
-                    <Box sx={{position: 'absolute', left: 8, bottom: 36, zIndex: 2}}>
-                        <StoryChip text={text} size='small' onDelete={() => onUpdate({...text, story: null})}/>
-                    </Box>
+                    <StoryChip text={text} size='small' onDelete={() => onUpdate({...text, story: null})}/>
                 )}
-                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
-                    <ReactionButtons targetType="TEXT" targetId={text.id}/>
-                </Box>
-                <Box sx={{position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 1, padding: '2px'}}>
-                    {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
-                    <Tooltip title="Erinnerung löschen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton disabled={isComplete} size="small" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
-                                <DeleteIcon fontSize="small"/>
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                </Box>
+                <CommentThread
+                    targetType="TEXT" targetId={text.id}
+                    prefix={<ReactionButtons targetType="TEXT" targetId={text.id}/>}
+                    actionButtons={
+                        <>
+                            {storiesLoaded && <AssignToStoryButton text={text} stories={stories}/>}
+                            <Tooltip title="Erinnerung löschen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(true); }}>
+                                        <DeleteIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        </>
+                    }
+                />
             </TableCell>
         </TableRow>
         <Snackbar

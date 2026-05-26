@@ -18,6 +18,7 @@ import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 import {ReactionButtons} from '../reactions/ReactionButtons';
+import {CommentThread} from '../comments/CommentThread';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -242,7 +243,6 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                                 border: !text.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                 borderRadius: 4,
                                 padding: '8.5px 14px',
-                                marginBottom: 40,
                                 color: text.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}
                         >
                             {text.description || 'Erinnerung hinzufügen …'}
@@ -251,44 +251,31 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                     )}
                 </Box>
 
-                <Box sx={{position: 'absolute', bottom: 4, left: 4, zIndex: 1}}>
-                    <ReactionButtons targetType="TEXT" targetId={text.id}/>
-                </Box>
-
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: 4,
-                    backgroundColor: 'rgba(255,255,255,0.7)',
-                    borderRadius: 1,
-                    padding: '2px',
-                    zIndex: 1,
-                    display: 'flex'
-                }}>
-                    {storiesLoaded && <AssignTextToStoryButton text={text} stories={stories}/>}
-                    <Tooltip title="Aus Story entfernen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton
-                                disabled={isComplete}
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); onRemoveFromStory(text); }}
-                            >
-                                <LinkOffIcon fontSize="small"/>
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                    <Tooltip title="In Papierkorb legen">
-                        <span onClick={() => isComplete && setLockMsg(true)}>
-                            <IconButton
-                                disabled={isComplete}
-                                size="small"
-                                onClick={(e) => { e.stopPropagation(); deleteText(text); }}
-                            >
-                                <DeleteOutlineIcon fontSize="small"/>
-                            </IconButton>
-                        </span>
-                    </Tooltip>
-                </Box>
+                <CommentThread
+                    targetType="TEXT" targetId={text.id}
+                    prefix={<ReactionButtons targetType="TEXT" targetId={text.id}/>}
+                    actionButtons={
+                        <>
+                            {storiesLoaded && <AssignTextToStoryButton text={text} stories={stories}/>}
+                            <Tooltip title="Aus Story entfernen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                        onClick={(e) => { e.stopPropagation(); onRemoveFromStory(text); }}>
+                                        <LinkOffIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                            <Tooltip title="In Papierkorb legen">
+                                <span onClick={() => isComplete && setLockMsg(true)}>
+                                    <IconButton disabled={isComplete} size="small"
+                                        onClick={(e) => { e.stopPropagation(); deleteText(text); }}>
+                                        <DeleteOutlineIcon fontSize="small"/>
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        </>
+                    }
+                />
             </Paper>
             <Snackbar
                 open={lockMsg}

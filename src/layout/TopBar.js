@@ -10,6 +10,7 @@ import {UserIcon} from "./UserIcon";
 import {GroupSwitcher} from "./GroupSwitcher";
 import {api} from '../users';
 import {PdfExportDialog} from '../pdf/PdfExportDialog';
+import {NotificationBell} from '../notifications/NotificationBell';
 
 export const TopBar = ({goHome, toggleDrawer}) => {
   const {data: user} = api.endpoints.getSelf.useQuery();
@@ -58,6 +59,7 @@ export const TopBar = ({goHome, toggleDrawer}) => {
             </IconButton>
           </Tooltip>
         )}
+        {(isGroupAdmin || isAdmin) && <NotificationBell />}
         {showInvitations && (
           <Tooltip title='Einladungen'>
             <IconButton color='inherit' onClick={() => navigate('/invitations')}>
