@@ -12,9 +12,10 @@ export const api = createApi({
                 [{type: 'Reaction', id: `${targetType}-${targetId}`}],
         }),
         toggleReaction: builder.mutation({
-            query: ({targetType, targetId, reactionType}) => ({
+            query: ({targetType, targetId, reactionType, message}) => ({
                 url: `/${targetType}/${targetId}/${reactionType}`,
                 method: 'POST',
+                body: {message: message ?? null},
             }),
             invalidatesTags: (result, error, {targetType, targetId}) =>
                 [{type: 'Reaction', id: `${targetType}-${targetId}`}],

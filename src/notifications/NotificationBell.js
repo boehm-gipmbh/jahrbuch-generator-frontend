@@ -67,7 +67,16 @@ export const NotificationBell = () => {
                                                 <strong>{n.reporterName}</strong> hat einen {targetLabel(n.targetType)} gemeldet
                                             </Typography>
                                         }
-                                        secondary={fmtDate(n.createdAt)}
+                                        secondary={
+                                            <>
+                                                {n.message && (
+                                                    <Typography variant="caption" display="block" sx={{fontStyle: 'italic', mb: 0.25}}>
+                                                        „{n.message}"
+                                                    </Typography>
+                                                )}
+                                                {fmtDate(n.createdAt)}
+                                            </>
+                                        }
                                     />
                                 </ListItem>
                             ))}

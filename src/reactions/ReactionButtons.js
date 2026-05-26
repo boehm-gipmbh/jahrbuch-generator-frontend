@@ -8,6 +8,8 @@ import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
 import FlagOutlinedIcon from '@mui/icons-material/OutlinedFlag';
 import {useSelector} from 'react-redux';
+import {useState} from 'react';
+import {ReportDialog} from './ReportDialog';
 import {api} from './api';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'}) : '';
@@ -30,6 +32,7 @@ export const ReactionButtons = ({targetType, targetId}) => {
     const myName = parseJwtName(jwt);
     const {data} = api.endpoints.getCounts.useQuery({targetType, targetId});
     const [toggleReaction] = api.endpoints.toggleReaction.useMutation();
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
     const hasLike = data?.myReactions?.includes('LIKE');
     const hasVote = data?.myReactions?.includes('VOTE');
@@ -39,6 +42,20 @@ export const ReactionButtons = ({targetType, targetId}) => {
     const toggle = (reactionType) => (e) => {
         e.stopPropagation();
         toggleReaction({targetType, targetId, reactionType});
+    };
+
+    const handleReportClick = (e) => {
+        e.stopPropagation();
+        if (hasReport) {
+            toggleReaction({targetType, targetId, reactionType: 'REPORT'});
+        } else {
+            setReportDialogOpen(true);
+        }
+    };
+
+    const handleReportConfirm = (message) => {
+        setReportDialogOpen(false);
+        toggleReaction({targetType, targetId, reactionType: 'REPORT', message});
     };
 
     const likeInfo = reactorTooltip(data?.likes, myName);
@@ -84,7 +101,7 @@ export const ReactionButtons = ({targetType, targetId}) => {
             )}
 
             <Tooltip title={hasReport ? 'Meldung zurückziehen' : 'Inhalt melden'}>
-                <IconButton size="small" onClick={toggle('REPORT')} sx={hasReport ? {color: 'error.dark'} : {}}>
+                <IconButton size="small" onClick={handleReportClick} sx={hasReport ? {color: 'error.dark'} : {}}>
                     {hasReport ? <FlagIcon fontSize="small"/> : <FlagOutlinedIcon fontSize="small"/>}
                 </IconButton>
             </Tooltip>
@@ -93,6 +110,12 @@ export const ReactionButtons = ({targetType, targetId}) => {
                     {data.reportCount}
                 </Typography>
             )}
+
+            <ReportDialog
+                open={reportDialogOpen}
+                onClose={() => setReportDialogOpen(false)}
+                onConfirm={handleReportConfirm}
+            />
         </Box>
     );
 };
