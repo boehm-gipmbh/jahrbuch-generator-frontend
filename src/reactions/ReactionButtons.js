@@ -5,6 +5,8 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
+import FlagIcon from '@mui/icons-material/Flag';
+import FlagOutlinedIcon from '@mui/icons-material/OutlinedFlag';
 import {useSelector} from 'react-redux';
 import {api} from './api';
 
@@ -32,6 +34,7 @@ export const ReactionButtons = ({targetType, targetId}) => {
     const hasLike = data?.myReactions?.includes('LIKE');
     const hasVote = data?.myReactions?.includes('VOTE');
     const hasDislike = data?.myReactions?.includes('DISLIKE');
+    const hasReport = data?.myReactions?.includes('REPORT');
 
     const toggle = (reactionType) => (e) => {
         e.stopPropagation();
@@ -77,6 +80,17 @@ export const ReactionButtons = ({targetType, targetId}) => {
             {data?.dislikeCount > 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
                     {data.dislikeCount}
+                </Typography>
+            )}
+
+            <Tooltip title={hasReport ? 'Meldung zurückziehen' : 'Inhalt melden'}>
+                <IconButton size="small" onClick={toggle('REPORT')} sx={hasReport ? {color: 'error.dark'} : {}}>
+                    {hasReport ? <FlagIcon fontSize="small"/> : <FlagOutlinedIcon fontSize="small"/>}
+                </IconButton>
+            </Tooltip>
+            {data?.reportCount > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{minWidth: 12, cursor: 'default'}}>
+                    {data.reportCount}
                 </Typography>
             )}
         </Box>

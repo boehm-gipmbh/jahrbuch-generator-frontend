@@ -10,6 +10,7 @@ import {api as groupApi} from './groups/api';
 import {api as announcementApi} from './announcement/api';
 import {api as reactionApi} from './reactions/api';
 import {api as commentApi} from './comments/api';
+import {api as notificationApi} from './notifications/api';
 
 const appReducer = combineReducers({
     auth: authReducer,
@@ -23,6 +24,7 @@ const appReducer = combineReducers({
     [announcementApi.reducerPath]: announcementApi.reducer,
     [reactionApi.reducerPath]: reactionApi.reducer,
     [commentApi.reducerPath]: commentApi.reducer,
+    [notificationApi.reducerPath]: notificationApi.reducer,
 });
 
 const rootReducer = (state, action) => {
@@ -44,5 +46,6 @@ export const store = configureStore({
         .concat(announcementApi.middleware)
         .concat(reactionApi.middleware)
         .concat(commentApi.middleware)
+        .concat(notificationApi.middleware)
 });
 
