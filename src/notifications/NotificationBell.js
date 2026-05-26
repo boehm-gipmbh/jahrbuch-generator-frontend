@@ -6,6 +6,10 @@ import {api} from './api';
 
 const targetLabel = (type) => ({BILD: 'Bild', TEXT: 'Text', VIDEO: 'Video', COMMENT: 'Kommentar'}[type] ?? type);
 
+const notificationText = (n) => n.type === 'REPORT_WITHDRAWN'
+    ? <><strong>{n.reporterName}</strong> hat die Meldung für einen {targetLabel(n.targetType)} zurückgezogen</>
+    : <><strong>{n.reporterName}</strong> hat einen {targetLabel(n.targetType)} gemeldet</>;
+
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE', {
     day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit'
 }) : '';
@@ -64,7 +68,7 @@ export const NotificationBell = () => {
                                     <ListItemText
                                         primary={
                                             <Typography variant="body2">
-                                                <strong>{n.reporterName}</strong> hat einen {targetLabel(n.targetType)} gemeldet
+                                                {notificationText(n)}
                                             </Typography>
                                         }
                                         secondary={
