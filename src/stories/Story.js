@@ -218,7 +218,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
 
-    const sensors = useSensors(useSensor(PointerSensor));
+    const sensors = useSensors(useSensor(PointerSensor, {activationConstraint: {distance: 5}}));
 
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [dragItems, setDragItems] = useState(null);
@@ -275,9 +275,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             onDelete={() => deleteVideo(item).unwrap()
                 .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                 .catch(e => console.error(e))}
-            onRemoveFromStory={(v) => updateVideo({...v, story: null}).unwrap()
-                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                .catch(e => console.error(e))}
         />
     ) : type === 'bild' ? (
         <SortableBildCard
@@ -287,9 +284,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
             onSetComplete={(args) => setBildComplete(args)}
-            onRemoveFromStory={(b) => updateBild({...b, story: null}).unwrap()
-                .then(() => dispatch(bilderApi.util.invalidateTags(['Bild'])))
-                .catch(e => console.error(e))}
         />
     ) : (
         <SortableTextCard
@@ -299,9 +293,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
             onSetComplete={(args) => setTextComplete(args)}
-            onRemoveFromStory={(t) => updateText({...t, story: null}).unwrap()
-                .then(() => dispatch(texteApi.util.invalidateTags(['Text'])))
-                .catch(e => console.error(e))}
         />
     );
 

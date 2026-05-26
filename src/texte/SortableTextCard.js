@@ -7,7 +7,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -51,7 +50,7 @@ const AssignTextToStoryButton = ({text, stories}) => {
 
     return (
         <>
-            <Tooltip title="Zu anderer Story hinzufügen">
+            <Tooltip title="Story zuweisen">
                 <IconButton size="small" onClick={e => setAnchor(e.currentTarget)}>
                     <AddLinkIcon fontSize="small"/>
                 </IconButton>
@@ -59,6 +58,12 @@ const AssignTextToStoryButton = ({text, stories}) => {
             <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
                      anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}>
                 <MenuList dense sx={{minWidth: 180}}>
+                    {text.story && (
+                        <MenuItem onClick={() => assignTo(null, null)} sx={{color: 'text.secondary'}}>
+                            Zurück in Pool
+                        </MenuItem>
+                    )}
+                    {text.story && <Divider/>}
                     {(stories || []).map(s => (
                         <MenuItem key={s.id} onClick={() => assignTo(s.id)}
                                   selected={text.story?.id === s.id}>
@@ -83,7 +88,7 @@ const AssignTextToStoryButton = ({text, stories}) => {
     );
 };
 
-export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSetComplete, onRemoveFromStory}) => {
+export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSetComplete}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `text-${text.id}`
     });
@@ -257,14 +262,6 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                     actionButtons={
                         <>
                             {storiesLoaded && <AssignTextToStoryButton text={text} stories={stories}/>}
-                            <Tooltip title="Aus Story entfernen">
-                                <span onClick={() => isComplete && setLockMsg(true)}>
-                                    <IconButton disabled={isComplete} size="small"
-                                        onClick={(e) => { e.stopPropagation(); onRemoveFromStory(text); }}>
-                                        <LinkOffIcon fontSize="small"/>
-                                    </IconButton>
-                                </span>
-                            </Tooltip>
                             <Tooltip title="In Papierkorb legen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>
                                     <IconButton disabled={isComplete} size="small"

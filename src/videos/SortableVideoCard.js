@@ -4,7 +4,7 @@ import {CSS} from '@dnd-kit/utilities';
 import {Box} from '@mui/material';
 import {VideoCard} from './VideoCard';
 
-export const SortableVideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, onRemoveFromStory}) => {
+export const SortableVideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `video-${video.id}`
     });
@@ -24,7 +24,6 @@ export const SortableVideoCard = memo(({video, story, storiesLoaded, stories, on
                 onSetComplete={onSetComplete}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
-                onRemoveFromStory={onRemoveFromStory}
                 dragHandleProps={{...attributes, ...listeners}}
             />
         </Box>
