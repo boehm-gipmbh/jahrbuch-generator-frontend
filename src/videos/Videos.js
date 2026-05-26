@@ -146,9 +146,6 @@ export const Videos = ({title = 'Deine Videos', filter = () => true}) => {
                                                 onDelete={() => deleteVideo(video).unwrap()
                                                     .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
                                                     .catch(e => console.error(e))}
-                                                onRemoveFromStory={(v) => updateVideo({...v, story: null}).unwrap()
-                                                    .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                                                    .catch(e => console.error(e))}
                                             />
                                         </Grid>
                                     ))}

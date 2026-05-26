@@ -8,7 +8,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
@@ -60,7 +59,7 @@ const AssignBildToStoryButton = ({bild, stories}) => {
 
     return (
         <>
-            <Tooltip title="Zu anderer Story hinzufügen">
+            <Tooltip title="Story zuweisen">
                 <IconButton size="small" onClick={e => setAnchor(e.currentTarget)}>
                     <AddLinkIcon fontSize="small"/>
                 </IconButton>
@@ -68,6 +67,12 @@ const AssignBildToStoryButton = ({bild, stories}) => {
             <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
                      anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}>
                 <MenuList dense sx={{minWidth: 180}}>
+                    {bild.story && (
+                        <MenuItem onClick={() => assignTo(null, null)} sx={{color: 'text.secondary'}}>
+                            Zurück in Pool
+                        </MenuItem>
+                    )}
+                    {bild.story && <Divider/>}
                     {(stories || []).map(s => (
                         <MenuItem key={s.id} onClick={() => assignTo(s.id)}
                                   selected={bild.story?.id === s.id}>
@@ -92,7 +97,7 @@ const AssignBildToStoryButton = ({bild, stories}) => {
     );
 };
 
-export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onRemoveFromStory}) => {
+export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -288,14 +293,6 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                                     sx={bild.hauptbild ? {color: 'warning.main'} : {}}>
                                     {bild.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
                                 </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Aus Story entfernen">
-                                <span onClick={() => isComplete && setLockMsg(true)}>
-                                    <IconButton disabled={isComplete} size="small"
-                                        onClick={(e) => { e.stopPropagation(); onRemoveFromStory(bild); }}>
-                                        <LinkOffIcon fontSize="small"/>
-                                    </IconButton>
-                                </span>
                             </Tooltip>
                             <Tooltip title="In Papierkorb legen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>

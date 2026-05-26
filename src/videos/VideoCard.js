@@ -10,7 +10,6 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AddLinkIcon from '@mui/icons-material/AddLink';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import {MetaInfoPanel} from '../shared/MetaInfoPanel';
@@ -58,7 +57,7 @@ const AssignVideoToStoryButton = ({video, stories}) => {
 
     return (
         <>
-            <Tooltip title="Zu anderer Story hinzufügen">
+            <Tooltip title="Story zuweisen">
                 <IconButton size="small" onClick={e => setAnchor(e.currentTarget)}>
                     <AddLinkIcon fontSize="small"/>
                 </IconButton>
@@ -66,6 +65,12 @@ const AssignVideoToStoryButton = ({video, stories}) => {
             <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)}
                      anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}>
                 <MenuList dense sx={{minWidth: 180}}>
+                    {video.story && (
+                        <MenuItem onClick={() => assignTo(null, null)} sx={{color: 'text.secondary'}}>
+                            Zurück in Pool
+                        </MenuItem>
+                    )}
+                    {video.story && <Divider/>}
                     {(stories || []).map(s => (
                         <MenuItem key={s.id} onClick={() => assignTo(s.id)}
                                   selected={video.story?.id === s.id}>
@@ -90,7 +95,7 @@ const AssignVideoToStoryButton = ({video, stories}) => {
     );
 };
 
-export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, onRemoveFromStory, dragHandleProps}) => {
+export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetComplete, onUpdate, onDelete, dragHandleProps}) => {
     const [priority, setPriorityState] = useState(video.priority);
     const [lockMsg, setLockMsg] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -202,11 +207,7 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                     )}
                     {!Boolean(story) && video.story && (
                         <Box sx={{width: 'fit-content', mb: 0.5}}>
-                            <Chip
-                                label={video.story.name}
-                                size="small"
-                                onDelete={!isComplete && onRemoveFromStory ? () => onRemoveFromStory(video) : undefined}
-                            />
+                            <Chip label={video.story.name} size="small"/>
                         </Box>
                     )}
                 </Box>
@@ -217,16 +218,6 @@ export const VideoCard = memo(({video, story, storiesLoaded, stories, onSetCompl
                     actionButtons={
                         <ButtonGroup size="small">
                             {storiesLoaded && <AssignVideoToStoryButton video={video} stories={stories}/>}
-                            {video.story && onRemoveFromStory && (
-                                <Tooltip title="Aus Story entfernen">
-                                    <span onClick={() => isComplete && setLockMsg(true)}>
-                                        <IconButton disabled={isComplete} size="small"
-                                            onClick={e => { e.stopPropagation(); onRemoveFromStory(video); }}>
-                                            <LinkOffIcon fontSize="small"/>
-                                        </IconButton>
-                                    </span>
-                                </Tooltip>
-                            )}
                             <Tooltip title="Video löschen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>
                                     <IconButton disabled={isComplete} size="small"
