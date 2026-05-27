@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {Link, useMatch, useNavigate} from 'react-router-dom';
 import {
     Badge,
@@ -251,35 +251,88 @@ const VersionFooter = ({drawerOpen}) => {
     );
 };
 
-export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild, stories = [], bilder ={}}) => (
-    <Drawer
-        open={drawerOpen} onClose={toggleDrawer} variant='permanent'
-        sx={{
-            width: theme => drawerOpen ? theme.layout.drawerWidth : theme.spacing(7),
-            '& .MuiDrawer-paper': theme => ({
-                width: theme.layout.drawerWidth,
-                ...(!drawerOpen && {
-                    width: theme.spacing(7),
-                    overflowX: 'hidden'
-                })
-            })
-        }}
-    >
-        <Toolbar/>
-        <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden', flexGrow: 1}}>
-            <List>
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Erinnerungen' to='/texte' bold/>
+const DRAWER_WIDTH_KEY = 'drawerWidth';
+const DRAWER_WIDTH_DEFAULT = 240;
+const DRAWER_WIDTH_MIN = 160;
+const DRAWER_WIDTH_MAX = 400;
 
-                <Divider/>
-                <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
-                <Item disableTooltip={drawerOpen} Icon={VideocamIcon} title='Deine Videos' to='/videos' bold/>
-                <PapierkorbItem disableTooltip={drawerOpen}/>
-                <Stories
-                    drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
+export const MainDrawer = ({drawerOpen, toggleDrawer, openNewStory, openNewBild, stories = [], bilder ={}}) => {
+    const [drawerWidth, setDrawerWidth] = useState(() => {
+        const saved = parseInt(localStorage.getItem(DRAWER_WIDTH_KEY), 10);
+        return saved && saved >= DRAWER_WIDTH_MIN && saved <= DRAWER_WIDTH_MAX ? saved : DRAWER_WIDTH_DEFAULT;
+    });
+    const isResizing = useRef(false);
+
+    const handleMouseDown = useCallback((e) => {
+        if (!drawerOpen) return;
+        isResizing.current = true;
+        e.preventDefault();
+    }, [drawerOpen]);
+
+    useEffect(() => {
+        const onMouseMove = (e) => {
+            if (!isResizing.current) return;
+            const newWidth = Math.min(Math.max(e.clientX, DRAWER_WIDTH_MIN), DRAWER_WIDTH_MAX);
+            setDrawerWidth(newWidth);
+        };
+        const onMouseUp = () => {
+            if (!isResizing.current) return;
+            isResizing.current = false;
+            setDrawerWidth(w => {
+                localStorage.setItem(DRAWER_WIDTH_KEY, String(w));
+                return w;
+            });
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        return () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+    }, []);
+
+    const collapsedWidth = 56; // theme.spacing(7)
+    const currentWidth = drawerOpen ? drawerWidth : collapsedWidth;
+
+    return (
+        <Drawer
+            open={drawerOpen} onClose={toggleDrawer} variant='permanent'
+            sx={{
+                width: currentWidth,
+                flexShrink: 0,
+                '& .MuiDrawer-paper': {
+                    width: currentWidth,
+                    overflowX: 'hidden',
+                    transition: isResizing.current ? 'none' : undefined,
+                }
+            }}
+        >
+            <Toolbar/>
+            <Box sx={{overflow: drawerOpen ? 'auto' : 'hidden', flexGrow: 1}}>
+                <List>
+                    <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Erinnerungen' to='/texte' bold/>
+
+                    <Divider/>
+                    <Item disableTooltip={drawerOpen} Icon={AssignmentIcon} title='Deine Bilder' to='/bilder' bold/>
+                    <Item disableTooltip={drawerOpen} Icon={VideocamIcon} title='Deine Videos' to='/videos' bold/>
+                    <PapierkorbItem disableTooltip={drawerOpen}/>
+                    <Stories
+                        drawerOpen={drawerOpen} openNewStory={openNewStory} stories={stories}
+                    />
+                </List>
+            </Box>
+            <VersionFooter drawerOpen={drawerOpen} />
+            {drawerOpen && (
+                <Box
+                    onMouseDown={handleMouseDown}
+                    sx={{
+                        position: 'absolute', top: 0, right: 0,
+                        width: 4, height: '100%',
+                        cursor: 'col-resize',
+                        '&:hover': { backgroundColor: 'primary.main', opacity: 0.4 },
+                    }}
                 />
-
-            </List>
-        </Box>
-        <VersionFooter drawerOpen={drawerOpen} />
-    </Drawer>
-);
+            )}
+        </Drawer>
+    );
+};

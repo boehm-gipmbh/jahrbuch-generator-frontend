@@ -115,6 +115,10 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected}) => {
   const [coverTitle, setCoverTitle] = useState(gruppe.name);
   const [pageNumbers, setPageNumbers] = useState(true);
   const [passepartoutStyle, setPassepartoutStyle] = useState('gold');
+  const [includeReactions, setIncludeReactions] = useState(true);
+  const [includeComments, setIncludeComments] = useState(true);
+  const [commentDepth, setCommentDepth] = useState(1);
+  const [commentMaxPerItem, setCommentMaxPerItem] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -159,7 +163,11 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected}) => {
       coverPage,
       coverTitle: coverPage ? coverTitle : null,
       pageNumbers,
-      passepartoutStyle
+      passepartoutStyle,
+      includeReactions,
+      includeComments,
+      commentDepth,
+      commentMaxPerItem
     };
 
     if (onOptionsSelected) {
@@ -280,6 +288,48 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected}) => {
               ))}
             </ToggleButtonGroup>
           </Box>
+          <Divider sx={{my: 1}}/>
+          <FormControlLabel
+            control={<Switch checked={includeReactions} onChange={e => setIncludeReactions(e.target.checked)} size="small"/>}
+            label="Reaktionen (♥ Likes, ★ Votes)"
+          />
+          <FormControlLabel
+            control={<Switch checked={includeComments} onChange={e => setIncludeComments(e.target.checked)} size="small"/>}
+            label="Kommentare"
+          />
+          {includeComments && (
+            <Box sx={{ml: 4, display: 'flex', flexDirection: 'column', gap: 0.5}}>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="body2" sx={{minWidth: 48}}>Tiefe</Typography>
+                <ToggleButtonGroup
+                  value={commentDepth}
+                  exclusive
+                  onChange={(_, v) => v && setCommentDepth(v)}
+                  size="small"
+                >
+                  <ToggleButton value={1}>1</ToggleButton>
+                  <ToggleButton value={2}>2</ToggleButton>
+                </ToggleButtonGroup>
+                <Typography variant="caption" color="text.secondary">
+                  {commentDepth === 1 ? 'nur direkte Kommentare' : '+ Antworten'}
+                </Typography>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="body2" sx={{minWidth: 48}}>Max.</Typography>
+                <ToggleButtonGroup
+                  value={commentMaxPerItem}
+                  exclusive
+                  onChange={(_, v) => v !== null && setCommentMaxPerItem(v)}
+                  size="small"
+                >
+                  {[3, 5, 10, 0].map(n => (
+                    <ToggleButton key={n} value={n}>{n === 0 ? '∞' : n}</ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
+                <Typography variant="caption" color="text.secondary">pro Inhalt</Typography>
+              </Box>
+            </Box>
+          )}
         </Box>
 
         {error && (
