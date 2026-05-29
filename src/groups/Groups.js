@@ -7,12 +7,14 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {Navigate} from 'react-router-dom';
 import {Layout} from '../layout';
 import {api} from './api';
 import {api as usersApi} from '../users';
 import {FotoboxSetupDialog} from './FotoboxSetupDialog';
 import {FotoboxTokenDialog} from './FotoboxTokenDialog';
+import {PdfSettingsDialog} from './PdfSettingsDialog';
 
 export const Groups = () => {
   const {data: user} = usersApi.endpoints.getSelf.useQuery();
@@ -21,6 +23,7 @@ export const Groups = () => {
   const [setupOpen, setSetupOpen] = useState(false);
   const [tokenDialogGruppe, setTokenDialogGruppe] = useState(null);
   const [revokeConfirmGruppe, setRevokeConfirmGruppe] = useState(null);
+  const [pdfSettingsGruppe, setPdfSettingsGruppe] = useState(null);
 
   if (user && !user.roles?.includes('admin')) {
     return <Navigate to='/bilder' replace />;
@@ -61,6 +64,13 @@ export const Groups = () => {
                     <Box sx={{display: 'flex', justifyContent: 'flex-end', gap: 1}}>
                       <Button
                         size="small"
+                        startIcon={<PictureAsPdfIcon />}
+                        onClick={() => setPdfSettingsGruppe(gruppe)}
+                      >
+                        PDF-Einstellungen
+                      </Button>
+                      <Button
+                        size="small"
                         startIcon={<CameraAltIcon />}
                         onClick={() => setTokenDialogGruppe(gruppe)}
                       >
@@ -85,6 +95,13 @@ export const Groups = () => {
 
       {setupOpen && (
         <FotoboxSetupDialog onClose={() => setSetupOpen(false)} />
+      )}
+
+      {pdfSettingsGruppe && (
+        <PdfSettingsDialog
+          groupId={pdfSettingsGruppe.id}
+          onClose={() => setPdfSettingsGruppe(null)}
+        />
       )}
 
       {tokenDialogGruppe && (

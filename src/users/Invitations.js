@@ -21,8 +21,10 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SendIcon from '@mui/icons-material/Send';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import {api} from './api';
 import {Layout} from '../layout';
+import {PdfSettingsDialog} from '../groups/PdfSettingsDialog';
 
 const daysUntil = (dateStr) => {
   if (!dateStr) return null;
@@ -735,6 +737,7 @@ export const Invitations = () => {
   const [showNew, setShowNew] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
   const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [showPdfSettings, setShowPdfSettings] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState({});
 
@@ -796,6 +799,16 @@ export const Invitations = () => {
                   Ankündigung
                 </Button>
               )}
+              {isGroupAdmin && groupId && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PictureAsPdfIcon />}
+                  onClick={() => setShowPdfSettings(true)}
+                >
+                  PDF-Einstellungen
+                </Button>
+              )}
               {(!isGroupAdmin || invitations.length === 0) && (
                 <Button startIcon={<AddIcon/>} variant="contained" size="small"
                   onClick={() => setShowNew(true)}>
@@ -847,6 +860,9 @@ export const Invitations = () => {
         />
       )}
       <AnnouncementDialog open={showAnnouncement} onClose={() => setShowAnnouncement(false)}/>
+      {showPdfSettings && groupId && (
+        <PdfSettingsDialog groupId={groupId} onClose={() => setShowPdfSettings(false)}/>
+      )}
       <Snackbar open={copied} message="Link in Zwischenablage kopiert"
         autoHideDuration={3000} onClose={() => setCopied(false)}/>
     </Layout>

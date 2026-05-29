@@ -4,11 +4,23 @@ import {authBaseQuery} from '../auth';
 export const api = createApi({
   reducerPath: 'groups',
   baseQuery: authBaseQuery({path: 'groups'}),
-  tagTypes: ['Group'],
+  tagTypes: ['Group', 'PdfConfig'],
   endpoints: builder => ({
     getGroups: builder.query({
       query: () => '/',
       providesTags: ['Group']
+    }),
+    getPdfConfig: builder.query({
+      query: ({id}) => `/${id}/pdf-config`,
+      providesTags: (result, error, {id}) => [{type: 'PdfConfig', id}]
+    }),
+    putPdfConfig: builder.mutation({
+      query: ({id, settings}) => ({
+        url: `/${id}/pdf-config`,
+        method: 'PUT',
+        body: settings
+      }),
+      invalidatesTags: (result, error, {id}) => [{type: 'PdfConfig', id}]
     }),
     setupFotobox: builder.mutation({
       query: ({groupName, validFrom, validTo, recipientEmail}) => ({
