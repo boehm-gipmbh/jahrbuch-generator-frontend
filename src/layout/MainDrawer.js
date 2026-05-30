@@ -19,6 +19,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 import SnippetFolderIcon from '@mui/icons-material/SnippetFolder';
 import CircleIcon from '@mui/icons-material/Circle';
@@ -107,6 +108,21 @@ const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
         disabled: isDragDisabled,
     });
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [editingName, setEditingName] = useState(false);
+    const [nameValue, setNameValue] = useState('');
+    const [updateStory] = storyApi.endpoints.updateStory.useMutation();
+    const nameInputRef = useRef(null);
+
+    const startEdit = (e) => { e.preventDefault(); e.stopPropagation(); setNameValue(s.name); setEditingName(true); };
+    const commitEdit = () => {
+        const trimmed = nameValue.trim();
+        if (trimmed && trimmed !== s.name) updateStory({...s, name: trimmed});
+        setEditingName(false);
+    };
+    const cancelEdit = () => setEditingName(false);
+
+    useEffect(() => { if (editingName) nameInputRef.current?.focus(); }, [editingName]);
+    const isSelected = Boolean(useMatch(`/bilder/story/${s.id}`));
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -120,11 +136,18 @@ const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
                 style={style}
                 disablePadding
                 secondaryAction={drawerOpen &&
-                    <Tooltip title="Story löschen">
-                        <IconButton edge="end" size="small" onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}>
-                            <DeleteIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{display: 'flex'}}>
+                        <Tooltip title="Namen bearbeiten">
+                            <IconButton size="small" onClick={startEdit}>
+                                <EditIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Story löschen">
+                            <IconButton edge="end" size="small" onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}>
+                                <DeleteIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 }
             >
                 {drawerOpen && !isDragDisabled && (
@@ -142,19 +165,35 @@ const SortableStoryItem = ({s, drawerOpen, isDragDisabled}) => {
                         <DragHandleIcon fontSize="small"/>
                     </Box>
                 )}
-                <ListItemButton component={Link} to={`/bilder/story/${s.id}`}
-                    selected={Boolean(useMatch(`/bilder/story/${s.id}`))}
-                    sx={{flex: 1, minWidth: 0}}
-                >
-                    <Tooltip title={s.name} placement='right' disableHoverListener={drawerOpen}>
-                        <ListItemIcon><CircleIcon fontSize='small'/></ListItemIcon>
-                    </Tooltip>
-                    <ListItemText
-                        primary={s.name}
-                        secondary={drawerOpen && (s.user?.name || s.created) ? [s.user?.name, fmtDate(s.created)].filter(Boolean).join(' · ') : undefined}
-                        secondaryTypographyProps={{variant: 'caption', noWrap: true, sx: {fontSize: '0.65rem'}}}
-                    />
-                </ListItemButton>
+                {editingName ? (
+                    <Box sx={{flex: 1, px: 1, display: 'flex', alignItems: 'center'}}>
+                        <TextField
+                            inputRef={nameInputRef}
+                            value={nameValue}
+                            onChange={e => setNameValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') cancelEdit(); }}
+                            size="small"
+                            variant="standard"
+                            fullWidth
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </Box>
+                ) : (
+                    <ListItemButton component={Link} to={`/bilder/story/${s.id}`}
+                        selected={isSelected}
+                        sx={{flex: 1, minWidth: 0}}
+                    >
+                        <Tooltip title={s.name} placement='right' disableHoverListener={drawerOpen}>
+                            <ListItemIcon><CircleIcon fontSize='small'/></ListItemIcon>
+                        </Tooltip>
+                        <ListItemText
+                            primary={s.name}
+                            secondary={drawerOpen && (s.user?.name || s.created) ? [s.user?.name, fmtDate(s.created)].filter(Boolean).join(' · ') : undefined}
+                            secondaryTypographyProps={{variant: 'caption', noWrap: true, sx: {fontSize: '0.65rem'}}}
+                        />
+                    </ListItemButton>
+                )}
             </ListItem>
             {confirmDelete && <DeleteStoryDialog story={s} onClose={() => setConfirmDelete(false)}/>}
         </>
