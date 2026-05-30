@@ -82,6 +82,7 @@ export const TopBar = ({goHome, toggleDrawer}) => {
       <PdfExportDialog
         gruppe={user.activeGroup}
         onClose={() => setPdfDialogOpen(false)}
+        isGroupAdmin={isGroupAdmin || isAdmin}
       />
     )}
   </>
