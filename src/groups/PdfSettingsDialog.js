@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {
   Box, Button, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, Divider, InputAdornment, MenuItem, TextField, Typography
+  DialogTitle, Divider, InputAdornment, TextField, Typography
 } from '@mui/material';
 import {api} from './api';
+import {PassepartoutPicker} from '../pdf/PassepartoutPicker';
 
 const DEFAULTS = {
   storyHeaderTitleSize: 22,
@@ -25,14 +26,6 @@ const FONT_FIELDS = [
   {key: 'imageCaptionSize', label: 'Bildunterschrift'},
   {key: 'commentTopLevelSize', label: 'Kommentar (Hauptebene)'},
   {key: 'commentReplySize', label: 'Kommentar (Antwort)'}
-];
-
-const STYLE_OPTIONS = [
-  {value: 'none', label: 'Kein Rahmen'},
-  {value: 'gold', label: 'Gold'},
-  {value: 'silver', label: 'Silber'},
-  {value: 'vintage', label: 'Vintage'},
-  {value: 'festlich', label: 'Festlich'}
 ];
 
 export const PdfSettingsDialog = ({groupId, onClose}) => {
@@ -88,17 +81,10 @@ export const PdfSettingsDialog = ({groupId, onClose}) => {
             <Divider />
 
             <Typography variant="subtitle2" color="text.secondary">Rahmen-Stil</Typography>
-            <TextField
-              select
-              label="Passepartout-Stil"
-              size="small"
-              value={form.passepartoutStyle ?? 'none'}
-              onChange={e => setField('passepartoutStyle', e.target.value)}
-            >
-              {STYLE_OPTIONS.map(opt => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-              ))}
-            </TextField>
+            <PassepartoutPicker
+              value={form.passepartoutStyle}
+              onChange={v => setField('passepartoutStyle', v)}
+            />
 
             <Divider />
 
