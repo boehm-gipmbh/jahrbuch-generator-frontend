@@ -2,8 +2,9 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, Paper, ToggleButton, ToggleButtonGroup, Tooltip, Typography
+    Box, Button, Container, InputAdornment, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
@@ -198,6 +199,27 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         setLayout(newLayout);
         if (story) updateStory({...story, layout: newLayout});
     };
+
+    const [editingName, setEditingName] = useState(false);
+    const [nameValue, setNameValue] = useState('');
+    const nameInputRef = useRef(null);
+
+    const startEditName = () => {
+        setNameValue(story?.name ?? '');
+        setEditingName(true);
+    };
+    const commitName = () => {
+        const trimmed = nameValue.trim();
+        if (trimmed && trimmed !== story?.name) {
+            updateStory({...story, name: trimmed});
+        }
+        setEditingName(false);
+    };
+    const cancelName = () => setEditingName(false);
+
+    useEffect(() => {
+        if (editingName) nameInputRef.current?.focus();
+    }, [editingName]);
     const handleToggleHero = (bild) => {
         setHauptbild({bild, hauptbild: !bild.hauptbild});
     };
@@ -457,9 +479,31 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             <Box sx={{position: 'sticky', top: {xs: 56, sm: 64}, zIndex: 'appBar', backgroundColor: 'background.default', pt: 1, pb: 1, mb: 1, boxShadow: '0 2px 4px rgba(0,0,0,0.08)'}}>
                 <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1}}>
                     <Box>
-                        <Typography component="h2" variant="h6" color="primary">
-                            {title}
-                        </Typography>
+                        {editingName ? (
+                            <TextField
+                                inputRef={nameInputRef}
+                                value={nameValue}
+                                onChange={e => setNameValue(e.target.value)}
+                                onBlur={commitName}
+                                onKeyDown={e => { if (e.key === 'Enter') commitName(); if (e.key === 'Escape') cancelName(); }}
+                                size="small"
+                                variant="standard"
+                                InputProps={{sx: {fontSize: '1.25rem', fontWeight: 500, color: 'primary.main'}}}
+                                sx={{minWidth: 200}}
+                            />
+                        ) : (
+                            <Tooltip title="Namen bearbeiten">
+                                <Typography
+                                    component="h2" variant="h6" color="primary"
+                                    onClick={startEditName}
+                                    sx={{cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 0.5,
+                                        '&:hover .edit-icon': {opacity: 1}}}
+                                >
+                                    {title}
+                                    <EditIcon className="edit-icon" sx={{fontSize: 16, opacity: 0, transition: 'opacity 0.15s'}}/>
+                                </Typography>
+                            </Tooltip>
+                        )}
                         {story && (story.user?.name || story.created) && (
                             <Typography variant="caption" color="text.disabled">
                                 {[story.user?.name, fmtDate(story.created)].filter(Boolean).join(' · ')}
