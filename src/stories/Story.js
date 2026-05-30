@@ -2,7 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, InputAdornment, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
+    Box, Button, Container, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
