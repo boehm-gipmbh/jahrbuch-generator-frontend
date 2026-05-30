@@ -1,5 +1,5 @@
 import React from 'react';
-import {Box, ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
+import {ToggleButton, ToggleButtonGroup, Typography} from '@mui/material';
 
 export const PASSEPARTOUT_STYLES = [
   {id: 'none',     label: 'Keiner'},
