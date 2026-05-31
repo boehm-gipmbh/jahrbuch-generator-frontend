@@ -17,7 +17,21 @@ import {useSelector} from 'react-redux';
 import {api as storyApi} from '../stories';
 import {api as storyAdminApi} from '../stories/api';
 import {api as groupsApi} from '../groups/api';
+import {api as bilderApi} from '../bilder/api';
 import {PassepartoutPicker} from './PassepartoutPicker';
+import {BackgroundImagePicker} from './BackgroundImagePicker';
+
+const enrichBackground = (bg, bilder) => {
+  if (!bg || !bg.bildId) return bg;
+  const bild = bilder.find(b => b.id === bg.bildId);
+  return bild ? {...bg, pfad: bild.pfad} : bg;
+};
+
+const stripBackground = (bg) => {
+  if (!bg) return null;
+  const {pfad, ...rest} = bg;
+  return rest;
+};
 
 const SETTINGS_DEFAULTS = {
   storyHeaderTitleSize: 22,
@@ -28,7 +42,10 @@ const SETTINGS_DEFAULTS = {
   commentTopLevelSize: 13,
   commentReplySize: 11,
   passepartoutStyle: 'gold',
-  pdfPassword: ''
+  pdfPassword: '',
+  coverFrontBackground: null,
+  coverBackBackground: null,
+  tocBackground: null
 };
 
 const FONT_FIELDS = [
@@ -78,6 +95,10 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
     {skip: !isGroupAdmin || !gruppe?.id}
   );
   const [putPdfConfig, {isLoading: isSaving}] = groupsApi.endpoints.putPdfConfig.useMutation();
+  const {data: groupBilder = []} = bilderApi.endpoints.getBilderByGroup.useQuery(
+    gruppe?.id,
+    {skip: !isGroupAdmin || !gruppe?.id}
+  );
 
   const [activeTab, setActiveTab] = useState(0);
   const [settingsForm, setSettingsForm] = useState(SETTINGS_DEFAULTS);
@@ -107,9 +128,16 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
 
   useEffect(() => {
     if (loadedSettings) {
-      setSettingsForm({...SETTINGS_DEFAULTS, ...loadedSettings, pdfPassword: loadedSettings.pdfPassword ?? ''});
+      setSettingsForm({
+        ...SETTINGS_DEFAULTS,
+        ...loadedSettings,
+        pdfPassword: loadedSettings.pdfPassword ?? '',
+        coverFrontBackground: enrichBackground(loadedSettings.coverFrontBackground, groupBilder),
+        coverBackBackground: enrichBackground(loadedSettings.coverBackBackground, groupBilder),
+        tocBackground: enrichBackground(loadedSettings.tocBackground, groupBilder),
+      });
     }
-  }, [loadedSettings]);
+  }, [loadedSettings, groupBilder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -140,7 +168,10 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
   const handleSaveSettings = () => {
     const settings = {
       ...settingsForm,
-      pdfPassword: settingsForm.pdfPassword.trim() === '' ? null : settingsForm.pdfPassword.trim()
+      pdfPassword: settingsForm.pdfPassword.trim() === '' ? null : settingsForm.pdfPassword.trim(),
+      coverFrontBackground: stripBackground(settingsForm.coverFrontBackground),
+      coverBackBackground: stripBackground(settingsForm.coverBackBackground),
+      tocBackground: stripBackground(settingsForm.tocBackground),
     };
     putPdfConfig({id: gruppe.id, settings})
       .unwrap()
@@ -354,6 +385,28 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 <PassepartoutPicker
                   value={settingsForm.passepartoutStyle}
                   onChange={v => setSettingsField('passepartoutStyle', v)}
+                />
+
+                <Divider />
+
+                <Typography variant="subtitle2" color="text.secondary">Hintergrundbilder</Typography>
+                <BackgroundImagePicker
+                  label="Vorderdeckel"
+                  value={settingsForm.coverFrontBackground}
+                  onChange={v => setSettingsField('coverFrontBackground', v)}
+                  bilder={groupBilder}
+                />
+                <BackgroundImagePicker
+                  label="Inhaltsverzeichnis"
+                  value={settingsForm.tocBackground}
+                  onChange={v => setSettingsField('tocBackground', v)}
+                  bilder={groupBilder}
+                />
+                <BackgroundImagePicker
+                  label="Rückdeckel"
+                  value={settingsForm.coverBackBackground}
+                  onChange={v => setSettingsField('coverBackBackground', v)}
+                  bilder={groupBilder}
                 />
 
                 <Divider />
