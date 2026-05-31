@@ -64,8 +64,11 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
   const tint = value?.tint ?? null;
+  const offsetX = value?.offsetX ?? 0;
+  const offsetY = value?.offsetY ?? 0;
+  const zoom = value?.zoom ?? 1;
 
-  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, ...patch});
+  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, ...patch});
 
   return (
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
@@ -104,6 +107,39 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
                 />
                 <Typography variant="caption" sx={{minWidth: 32, textAlign: 'right'}}>
                   {Math.round(opacity * 100)}%
+                </Typography>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="caption" sx={{minWidth: 60}}>Links/Rechts</Typography>
+                <Slider
+                  size="small"
+                  min={-1} max={1} step={0.05}
+                  value={offsetX}
+                  onChange={(_, v) => update({offsetX: v})}
+                  sx={{flex: 1}}
+                />
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="caption" sx={{minWidth: 60}}>Oben/Unten</Typography>
+                <Slider
+                  size="small"
+                  min={-1} max={1} step={0.05}
+                  value={offsetY}
+                  onChange={(_, v) => update({offsetY: v})}
+                  sx={{flex: 1}}
+                />
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="caption" sx={{minWidth: 60}}>Zoom</Typography>
+                <Slider
+                  size="small"
+                  min={1} max={3} step={0.1}
+                  value={zoom}
+                  onChange={(_, v) => update({zoom: v})}
+                  sx={{flex: 1}}
+                />
+                <Typography variant="caption" sx={{minWidth: 32, textAlign: 'right'}}>
+                  {zoom.toFixed(1)}×
                 </Typography>
               </Box>
               <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
