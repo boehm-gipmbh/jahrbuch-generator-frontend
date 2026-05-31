@@ -14,7 +14,7 @@ const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
   const posX = `${(offsetX + 1) / 2 * 100}%`;
   const posY = `${(1 - offsetY) / 2 * 100}%`;
   return (
-    <Box sx={{position: 'relative', width: 80, height: 60, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
+    <Box sx={{position: 'relative', width: 120, height: 90, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
       <AuthImage
         src={externUrl(pfad)}
         thumb
