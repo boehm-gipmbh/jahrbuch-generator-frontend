@@ -19,6 +19,10 @@ export const api = createApi({
                 query: () => '/',
                 providesTags: ['Bild'],
             }),
+            getBilderByGroup: builder.query({
+                query: (groupId) => `/by-group/${groupId}`,
+                providesTags: ['Bild'],
+            }),
 
             triggerCapture: builder.mutation({
                 query: () => ({

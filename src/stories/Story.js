@@ -33,6 +33,7 @@ import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
+import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -198,6 +199,22 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         if (!newLayout) return;
         setLayout(newLayout);
         if (story) updateStory({...story, layout: newLayout});
+    };
+
+    const storyBilder = bilderData?.filter(b => b.story?.id === story?.id) ?? [];
+    const parsedBackground = React.useMemo(() => {
+        if (!story?.background) return null;
+        try {
+            const bg = JSON.parse(story.background);
+            const bild = bilderData?.find(b => b.id === bg.bildId);
+            return bild ? {...bg, pfad: bild.pfad} : bg;
+        } catch { return null; }
+    }, [story?.background, bilderData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleBackgroundChange = (value) => {
+        if (!story) return;
+        const bg = value ? {bildId: value.bildId, opacity: value.opacity, tint: value.tint} : null;
+        updateStory({...story, background: bg ? JSON.stringify(bg) : null});
     };
 
     const [editingName, setEditingName] = useState(false);
@@ -535,6 +552,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     <BilderUploadDialog story={story}/>
                     <VideoUploadDialog story={story}/>
                 </Box>
+                {story && (
+                    <Box sx={{mt: 1}}>
+                        <BackgroundImagePicker
+                            label="PDF-Hintergrundbild"
+                            value={parsedBackground}
+                            onChange={handleBackgroundChange}
+                            bilder={storyBilder}
+                        />
+                    </Box>
+                )}
             </Box>
 
             <Paper sx={{p: 2}}>

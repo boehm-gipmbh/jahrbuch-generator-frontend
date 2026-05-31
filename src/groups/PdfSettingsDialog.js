@@ -4,7 +4,9 @@ import {
   DialogTitle, Divider, InputAdornment, TextField, Typography
 } from '@mui/material';
 import {api} from './api';
+import {api as bilderApi} from '../bilder/api';
 import {PassepartoutPicker} from '../pdf/PassepartoutPicker';
+import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 
 const DEFAULTS = {
   storyHeaderTitleSize: 22,
@@ -15,7 +17,10 @@ const DEFAULTS = {
   commentTopLevelSize: 13,
   commentReplySize: 11,
   passepartoutStyle: 'gold',
-  pdfPassword: ''
+  pdfPassword: '',
+  coverFrontBackground: null,
+  coverBackBackground: null,
+  tocBackground: null
 };
 
 const FONT_FIELDS = [
@@ -28,23 +33,46 @@ const FONT_FIELDS = [
   {key: 'commentReplySize', label: 'Kommentar (Antwort)'}
 ];
 
+const enrichBackground = (bg, bilder) => {
+  if (!bg || !bg.bildId) return bg;
+  const bild = bilder.find(b => b.id === bg.bildId);
+  return bild ? {...bg, pfad: bild.pfad} : bg;
+};
+
+const stripBackground = (bg) => {
+  if (!bg) return null;
+  const {pfad, ...rest} = bg;
+  return rest;
+};
+
 export const PdfSettingsDialog = ({groupId, onClose}) => {
   const {data: loaded, isLoading} = api.endpoints.getPdfConfig.useQuery({id: groupId});
+  const {data: bilder = []} = bilderApi.endpoints.getBilderByGroup.useQuery(groupId);
   const [putPdfConfig, {isLoading: isSaving}] = api.endpoints.putPdfConfig.useMutation();
   const [form, setForm] = useState(DEFAULTS);
 
   useEffect(() => {
-    if (loaded) {
-      setForm({...DEFAULTS, ...loaded, pdfPassword: loaded.pdfPassword ?? ''});
+    if (loaded && bilder.length >= 0) {
+      setForm({
+        ...DEFAULTS,
+        ...loaded,
+        pdfPassword: loaded.pdfPassword ?? '',
+        coverFrontBackground: enrichBackground(loaded.coverFrontBackground, bilder),
+        coverBackBackground: enrichBackground(loaded.coverBackBackground, bilder),
+        tocBackground: enrichBackground(loaded.tocBackground, bilder),
+      });
     }
-  }, [loaded]);
+  }, [loaded, bilder]);
 
   const setField = (key, value) => setForm(prev => ({...prev, [key]: value}));
 
   const handleSave = () => {
     const settings = {
       ...form,
-      pdfPassword: form.pdfPassword.trim() === '' ? null : form.pdfPassword.trim()
+      pdfPassword: form.pdfPassword.trim() === '' ? null : form.pdfPassword.trim(),
+      coverFrontBackground: stripBackground(form.coverFrontBackground),
+      coverBackBackground: stripBackground(form.coverBackBackground),
+      tocBackground: stripBackground(form.tocBackground),
     };
     putPdfConfig({id: groupId, settings})
       .unwrap()
@@ -84,6 +112,28 @@ export const PdfSettingsDialog = ({groupId, onClose}) => {
             <PassepartoutPicker
               value={form.passepartoutStyle}
               onChange={v => setField('passepartoutStyle', v)}
+            />
+
+            <Divider />
+
+            <Typography variant="subtitle2" color="text.secondary">Hintergrundbilder</Typography>
+            <BackgroundImagePicker
+              label="Vorderdeckel"
+              value={form.coverFrontBackground}
+              onChange={v => setField('coverFrontBackground', v)}
+              bilder={bilder}
+            />
+            <BackgroundImagePicker
+              label="Inhaltsverzeichnis"
+              value={form.tocBackground}
+              onChange={v => setField('tocBackground', v)}
+              bilder={bilder}
+            />
+            <BackgroundImagePicker
+              label="Rückdeckel"
+              value={form.coverBackBackground}
+              onChange={v => setField('coverBackBackground', v)}
+              bilder={bilder}
             />
 
             <Divider />
