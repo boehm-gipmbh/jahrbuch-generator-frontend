@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 
-export default function AuthImage({src, alt, style, id, thumb}) {
+export default function AuthImage({src, alt, style, id, thumb, onLoad}) {
     const [blobUrl, setBlobUrl] = useState(null);
     const blobRef = useRef(null);
 
@@ -27,5 +27,5 @@ export default function AuthImage({src, alt, style, id, thumb}) {
         };
     }, [src, thumb]);
 
-    return <img id={id} src={blobUrl || ''} alt={alt} style={style}/>;
+    return <img id={id} src={blobUrl || ''} alt={alt} style={style} onLoad={onLoad}/>;
 }

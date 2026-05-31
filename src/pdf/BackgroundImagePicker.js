@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   IconButton, ImageList, ImageListItem, Slider, Tooltip, Typography
@@ -9,24 +9,37 @@ import AuthImage from '../bilder/AuthImage';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
+const PREVIEW_W = 120;
+const PREVIEW_H = 90;
+
 const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
+  const [imgSize, setImgSize] = useState(null);
+  const handleLoad = useCallback((e) => {
+    setImgSize({w: e.target.naturalWidth, h: e.target.naturalHeight});
+  }, []);
+
   if (!pfad) return null;
-  const posX = `${(offsetX + 1) / 2 * 100}%`;
-  const posY = `${(1 - offsetY) / 2 * 100}%`;
+
+  let imgStyle;
+  if (imgSize) {
+    const scale = Math.max(PREVIEW_W / imgSize.w, PREVIEW_H / imgSize.h) * zoom;
+    const drawW = imgSize.w * scale;
+    const drawH = imgSize.h * scale;
+    const x = (PREVIEW_W - drawW) / 2 * (1 + offsetX);
+    const y = (PREVIEW_H - drawH) / 2 * (1 - offsetY);
+    imgStyle = {position: 'absolute', left: x, top: y, width: drawW, height: drawH, opacity};
+  } else {
+    imgStyle = {width: '100%', height: '100%', objectFit: 'cover', opacity};
+  }
+
   return (
-    <Box sx={{position: 'relative', width: 120, height: 90, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
+    <Box sx={{position: 'relative', width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
       <AuthImage
         src={externUrl(pfad)}
         thumb
         alt=""
-        style={{
-          width: '100%', height: '100%',
-          objectFit: 'cover',
-          objectPosition: `${posX} ${posY}`,
-          opacity,
-          transform: zoom !== 1 ? `scale(${zoom})` : undefined,
-          transformOrigin: `${posX} ${posY}`,
-        }}
+        style={imgStyle}
+        onLoad={handleLoad}
       />
       {tint && (
         <Box sx={{position: 'absolute', inset: 0, backgroundColor: tint, opacity: 0.3}} />
