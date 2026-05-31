@@ -9,15 +9,24 @@ import AuthImage from '../bilder/AuthImage';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
-const Preview = ({pfad, opacity, tint}) => {
+const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
   if (!pfad) return null;
+  const posX = `${(offsetX + 1) / 2 * 100}%`;
+  const posY = `${(1 - offsetY) / 2 * 100}%`;
   return (
     <Box sx={{position: 'relative', width: 80, height: 60, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
       <AuthImage
         src={externUrl(pfad)}
         thumb
         alt=""
-        style={{width: '100%', height: '100%', objectFit: 'cover', opacity}}
+        style={{
+          width: '100%', height: '100%',
+          objectFit: 'cover',
+          objectPosition: `${posX} ${posY}`,
+          opacity,
+          transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+          transformOrigin: `${posX} ${posY}`,
+        }}
       />
       {tint && (
         <Box sx={{position: 'absolute', inset: 0, backgroundColor: tint, opacity: 0.3}} />
@@ -74,7 +83,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
       {label && <Typography variant="body2" color="text.secondary">{label}</Typography>}
       <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-        <Preview pfad={pfad} opacity={opacity} tint={tint} />
+        <Preview pfad={pfad} opacity={opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} />
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1}}>
           <Box sx={{display: 'flex', gap: 0.5}}>
             <Button
