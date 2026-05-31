@@ -75,7 +75,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
   const tint = value?.tint ?? null;
   const offsetX = value?.offsetX ?? 0;
   const offsetY = value?.offsetY ?? 0;
-  const zoom = value?.zoom ?? 1;
+  const zoom = value?.zoom || 1;
 
   const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, ...patch});
 

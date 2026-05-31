@@ -36,7 +36,8 @@ const FONT_FIELDS = [
 const enrichBackground = (bg, bilder) => {
   if (!bg || !bg.bildId) return bg;
   const bild = bilder.find(b => b.id === bg.bildId);
-  return bild ? {...bg, pfad: bild.pfad} : bg;
+  const enriched = {...bg, zoom: bg.zoom || 1};
+  return bild ? {...enriched, pfad: bild.pfad} : enriched;
 };
 
 const stripBackground = (bg) => {
