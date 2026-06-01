@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
   IconButton, ImageList, ImageListItem, Slider, Tooltip, Typography
 } from '@mui/material';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import AuthImage from '../bilder/AuthImage';
+import {triggerOutpaint} from './api';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
@@ -97,6 +99,8 @@ const BildPickerDialog = ({bilder, onSelect, onClose}) => (
 
 export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [outpainting, setOutpainting] = useState(false);
+  const [outpaintError, setOutpaintError] = useState(null);
   const bildId = value?.bildId ?? null;
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
@@ -104,8 +108,23 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
   const offsetX = value?.offsetX ?? 0;
   const offsetY = value?.offsetY ?? 0;
   const zoom = value?.zoom || 1;
+  const outpaintedPfad = value?.outpaintedPfad ?? null;
 
-  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, ...patch});
+  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, outpaintedPfad: null, ...patch});
+
+  const handleOutpaint = async () => {
+    setOutpainting(true);
+    setOutpaintError(null);
+    try {
+      const jwt = sessionStorage.getItem('jwt');
+      const result = await triggerOutpaint(jwt, bildId);
+      update({outpaintedPfad: result.outpaintedPfad});
+    } catch (e) {
+      setOutpaintError(e.message);
+    } finally {
+      setOutpainting(false);
+    }
+  };
 
   return (
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
@@ -178,6 +197,26 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
                 <Typography variant="caption" sx={{minWidth: 32, textAlign: 'right'}}>
                   {zoom.toFixed(2)}×
                 </Typography>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+                <Button
+                  size="small"
+                  variant={outpaintedPfad ? 'contained' : 'outlined'}
+                  color={outpaintedPfad ? 'success' : 'primary'}
+                  startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
+                  onClick={handleOutpaint}
+                  disabled={outpainting}
+                >
+                  {outpainting ? 'KI läuft…' : outpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
+                </Button>
+                {outpaintedPfad && (
+                  <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => update({outpaintedPfad: null})}>
+                    <Typography variant="caption">entfernen</Typography>
+                  </Button>
+                )}
+                {outpaintError && (
+                  <Typography variant="caption" color="error">{outpaintError}</Typography>
+                )}
               </Box>
               <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                 <Typography variant="caption" sx={{minWidth: 60}}>Farbton</Typography>
