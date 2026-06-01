@@ -33,6 +33,7 @@ import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
+import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -228,6 +229,22 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const {data: texteData} = texteApi.endpoints.getTexte.useQuery(undefined, {pollingInterval: 10000});
     const {data: bilderData} = bilderApi.endpoints.getBilder.useQuery(undefined, {pollingInterval: 10000});
     const {data: videoData} = videoApi.endpoints.getVideos.useQuery(undefined, {pollingInterval: 10000});
+
+    const storyBilder = bilderData?.filter(b => b.story?.id === story?.id) ?? [];
+    const parsedBackground = React.useMemo(() => {
+        if (!story?.background) return null;
+        try {
+            const bg = JSON.parse(story.background);
+            const bild = bilderData?.find(b => b.id === bg.bildId);
+            return bild ? {...bg, pfad: bild.pfad} : bg;
+        } catch { return null; }
+    }, [story?.background, bilderData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleBackgroundChange = (value) => {
+        if (!story) return;
+        const bg = value ? {bildId: value.bildId, opacity: value.opacity, tint: value.tint, offsetX: value.offsetX ?? 0, offsetY: value.offsetY ?? 0, zoom: value.zoom || 1} : null;
+        updateStory({...story, background: bg ? JSON.stringify(bg) : null});
+    };
     const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
     const [setVideoComplete] = videoApi.endpoints.setComplete.useMutation();
     const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
@@ -535,6 +552,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     <BilderUploadDialog story={story}/>
                     <VideoUploadDialog story={story}/>
                 </Box>
+                {story && (
+                    <Box sx={{mt: 1}}>
+                        <BackgroundImagePicker
+                            label="PDF-Hintergrundbild"
+                            value={parsedBackground}
+                            onChange={handleBackgroundChange}
+                            bilder={storyBilder}
+                        />
+                    </Box>
+                )}
             </Box>
 
             <Paper sx={{p: 2}}>
