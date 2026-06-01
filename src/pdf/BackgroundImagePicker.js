@@ -9,8 +9,8 @@ import AuthImage from '../bilder/AuthImage';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
-const PREVIEW_W = 120;
-const PREVIEW_H = 90;
+const PREVIEW_W = 85;
+const PREVIEW_H = 120;
 
 const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
   const [imgData, setImgData] = useState(null); // {blobUrl, w, h}
