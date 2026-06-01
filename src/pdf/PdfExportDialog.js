@@ -46,7 +46,13 @@ const SETTINGS_DEFAULTS = {
   pdfPassword: '',
   coverFrontBackground: null,
   coverBackBackground: null,
-  tocBackground: null
+  tocBackground: null,
+  tocEnabled: true,
+  tocTitle: 'Inhaltsverzeichnis',
+  tocTitleSize: 24,
+  tocEntrySize: 13,
+  tocShowPageNumbers: true,
+  tocColumns: 1,
 };
 
 const FONT_FIELDS = [
@@ -136,6 +142,12 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
         coverFrontBackground: enrichBackground(loadedSettings.coverFrontBackground, groupBilder),
         coverBackBackground: enrichBackground(loadedSettings.coverBackBackground, groupBilder),
         tocBackground: enrichBackground(loadedSettings.tocBackground, groupBilder),
+        tocEnabled: loadedSettings.tocEnabled ?? SETTINGS_DEFAULTS.tocEnabled,
+        tocTitle: loadedSettings.tocTitle ?? SETTINGS_DEFAULTS.tocTitle,
+        tocTitleSize: loadedSettings.tocTitleSize ?? SETTINGS_DEFAULTS.tocTitleSize,
+        tocEntrySize: loadedSettings.tocEntrySize ?? SETTINGS_DEFAULTS.tocEntrySize,
+        tocShowPageNumbers: loadedSettings.tocShowPageNumbers ?? SETTINGS_DEFAULTS.tocShowPageNumbers,
+        tocColumns: loadedSettings.tocColumns ?? SETTINGS_DEFAULTS.tocColumns,
       });
     }
   }, [loadedSettings, groupBilder]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -387,6 +399,62 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                   value={settingsForm.passepartoutStyle}
                   onChange={v => setSettingsField('passepartoutStyle', v)}
                 />
+
+                <Divider />
+
+                <Typography variant="subtitle2" color="text.secondary">Inhaltsverzeichnis</Typography>
+                <FormControlLabel
+                  control={<Switch checked={settingsForm.tocEnabled} onChange={e => setSettingsField('tocEnabled', e.target.checked)} size="small" />}
+                  label="Inhaltsverzeichnis anzeigen"
+                />
+                {settingsForm.tocEnabled && (
+                  <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5, ml: 1}}>
+                    <TextField
+                      label="Titel"
+                      size="small"
+                      value={settingsForm.tocTitle}
+                      onChange={e => setSettingsField('tocTitle', e.target.value)}
+                    />
+                    <Box sx={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2}}>
+                      <TextField
+                        label="Titelgröße"
+                        type="number"
+                        size="small"
+                        value={settingsForm.tocTitleSize}
+                        onChange={e => setSettingsField('tocTitleSize', parseFloat(e.target.value) || 0)}
+                        InputProps={{endAdornment: <InputAdornment position="end">pt</InputAdornment>}}
+                        inputProps={{min: 10, max: 60, step: 0.5}}
+                      />
+                      <TextField
+                        label="Eintrags-Schriftgröße"
+                        type="number"
+                        size="small"
+                        value={settingsForm.tocEntrySize}
+                        onChange={e => setSettingsField('tocEntrySize', parseFloat(e.target.value) || 0)}
+                        InputProps={{endAdornment: <InputAdornment position="end">pt</InputAdornment>}}
+                        inputProps={{min: 6, max: 30, step: 0.5}}
+                      />
+                    </Box>
+                    <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
+                      <FormControlLabel
+                        control={<Switch checked={settingsForm.tocShowPageNumbers} onChange={e => setSettingsField('tocShowPageNumbers', e.target.checked)} size="small" />}
+                        label="Seitenzahlen"
+                      />
+                      <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                        <Typography variant="body2">Spalten</Typography>
+                        <ToggleButtonGroup
+                          value={settingsForm.tocColumns}
+                          exclusive
+                          onChange={(_, v) => v !== null && setSettingsField('tocColumns', v)}
+                          size="small"
+                        >
+                          <ToggleButton value={1}>1</ToggleButton>
+                          <ToggleButton value={2}>2</ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
 
                 <Divider />
 
