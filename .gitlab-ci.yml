@@ -25,7 +25,7 @@ update-backend-pointer:
   stage: update-backend
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH =~ /^feature\//
+    - if: $CI_COMMIT_BRANCH != "main"
   variables:
     GIT_STRATEGY: none
   script:
@@ -37,9 +37,10 @@ update-backend-pointer:
     - git config user.email "gitlab-ci[bot]@noreply.local"
     - |
       if [ "$CI_COMMIT_BRANCH" != "main" ]; then
-        CLICKUP_ID=$(echo "$CI_COMMIT_BRANCH" | sed -n 's|^feature/\([a-z0-9]*\)-.*|\1|p')
+        CLICKUP_ID=$(echo "$CI_COMMIT_BRANCH" | sed -n 's|^[^/]*/\([a-z0-9]*\)-.*|\1|p')
+        PREFIX=$(echo "$CI_COMMIT_BRANCH" | cut -d/ -f1)
         if [ -n "$CLICKUP_ID" ]; then
-          BACKEND_BRANCH=$(git ls-remote --heads origin "feature/${CLICKUP_ID}-*" | head -1 | sed 's|.*refs/heads/||')
+          BACKEND_BRANCH=$(git ls-remote --heads origin "${PREFIX}/${CLICKUP_ID}-*" | head -1 | sed 's|.*refs/heads/||')
         fi
         if [ -n "$BACKEND_BRANCH" ]; then
           echo "Passender Backend-Branch gefunden: $BACKEND_BRANCH"
