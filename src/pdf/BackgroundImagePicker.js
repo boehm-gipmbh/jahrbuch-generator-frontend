@@ -12,7 +12,7 @@ const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` 
 const PREVIEW_W = 85;
 const PREVIEW_H = 120;
 
-const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
+const Preview = ({pfad, opacity, tint, fillColor, offsetX = 0, offsetY = 0, zoom = 1}) => {
   const [imgData, setImgData] = useState(null); // {blobUrl, w, h}
 
   useEffect(() => {
@@ -50,7 +50,7 @@ const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
   const y = (PREVIEW_H - drawH) / 2 * (1 - offsetY);
 
   return (
-    <Box sx={{position: 'relative', width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider'}}>
+    <Box sx={{position: 'relative', width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0, borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', backgroundColor: fillColor || undefined}}>
       <img
         src={imgData.blobUrl}
         alt=""
@@ -101,17 +101,18 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
   const tint = value?.tint ?? null;
+  const fillColor = value?.fillColor ?? null;
   const offsetX = value?.offsetX ?? 0;
   const offsetY = value?.offsetY ?? 0;
   const zoom = value?.zoom || 1;
 
-  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, ...patch});
+  const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, fillColor: null, offsetX: 0, offsetY: 0, zoom: 1, ...patch});
 
   return (
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
       {label && <Typography variant="body2" color="text.secondary">{label}</Typography>}
       <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-        <Preview pfad={pfad} opacity={opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} />
+        <Preview pfad={pfad} opacity={opacity} tint={tint} fillColor={fillColor} offsetX={offsetX} offsetY={offsetY} zoom={zoom} />
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1}}>
           <Box sx={{display: 'flex', gap: 0.5}}>
             <Button
@@ -170,14 +171,28 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
                 <Typography variant="caption" sx={{minWidth: 60}}>Zoom</Typography>
                 <Slider
                   size="small"
-                  min={1} max={3} step={0.1}
+                  min={0.1} max={3} step={0.05}
                   value={zoom}
                   onChange={(_, v) => update({zoom: v})}
                   sx={{flex: 1}}
                 />
                 <Typography variant="caption" sx={{minWidth: 32, textAlign: 'right'}}>
-                  {zoom.toFixed(1)}×
+                  {zoom.toFixed(2)}×
                 </Typography>
+              </Box>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="caption" sx={{minWidth: 60}}>Füllfarbe</Typography>
+                <input
+                  type="color"
+                  value={fillColor ?? '#ffffff'}
+                  onChange={e => update({fillColor: e.target.value})}
+                  style={{width: 36, height: 24, padding: 0, border: 'none', cursor: 'pointer', borderRadius: 4}}
+                />
+                {fillColor && (
+                  <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => update({fillColor: null})}>
+                    <Typography variant="caption">entfernen</Typography>
+                  </Button>
+                )}
               </Box>
               <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                 <Typography variant="caption" sx={{minWidth: 60}}>Farbton</Typography>
