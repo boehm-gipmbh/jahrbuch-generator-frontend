@@ -142,6 +142,12 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
         coverFrontBackground: enrichBackground(loadedSettings.coverFrontBackground, groupBilder),
         coverBackBackground: enrichBackground(loadedSettings.coverBackBackground, groupBilder),
         tocBackground: enrichBackground(loadedSettings.tocBackground, groupBilder),
+        tocEnabled: loadedSettings.tocEnabled ?? SETTINGS_DEFAULTS.tocEnabled,
+        tocTitle: loadedSettings.tocTitle ?? SETTINGS_DEFAULTS.tocTitle,
+        tocTitleSize: loadedSettings.tocTitleSize ?? SETTINGS_DEFAULTS.tocTitleSize,
+        tocEntrySize: loadedSettings.tocEntrySize ?? SETTINGS_DEFAULTS.tocEntrySize,
+        tocShowPageNumbers: loadedSettings.tocShowPageNumbers ?? SETTINGS_DEFAULTS.tocShowPageNumbers,
+        tocColumns: loadedSettings.tocColumns ?? SETTINGS_DEFAULTS.tocColumns,
       });
     }
   }, [loadedSettings, groupBilder]); // eslint-disable-line react-hooks/exhaustive-deps
