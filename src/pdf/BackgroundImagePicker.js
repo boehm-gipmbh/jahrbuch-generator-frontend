@@ -153,7 +153,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
       {label && <Typography variant="body2" color="text.secondary">{label}</Typography>}
       <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-        <Preview pfad={outpaintedPfad ?? pfad} opacity={opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} onDims={!outpaintedPfad ? setOrigDims : undefined} />
+        <Preview pfad={outpaintedPfad ?? pfad} opacity={outpaintedPfad ? 1 : opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} onDims={!outpaintedPfad ? setOrigDims : undefined} />
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1}}>
           <Box sx={{display: 'flex', gap: 0.5}}>
             <Button
