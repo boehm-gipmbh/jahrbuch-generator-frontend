@@ -146,7 +146,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
       const jwt = sessionStorage.getItem('jwt');
       const result = await triggerOutpaint(jwt, bildId);
       setPreviewOutpaintedPfad(result.outpaintedPfad); // sofort sichtbar
-      update({outpaintedPfad: result.outpaintedPfad});
+      update({outpaintedPfad: result.outpaintedPfad, zoom: 1, offsetX: 0, offsetY: 0});
     } catch (e) {
       setOutpaintError(e.message);
     } finally {
