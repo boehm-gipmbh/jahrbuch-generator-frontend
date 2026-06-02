@@ -105,6 +105,15 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [pickerOpen, setPickerOpen] = useState(false);
   const [outpainting, setOutpainting] = useState(false);
   const [outpaintError, setOutpaintError] = useState(null);
+  const bildId = value?.bildId ?? null;
+  const pfad = value?.pfad ?? null;
+  const opacity = value?.opacity ?? 0.15;
+  const tint = value?.tint ?? null;
+  const offsetX = value?.offsetX ?? 0;
+  const offsetY = value?.offsetY ?? 0;
+  const zoom = value?.zoom || 1;
+  const outpaintedPfad = value?.outpaintedPfad ?? null;
+
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
 
@@ -123,14 +132,6 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
       .catch(() => {});
     return () => { cancelled = true; };
   }, [pfad, outpaintedPfad]);
-  const bildId = value?.bildId ?? null;
-  const pfad = value?.pfad ?? null;
-  const opacity = value?.opacity ?? 0.15;
-  const tint = value?.tint ?? null;
-  const offsetX = value?.offsetX ?? 0;
-  const offsetY = value?.offsetY ?? 0;
-  const zoom = value?.zoom || 1;
-  const outpaintedPfad = value?.outpaintedPfad ?? null;
 
   const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, outpaintedPfad: null, ...patch});
 
