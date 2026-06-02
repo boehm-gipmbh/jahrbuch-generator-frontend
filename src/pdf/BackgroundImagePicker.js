@@ -117,8 +117,12 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
 
+  // Lokaler State für sofortige Preview-Aktualisierung, unabhängig vom Parent-Prop-Cycle
+  const [previewOutpaintedPfad, setPreviewOutpaintedPfad] = useState(outpaintedPfad);
+  useEffect(() => { setPreviewOutpaintedPfad(outpaintedPfad); }, [outpaintedPfad]);
+
   useEffect(() => {
-    if (!pfad || !outpaintedPfad) return; // Preview liefert dims via onDims wenn kein outpainted
+    if (!pfad || !previewOutpaintedPfad) return; // Preview liefert dims via onDims wenn kein outpainted
     let cancelled = false;
     const jwt = sessionStorage.getItem('jwt');
     fetch(`/api/bilder/extern${pfad}?thumb=true`, {headers: {Authorization: `Bearer ${jwt}`}, cache: 'no-store'})
@@ -131,7 +135,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [pfad, outpaintedPfad]);
+  }, [pfad, previewOutpaintedPfad]);
 
   const update = (patch) => onChange(value ? {...value, ...patch} : {bildId: null, pfad: null, opacity: 0.15, tint: null, offsetX: 0, offsetY: 0, zoom: 1, outpaintedPfad: null, ...patch});
 
@@ -141,6 +145,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
     try {
       const jwt = sessionStorage.getItem('jwt');
       const result = await triggerOutpaint(jwt, bildId);
+      setPreviewOutpaintedPfad(result.outpaintedPfad); // sofort sichtbar
       update({outpaintedPfad: result.outpaintedPfad});
     } catch (e) {
       setOutpaintError(e.message);
@@ -153,7 +158,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
       {label && <Typography variant="body2" color="text.secondary">{label}</Typography>}
       <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-        <Preview pfad={outpaintedPfad ?? pfad} opacity={outpaintedPfad ? 1 : opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} onDims={!outpaintedPfad ? setOrigDims : undefined} />
+        <Preview pfad={previewOutpaintedPfad ?? pfad} opacity={previewOutpaintedPfad ? 1 : opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} onDims={!previewOutpaintedPfad ? setOrigDims : undefined} />
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1}}>
           <Box sx={{display: 'flex', gap: 0.5}}>
             <Button
@@ -225,16 +230,16 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
                   <Button
                     size="small"
-                    variant={outpaintedPfad ? 'contained' : 'outlined'}
-                    color={outpaintedPfad ? 'success' : 'primary'}
+                    variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
+                    color={previewOutpaintedPfad ? 'success' : 'primary'}
                     startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
                     onClick={handleOutpaint}
                     disabled={outpainting}
                   >
-                    {outpainting ? 'KI läuft…' : outpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
+                    {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
                   </Button>
-                  {outpaintedPfad && (
-                    <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => update({outpaintedPfad: null})}>
+                  {previewOutpaintedPfad && (
+                    <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => { setPreviewOutpaintedPfad(null); update({outpaintedPfad: null}); }}>
                       <Typography variant="caption">entfernen</Typography>
                     </Button>
                   )}
@@ -264,7 +269,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
       {pickerOpen && (
         <BildPickerDialog
           bilder={bilder}
-          onSelect={b => update({bildId: b.id, pfad: b.pfad, outpaintedPfad: null})}
+          onSelect={b => { setPreviewOutpaintedPfad(null); update({bildId: b.id, pfad: b.pfad, outpaintedPfad: null}); }}
           onClose={() => setPickerOpen(false)}
         />
       )}
