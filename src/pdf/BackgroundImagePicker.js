@@ -14,11 +14,12 @@ const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` 
 const PREVIEW_W = 85;
 const PREVIEW_H = 120;
 
-const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
+const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1, onDims}) => {
   const [imgData, setImgData] = useState(null); // {blobUrl, w, h}
 
   useEffect(() => {
     setImgData(null);
+    onDims?.(null);
     if (!pfad) return;
     let cancelled = false;
     let objUrl = null;
@@ -31,7 +32,10 @@ const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
         objUrl = URL.createObjectURL(blob);
         const img = new Image();
         img.onload = () => {
-          if (!cancelled) setImgData({blobUrl: objUrl, w: img.naturalWidth, h: img.naturalHeight});
+          if (!cancelled) {
+            setImgData({blobUrl: objUrl, w: img.naturalWidth, h: img.naturalHeight});
+            onDims?.({w: img.naturalWidth, h: img.naturalHeight});
+          }
         };
         img.src = objUrl;
       })
@@ -40,7 +44,7 @@ const Preview = ({pfad, opacity, tint, offsetX = 0, offsetY = 0, zoom = 1}) => {
       cancelled = true;
       if (objUrl) URL.revokeObjectURL(objUrl);
     };
-  }, [pfad]);
+  }, [pfad]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!pfad) return <Box sx={{width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0}} />;
   if (!imgData) return <Box sx={{width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0, borderRadius: 1, border: '1px solid', borderColor: 'divider'}} />;
@@ -97,10 +101,28 @@ const BildPickerDialog = ({bilder, onSelect, onClose}) => (
   </Dialog>
 );
 
-export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => {
+export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outpaintEnabled = true}) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [outpainting, setOutpainting] = useState(false);
   const [outpaintError, setOutpaintError] = useState(null);
+  const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
+  const isLandscape = origDims ? origDims.w > origDims.h : false;
+
+  useEffect(() => {
+    if (!pfad || !outpaintedPfad) return; // Preview liefert dims via onDims wenn kein outpainted
+    let cancelled = false;
+    const jwt = sessionStorage.getItem('jwt');
+    fetch(`/api/bilder/extern${pfad}?thumb=true`, {headers: {Authorization: `Bearer ${jwt}`}, cache: 'no-store'})
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => { if (!cancelled) { setOrigDims({w: img.naturalWidth, h: img.naturalHeight}); URL.revokeObjectURL(url); } };
+        img.src = url;
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [pfad, outpaintedPfad]);
   const bildId = value?.bildId ?? null;
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
@@ -130,7 +152,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
     <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
       {label && <Typography variant="body2" color="text.secondary">{label}</Typography>}
       <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-        <Preview pfad={outpaintedPfad ?? pfad} opacity={opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} />
+        <Preview pfad={outpaintedPfad ?? pfad} opacity={opacity} tint={tint} offsetX={offsetX} offsetY={offsetY} zoom={zoom} onDims={!outpaintedPfad ? setOrigDims : undefined} />
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1}}>
           <Box sx={{display: 'flex', gap: 0.5}}>
             <Button
@@ -198,26 +220,28 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
                   {zoom.toFixed(2)}×
                 </Typography>
               </Box>
-              <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
-                <Button
-                  size="small"
-                  variant={outpaintedPfad ? 'contained' : 'outlined'}
-                  color={outpaintedPfad ? 'success' : 'primary'}
-                  startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
-                  onClick={handleOutpaint}
-                  disabled={outpainting}
-                >
-                  {outpainting ? 'KI läuft…' : outpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
-                </Button>
-                {outpaintedPfad && (
-                  <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => update({outpaintedPfad: null})}>
-                    <Typography variant="caption">entfernen</Typography>
+              {outpaintEnabled && isLandscape && (
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+                  <Button
+                    size="small"
+                    variant={outpaintedPfad ? 'contained' : 'outlined'}
+                    color={outpaintedPfad ? 'success' : 'primary'}
+                    startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
+                    onClick={handleOutpaint}
+                    disabled={outpainting}
+                  >
+                    {outpainting ? 'KI läuft…' : outpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
                   </Button>
-                )}
-                {outpaintError && (
-                  <Typography variant="caption" color="error">{outpaintError}</Typography>
-                )}
-              </Box>
+                  {outpaintedPfad && (
+                    <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => update({outpaintedPfad: null})}>
+                      <Typography variant="caption">entfernen</Typography>
+                    </Button>
+                  )}
+                  {outpaintError && (
+                    <Typography variant="caption" color="error">{outpaintError}</Typography>
+                  )}
+                </Box>
+              )}
               <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                 <Typography variant="caption" sx={{minWidth: 60}}>Farbton</Typography>
                 <input
@@ -239,7 +263,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = []}) => 
       {pickerOpen && (
         <BildPickerDialog
           bilder={bilder}
-          onSelect={b => update({bildId: b.id, pfad: b.pfad})}
+          onSelect={b => update({bildId: b.id, pfad: b.pfad, outpaintedPfad: null})}
           onClose={() => setPickerOpen(false)}
         />
       )}
