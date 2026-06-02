@@ -211,7 +211,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                 <Typography variant="caption" sx={{minWidth: 60}}>Zoom</Typography>
                 <Slider
                   size="small"
-                  min={0.1} max={3} step={0.05}
+                  min={isLandscape ? 0.1 : 1} max={3} step={0.05}
                   value={zoom}
                   onChange={(_, v) => update({zoom: v})}
                   sx={{flex: 1}}
