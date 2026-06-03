@@ -242,7 +242,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
     const handleBackgroundChange = (value) => {
         if (!story) return;
-        const bg = value ? {bildId: value.bildId, opacity: value.opacity, tint: value.tint, offsetX: value.offsetX ?? 0, offsetY: value.offsetY ?? 0, zoom: value.zoom || 1} : null;
+        const bg = value ? {bildId: value.bildId, opacity: value.opacity, tint: value.tint, offsetX: value.offsetX ?? 0, offsetY: value.offsetY ?? 0, zoom: value.zoom || 1, outpaintedPfad: value.outpaintedPfad ?? null} : null;
         updateStory({...story, background: bg ? JSON.stringify(bg) : null});
     };
     const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
