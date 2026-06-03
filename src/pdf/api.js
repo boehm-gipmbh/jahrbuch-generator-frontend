@@ -11,6 +11,18 @@ export async function triggerOutpaint(jwt, bildId, prompt) {
   return res.json(); // {outpaintedPfad: "..."}
 }
 
+export async function captionBild(jwt, bildId) {
+  const res = await fetch(`/api/pdf/outpaint/${bildId}/caption`, {
+    method: 'POST',
+    headers: {Authorization: `Bearer ${jwt}`},
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Fehler ${res.status}`);
+  }
+  return res.json(); // {caption: "..."}
+}
+
 export async function deleteOutpaint(jwt, bildId) {
   const res = await fetch(`/api/pdf/outpaint/${bildId}`, {
     method: 'DELETE',

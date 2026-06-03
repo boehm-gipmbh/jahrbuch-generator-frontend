@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {
-  Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  IconButton, ImageList, ImageListItem, Slider, TextField, Tooltip, Typography
+  Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+  FormControlLabel, IconButton, ImageList, ImageListItem, Slider, TextField, Tooltip, Typography
 } from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import AuthImage from '../bilder/AuthImage';
-import {triggerOutpaint, deleteOutpaint} from './api';
+import {triggerOutpaint, deleteOutpaint, captionBild} from './api';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
@@ -106,6 +106,8 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [outpainting, setOutpainting] = useState(false);
   const [outpaintError, setOutpaintError] = useState(null);
   const [outpaintPrompt, setOutpaintPrompt] = useState('');
+  const [captionMode, setCaptionMode] = useState(false);
+  const [captioning, setCaptioning] = useState(false);
   const bildId = value?.bildId ?? null;
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
@@ -228,26 +230,70 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                 </Typography>
               </Box>
               {outpaintEnabled && isLandscape && (
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
-                  <TextField
-                    size="small"
-                    placeholder="Prompt (optional, English)"
-                    value={outpaintPrompt}
-                    onChange={e => setOutpaintPrompt(e.target.value)}
-                    disabled={outpainting}
-                    sx={{flex: 1, minWidth: 160}}
-                    inputProps={{maxLength: 300}}
+                <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
+                  <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+                  <FormControlLabel
+                    control={<Checkbox size="small" checked={captionMode} onChange={e => { setCaptionMode(e.target.checked); setOutpaintPrompt(''); }} disabled={outpainting || captioning} />}
+                    label={<Typography variant="caption">KI-Beschreibung zuerst</Typography>}
+                    sx={{m: 0}}
                   />
-                  <Button
-                    size="small"
-                    variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
-                    color={previewOutpaintedPfad ? 'success' : 'primary'}
-                    startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
-                    onClick={handleOutpaint}
-                    disabled={outpainting}
-                  >
-                    {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
-                  </Button>
+                  {!captionMode && (
+                    <Button
+                      size="small"
+                      variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
+                      color={previewOutpaintedPfad ? 'success' : 'primary'}
+                      startIcon={outpainting ? <CircularProgress size={14} /> : <AutoFixHighIcon />}
+                      onClick={handleOutpaint}
+                      disabled={outpainting}
+                    >
+                      {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
+                    </Button>
+                  )}
+                  </Box>
+                  {captionMode && (
+                    <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
+                      <Box sx={{display: 'flex', gap: 1, alignItems: 'flex-start'}}>
+                        <TextField
+                          size="small"
+                          multiline
+                          minRows={2}
+                          placeholder="Hier erscheint die KI-Beschreibung…"
+                          value={outpaintPrompt}
+                          onChange={e => setOutpaintPrompt(e.target.value)}
+                          disabled={outpainting || captioning}
+                          sx={{flex: 1}}
+                          inputProps={{maxLength: 400}}
+                        />
+                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
+                          <Button size="small" variant="outlined"
+                            onClick={async () => {
+                              setCaptioning(true);
+                              setOutpaintError(null);
+                              try {
+                                const jwt = sessionStorage.getItem('jwt');
+                                const res = await captionBild(jwt, bildId);
+                                setOutpaintPrompt(res.caption || '');
+                              } catch(e) { setOutpaintError(e.message); }
+                              finally { setCaptioning(false); }
+                            }}
+                            disabled={captioning || outpainting}
+                            startIcon={captioning ? <CircularProgress size={12}/> : null}
+                          >
+                            {captioning ? 'läuft…' : 'Beschreiben'}
+                          </Button>
+                          <Button size="small"
+                            variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
+                            color={previewOutpaintedPfad ? 'success' : 'primary'}
+                            startIcon={outpainting ? <CircularProgress size={12}/> : <AutoFixHighIcon/>}
+                            onClick={handleOutpaint}
+                            disabled={outpainting || !outpaintPrompt.trim()}
+                          >
+                            {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'fertig ✓' : 'Outpainting'}
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
                   {previewOutpaintedPfad && (
                     <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => {
                       const jwt = sessionStorage.getItem('jwt');
