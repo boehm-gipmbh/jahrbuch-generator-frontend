@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
   Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  IconButton, ImageList, ImageListItem, Slider, Tooltip, Typography
+  IconButton, ImageList, ImageListItem, Slider, TextField, Tooltip, Typography
 } from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -105,6 +105,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [pickerOpen, setPickerOpen] = useState(false);
   const [outpainting, setOutpainting] = useState(false);
   const [outpaintError, setOutpaintError] = useState(null);
+  const [outpaintPrompt, setOutpaintPrompt] = useState('');
   const bildId = value?.bildId ?? null;
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
@@ -144,7 +145,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
     setOutpaintError(null);
     try {
       const jwt = sessionStorage.getItem('jwt');
-      const result = await triggerOutpaint(jwt, bildId);
+      const result = await triggerOutpaint(jwt, bildId, outpaintPrompt.trim() || null);
       setPreviewOutpaintedPfad(result.outpaintedPfad); // sofort sichtbar
       update({outpaintedPfad: result.outpaintedPfad, zoom: 1, offsetX: 0, offsetY: 0});
     } catch (e) {
@@ -228,6 +229,15 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
               </Box>
               {outpaintEnabled && isLandscape && (
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+                  <TextField
+                    size="small"
+                    placeholder="Prompt (optional, English)"
+                    value={outpaintPrompt}
+                    onChange={e => setOutpaintPrompt(e.target.value)}
+                    disabled={outpainting}
+                    sx={{flex: 1, minWidth: 160}}
+                    inputProps={{maxLength: 300}}
+                  />
                   <Button
                     size="small"
                     variant={previewOutpaintedPfad ? 'contained' : 'outlined'}

@@ -1,7 +1,8 @@
-export async function triggerOutpaint(jwt, bildId) {
+export async function triggerOutpaint(jwt, bildId, prompt) {
   const res = await fetch(`/api/pdf/outpaint/${bildId}`, {
     method: 'POST',
-    headers: {Authorization: `Bearer ${jwt}`},
+    headers: {Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json'},
+    body: JSON.stringify({prompt: prompt || null}),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
