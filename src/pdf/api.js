@@ -9,3 +9,14 @@ export async function triggerOutpaint(jwt, bildId) {
   }
   return res.json(); // {outpaintedPfad: "..."}
 }
+
+export async function deleteOutpaint(jwt, bildId) {
+  const res = await fetch(`/api/pdf/outpaint/${bildId}`, {
+    method: 'DELETE',
+    headers: {Authorization: `Bearer ${jwt}`},
+  });
+  if (!res.ok && res.status !== 404) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Fehler ${res.status}`);
+  }
+}

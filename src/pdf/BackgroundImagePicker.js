@@ -7,7 +7,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import AuthImage from '../bilder/AuthImage';
-import {triggerOutpaint} from './api';
+import {triggerOutpaint, deleteOutpaint} from './api';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
@@ -239,7 +239,12 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                     {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
                   </Button>
                   {previewOutpaintedPfad && (
-                    <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => { setPreviewOutpaintedPfad(null); update({outpaintedPfad: null}); }}>
+                    <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => {
+                      const jwt = sessionStorage.getItem('jwt');
+                      deleteOutpaint(jwt, bildId).catch(() => {});
+                      setPreviewOutpaintedPfad(null);
+                      update({outpaintedPfad: null});
+                    }}>
                       <Typography variant="caption">entfernen</Typography>
                     </Button>
                   )}
