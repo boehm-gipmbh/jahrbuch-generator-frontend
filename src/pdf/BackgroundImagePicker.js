@@ -120,6 +120,9 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
 
+  // Prompt + captionMode zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
+  useEffect(() => { setOutpaintPrompt(''); setCaptionMode(false); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Lokaler State für sofortige Preview-Aktualisierung, unabhängig vom Parent-Prop-Cycle
   const [previewOutpaintedPfad, setPreviewOutpaintedPfad] = useState(outpaintedPfad);
   useEffect(() => { setPreviewOutpaintedPfad(outpaintedPfad); }, [outpaintedPfad]);
