@@ -115,15 +115,15 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const offsetY = value?.offsetY ?? 0;
   const zoom = value?.zoom || 1;
   const outpaintedPfad = value?.outpaintedPfad ?? null;
-  const savedCaption = value?.caption ?? '';
+  const bildCaption = bilder.find(b => b.id === bildId)?.caption ?? '';
 
-  const [outpaintPrompt, setOutpaintPrompt] = useState(savedCaption);
+  const [outpaintPrompt, setOutpaintPrompt] = useState(bildCaption);
 
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
 
-  // Prompt auf gespeicherten Wert zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
-  useEffect(() => { setOutpaintPrompt(savedCaption); setCaptionMode(!!savedCaption); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Prompt auf Bild-Caption zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
+  useEffect(() => { setOutpaintPrompt(bildCaption); setCaptionMode(!!bildCaption); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lokaler State für sofortige Preview-Aktualisierung, unabhängig vom Parent-Prop-Cycle
   const [previewOutpaintedPfad, setPreviewOutpaintedPfad] = useState(outpaintedPfad);
@@ -278,7 +278,6 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                                 const jwt = sessionStorage.getItem('jwt');
                                 const res = await captionBild(jwt, bildId);
                                 setOutpaintPrompt(res.caption || '');
-                                update({caption: res.caption || null});
                               } catch(e) { setOutpaintError(e.message); }
                               finally { setCaptioning(false); }
                             }}
@@ -305,7 +304,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                       const jwt = sessionStorage.getItem('jwt');
                       deleteOutpaint(jwt, bildId).catch(() => {});
                       setPreviewOutpaintedPfad(null);
-                      update({outpaintedPfad: null, caption: null});
+                      update({outpaintedPfad: null});
                     }}>
                       <Typography variant="caption">entfernen</Typography>
                     </Button>
