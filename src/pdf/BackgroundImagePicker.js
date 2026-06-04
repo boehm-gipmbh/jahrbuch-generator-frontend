@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {
-  Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  FormControlLabel, IconButton, ImageList, ImageListItem, Slider, TextField, Tooltip, Typography
+  Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+  IconButton, ImageList, ImageListItem, Slider, Tooltip, Typography
 } from '@mui/material';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import AuthImage from '../bilder/AuthImage';
-import {triggerOutpaint, deleteOutpaint, captionBild} from './api';
+import {triggerOutpaint, deleteOutpaint} from './api';
 
 const externUrl = (pfad) => pfad?.startsWith('/') ? `/api/bilder/extern${pfad}` : pfad;
 
@@ -105,8 +105,6 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const [pickerOpen, setPickerOpen] = useState(false);
   const [outpainting, setOutpainting] = useState(false);
   const [outpaintError, setOutpaintError] = useState(null);
-  const [captionMode, setCaptionMode] = useState(false);
-  const [captioning, setCaptioning] = useState(false);
   const bildId = value?.bildId ?? null;
   const pfad = value?.pfad ?? null;
   const opacity = value?.opacity ?? 0.15;
@@ -115,15 +113,8 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const offsetY = value?.offsetY ?? 0;
   const zoom = value?.zoom || 1;
   const outpaintedPfad = value?.outpaintedPfad ?? null;
-  const bildCaption = bilder.find(b => b.id === bildId)?.caption ?? '';
-
-  const [outpaintPrompt, setOutpaintPrompt] = useState(bildCaption);
-
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
-
-  // Prompt auf Bild-Caption zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
-  useEffect(() => { setOutpaintPrompt(bildCaption); setCaptionMode(!!bildCaption); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lokaler State für sofortige Preview-Aktualisierung, unabhängig vom Parent-Prop-Cycle
   const [previewOutpaintedPfad, setPreviewOutpaintedPfad] = useState(outpaintedPfad);
@@ -152,7 +143,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
     setOutpaintError(null);
     try {
       const jwt = sessionStorage.getItem('jwt');
-      const result = await triggerOutpaint(jwt, bildId, outpaintPrompt.trim() || null);
+      const result = await triggerOutpaint(jwt, bildId, null);
       setPreviewOutpaintedPfad(result.outpaintedPfad); // sofort sichtbar
       update({outpaintedPfad: result.outpaintedPfad, zoom: 1, offsetX: 0, offsetY: 0});
     } catch (e) {
@@ -237,12 +228,6 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
               {outpaintEnabled && isLandscape && (
                 <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
                   <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
-                  <FormControlLabel
-                    control={<Checkbox size="small" checked={captionMode} onChange={e => { setCaptionMode(e.target.checked); setOutpaintPrompt(''); }} disabled={outpainting || captioning} />}
-                    label={<Typography variant="caption">KI-Beschreibung zuerst</Typography>}
-                    sx={{m: 0}}
-                  />
-                  {!captionMode && (
                     <Button
                       size="small"
                       variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
@@ -253,52 +238,7 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                     >
                       {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'KI: fertig ✓' : 'KI Outpainting'}
                     </Button>
-                  )}
                   </Box>
-                  {captionMode && (
-                    <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
-                      <Box sx={{display: 'flex', gap: 1, alignItems: 'flex-start'}}>
-                        <TextField
-                          size="small"
-                          multiline
-                          minRows={2}
-                          placeholder="Hier erscheint die KI-Beschreibung…"
-                          value={outpaintPrompt}
-                          onChange={e => setOutpaintPrompt(e.target.value)}
-                          disabled={outpainting || captioning}
-                          sx={{flex: 1}}
-                          inputProps={{maxLength: 400}}
-                        />
-                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.5}}>
-                          <Button size="small" variant="outlined"
-                            onClick={async () => {
-                              setCaptioning(true);
-                              setOutpaintError(null);
-                              try {
-                                const jwt = sessionStorage.getItem('jwt');
-                                const res = await captionBild(jwt, bildId);
-                                setOutpaintPrompt(res.caption || '');
-                              } catch(e) { setOutpaintError(e.message); }
-                              finally { setCaptioning(false); }
-                            }}
-                            disabled={captioning || outpainting}
-                            startIcon={captioning ? <CircularProgress size={12}/> : null}
-                          >
-                            {captioning ? 'läuft…' : 'Beschreiben'}
-                          </Button>
-                          <Button size="small"
-                            variant={previewOutpaintedPfad ? 'contained' : 'outlined'}
-                            color={previewOutpaintedPfad ? 'success' : 'primary'}
-                            startIcon={outpainting ? <CircularProgress size={12}/> : <AutoFixHighIcon/>}
-                            onClick={handleOutpaint}
-                            disabled={outpainting || !outpaintPrompt.trim()}
-                          >
-                            {outpainting ? 'KI läuft…' : previewOutpaintedPfad ? 'fertig ✓' : 'Outpainting'}
-                          </Button>
-                        </Box>
-                      </Box>
-                    </Box>
-                  )}
                   {previewOutpaintedPfad && (
                     <Button size="small" sx={{minWidth: 0, px: 0.5}} onClick={() => {
                       const jwt = sessionStorage.getItem('jwt');
