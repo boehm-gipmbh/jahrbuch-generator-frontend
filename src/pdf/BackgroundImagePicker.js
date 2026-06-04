@@ -115,15 +115,15 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
   const offsetY = value?.offsetY ?? 0;
   const zoom = value?.zoom || 1;
   const outpaintedPfad = value?.outpaintedPfad ?? null;
-  const bildCaption = bilder.find(b => b.id === bildId)?.caption ?? '';
+  const bildDescription = bilder.find(b => b.id === bildId)?.description ?? '';
 
-  const [outpaintPrompt, setOutpaintPrompt] = useState(bildCaption);
+  const [outpaintPrompt, setOutpaintPrompt] = useState(bildDescription);
 
   const [origDims, setOrigDims] = useState(null); // {w, h} des Originalbilds
   const isLandscape = origDims ? origDims.w > origDims.h : false;
 
-  // Prompt auf Bild-Caption zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
-  useEffect(() => { setOutpaintPrompt(bildCaption); setCaptionMode(!!bildCaption); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Prompt auf Bild-Beschreibung zurücksetzen wenn anderes Bild gewählt wird (Story-Navigation)
+  useEffect(() => { setOutpaintPrompt(bildDescription); setCaptionMode(!!bildDescription); }, [bildId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lokaler State für sofortige Preview-Aktualisierung, unabhängig vom Parent-Prop-Cycle
   const [previewOutpaintedPfad, setPreviewOutpaintedPfad] = useState(outpaintedPfad);
@@ -277,7 +277,9 @@ export const BackgroundImagePicker = ({label, value, onChange, bilder = [], outp
                               try {
                                 const jwt = sessionStorage.getItem('jwt');
                                 const res = await captionBild(jwt, bildId);
-                                setOutpaintPrompt(res.caption || '');
+                                // INDOOR:/OUTDOOR:-Prefix ist intern, nicht für den User
+                                const clean = (res.caption || '').replace(/^(INDOOR|OUTDOOR):/, '').trim();
+                                setOutpaintPrompt(clean);
                               } catch(e) { setOutpaintError(e.message); }
                               finally { setCaptioning(false); }
                             }}
