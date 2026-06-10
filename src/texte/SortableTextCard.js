@@ -17,6 +17,7 @@ import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
 import {ClusterButton} from '../stories/ClusterButton';
+import {clusterColor} from '../stories/clusterColor';
 import {ReactionButtons} from '../reactions/ReactionButtons';
 import {CommentThread} from '../comments/CommentThread';
 
@@ -133,7 +134,8 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                position: 'relative'
+                position: 'relative',
+                borderLeft: text.clusterId ? `4px solid ${clusterColor(text.clusterId)}` : undefined,
             }}>
                 {/* Drag Handle */}
                 <Box
