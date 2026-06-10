@@ -25,7 +25,10 @@ export const Groups = () => {
   const [revokeConfirmGruppe, setRevokeConfirmGruppe] = useState(null);
   const [pdfSettingsGruppe, setPdfSettingsGruppe] = useState(null);
 
-  if (user && !user.roles?.includes('admin')) {
+  const isAdmin = user?.roles?.includes('admin');
+  const isGroupAdmin = user?.roles?.includes('group-admin');
+
+  if (user && !isAdmin && !isGroupAdmin) {
     return <Navigate to='/bilder' replace />;
   }
 
@@ -37,13 +40,15 @@ export const Groups = () => {
             <Typography component="h2" variant="h6" color="primary">
               Gruppen
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setSetupOpen(true)}
-            >
-              Neue Fotobox-Veranstaltung
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setSetupOpen(true)}
+              >
+                Neue Fotobox-Veranstaltung
+              </Button>
+            )}
           </Box>
           <Table>
             <TableHead>
@@ -69,21 +74,25 @@ export const Groups = () => {
                       >
                         PDF-Einstellungen
                       </Button>
-                      <Button
-                        size="small"
-                        startIcon={<CameraAltIcon />}
-                        onClick={() => setTokenDialogGruppe(gruppe)}
-                      >
-                        Token neu generieren
-                      </Button>
-                      <Button
-                        size="small"
-                        color="error"
-                        startIcon={<BlockIcon />}
-                        onClick={() => setRevokeConfirmGruppe(gruppe)}
-                      >
-                        Token widerrufen
-                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="small"
+                          startIcon={<CameraAltIcon />}
+                          onClick={() => setTokenDialogGruppe(gruppe)}
+                        >
+                          Token neu generieren
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          size="small"
+                          color="error"
+                          startIcon={<BlockIcon />}
+                          onClick={() => setRevokeConfirmGruppe(gruppe)}
+                        >
+                          Token widerrufen
+                        </Button>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>

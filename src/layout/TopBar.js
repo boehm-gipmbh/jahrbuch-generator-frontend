@@ -67,7 +67,7 @@ export const TopBar = ({goHome, toggleDrawer}) => {
             </IconButton>
           </Tooltip>
         )}
-        {isAdmin && (
+        {(isAdmin || isGroupAdmin) && (
           <Tooltip title='Gruppen'>
             <IconButton color='inherit' onClick={() => navigate('/groups')}>
               <GroupsIcon />
