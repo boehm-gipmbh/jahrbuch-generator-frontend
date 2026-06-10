@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {
   Box, Button, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, Divider, InputAdornment, TextField, Typography
+  DialogTitle, Divider, InputAdornment, TextField, ToggleButton,
+  ToggleButtonGroup, Typography
 } from '@mui/material';
 import {api} from './api';
 import {api as bilderApi} from '../bilder/api';
@@ -20,7 +21,9 @@ const DEFAULTS = {
   pdfPassword: '',
   coverFrontBackground: null,
   coverBackBackground: null,
-  tocBackground: null
+  tocBackground: null,
+  coverTitlePosition: 'middle',
+  coverTitleColor: '#000000'
 };
 
 const FONT_FIELDS = [
@@ -136,6 +139,31 @@ export const PdfSettingsDialog = ({groupId, onClose}) => {
               onChange={v => setField('coverBackBackground', v)}
               bilder={bilder}
             />
+
+            <Divider />
+
+            <Typography variant="subtitle2" color="text.secondary">Titel auf Deckblatt</Typography>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={form.coverTitlePosition}
+                onChange={(_, v) => v && setField('coverTitlePosition', v)}
+              >
+                <ToggleButton value="top">Oben</ToggleButton>
+                <ToggleButton value="middle">Mitte</ToggleButton>
+                <ToggleButton value="bottom">Unten</ToggleButton>
+              </ToggleButtonGroup>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+                <Typography variant="body2" color="text.secondary">Farbe</Typography>
+                <input
+                  type="color"
+                  value={form.coverTitleColor}
+                  onChange={e => setField('coverTitleColor', e.target.value)}
+                  style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                />
+              </Box>
+            </Box>
 
             <Divider />
 
