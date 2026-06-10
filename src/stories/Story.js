@@ -323,6 +323,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
             onSetComplete={(args) => setBildComplete(args)}
+            storyTexte={textItems.map(i => i.item)}
         />
     ) : (
         <SortableTextCard
@@ -332,6 +333,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
             onSetComplete={(args) => setTextComplete(args)}
+            storyBilder={bildItems.map(i => i.item)}
         />
     );
 

@@ -16,6 +16,7 @@ import {EditTextPriority} from './Priority';
 import {StoryChip} from './StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
+import {TextBildLinkButton} from '../stories/TextBildLinkButton';
 import {ReactionButtons} from '../reactions/ReactionButtons';
 import {CommentThread} from '../comments/CommentThread';
 
@@ -88,7 +89,7 @@ const AssignTextToStoryButton = ({text, stories}) => {
     );
 };
 
-export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSetComplete}) => {
+export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSetComplete, storyBilder = []}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `text-${text.id}`
     });
@@ -262,6 +263,7 @@ export const SortableTextCard = memo(({text, story, storiesLoaded, stories, onSe
                     actionButtons={
                         <>
                             {storiesLoaded && <AssignTextToStoryButton text={text} stories={stories}/>}
+                            <TextBildLinkButton mode="text" ownId={text.id} storyId={text.story?.id} storyBilder={storyBilder}/>
                             <Tooltip title="In Papierkorb legen">
                                 <span onClick={() => isComplete && setLockMsg(true)}>
                                     <IconButton disabled={isComplete} size="small"
