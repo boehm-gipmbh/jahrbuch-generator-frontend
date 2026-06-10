@@ -308,7 +308,7 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
               />
               <FormControlLabel
                 control={<Switch checked={coverPage} onChange={e => setCoverPage(e.target.checked)} size="small" />}
-                label="Deckblatt"
+                label="Deckblatt anzeigen"
               />
               {coverPage && (
                 <TextField
@@ -405,6 +405,32 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
 
                 <Divider />
 
+                <Typography variant="subtitle2" color="text.secondary">Titelblatt</Typography>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelposition</Typography>
+                  <ToggleButtonGroup
+                    value={settingsForm.coverTitlePosition}
+                    exclusive
+                    onChange={(_, v) => v && setSettingsField('coverTitlePosition', v)}
+                    size="small"
+                  >
+                    <ToggleButton value="top">Oben</ToggleButton>
+                    <ToggleButton value="middle">Mitte</ToggleButton>
+                    <ToggleButton value="bottom">Unten</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelfarbe</Typography>
+                  <input
+                    type="color"
+                    value={settingsForm.coverTitleColor}
+                    onChange={e => setSettingsField('coverTitleColor', e.target.value)}
+                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                  />
+                </Box>
+
+                <Divider />
+
                 <Typography variant="subtitle2" color="text.secondary">Inhaltsverzeichnis</Typography>
                 <FormControlLabel
                   control={<Switch checked={settingsForm.tocEnabled} onChange={e => setSettingsField('tocEnabled', e.target.checked)} size="small" />}
@@ -471,29 +497,6 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 <Divider />
 
                 <Typography variant="subtitle2" color="text.secondary">Hintergrundbilder</Typography>
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                  <Typography variant="body2" sx={{minWidth: 100}}>Titelposition</Typography>
-                  <ToggleButtonGroup
-                    value={settingsForm.coverTitlePosition}
-                    exclusive
-                    onChange={(_, v) => v && setSettingsField('coverTitlePosition', v)}
-                    size="small"
-                  >
-                    <ToggleButton value="top">Oben</ToggleButton>
-                    <ToggleButton value="middle">Mitte</ToggleButton>
-                    <ToggleButton value="bottom">Unten</ToggleButton>
-                  </ToggleButtonGroup>
-                </Box>
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
-                  <Typography variant="body2" sx={{minWidth: 100}}>Titelfarbe</Typography>
-                  <input
-                    type="color"
-                    value={settingsForm.coverTitleColor}
-                    onChange={e => setSettingsField('coverTitleColor', e.target.value)}
-                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
-                  />
-                </Box>
-
                 <BackgroundImagePicker
                   label="Vorderdeckel"
                   value={settingsForm.coverFrontBackground}
