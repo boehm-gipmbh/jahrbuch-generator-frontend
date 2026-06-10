@@ -55,6 +55,7 @@ const SETTINGS_DEFAULTS = {
   tocColumns: 1,
   coverTitlePosition: 'middle',
   coverTitleColor: '#000000',
+  tocTitleColor: '#000000',
 };
 
 const FONT_FIELDS = [
@@ -409,6 +410,15 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                   control={<Switch checked={settingsForm.tocEnabled} onChange={e => setSettingsField('tocEnabled', e.target.checked)} size="small" />}
                   label="Inhaltsverzeichnis anzeigen"
                 />
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelfarbe</Typography>
+                  <input
+                    type="color"
+                    value={settingsForm.tocTitleColor}
+                    onChange={e => setSettingsField('tocTitleColor', e.target.value)}
+                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                  />
+                </Box>
                 {settingsForm.tocEnabled && (
                   <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5, ml: 1}}>
                     <TextField
