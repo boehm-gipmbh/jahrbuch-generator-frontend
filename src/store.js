@@ -11,7 +11,7 @@ import {api as announcementApi} from './announcement/api';
 import {api as reactionApi} from './reactions/api';
 import {api as commentApi} from './comments/api';
 import {api as notificationApi} from './notifications/api';
-import {linkApi} from './stories/linkApi';
+import {clusterApi} from './stories/clusterApi';
 
 const appReducer = combineReducers({
     auth: authReducer,
@@ -26,7 +26,7 @@ const appReducer = combineReducers({
     [reactionApi.reducerPath]: reactionApi.reducer,
     [commentApi.reducerPath]: commentApi.reducer,
     [notificationApi.reducerPath]: notificationApi.reducer,
-    [linkApi.reducerPath]: linkApi.reducer,
+    [clusterApi.reducerPath]: clusterApi.reducer,
 });
 
 const rootReducer = (state, action) => {
@@ -49,6 +49,6 @@ export const store = configureStore({
         .concat(reactionApi.middleware)
         .concat(commentApi.middleware)
         .concat(notificationApi.middleware)
-        .concat(linkApi.middleware)
+        .concat(clusterApi.middleware)
 });
 

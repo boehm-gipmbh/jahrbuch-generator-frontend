@@ -323,6 +323,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             storiesLoaded={storiesLoaded}
             stories={storiesData || []}
             onSetComplete={(args) => setBildComplete(args)}
+            storyBilder={bildItems.map(i => i.item)}
             storyTexte={textItems.map(i => i.item)}
         />
     ) : (
@@ -334,6 +335,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             stories={storiesData || []}
             onSetComplete={(args) => setTextComplete(args)}
             storyBilder={bildItems.map(i => i.item)}
+            storyTexte={textItems.map(i => i.item)}
         />
     );
 

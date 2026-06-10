@@ -20,7 +20,7 @@ import {EditBildPriority} from './Priority';
 import {StoryChip} from '../texte/StoryChip';
 import {api} from './api';
 import {api as storyApi} from '../stories';
-import {TextBildLinkButton} from '../stories/TextBildLinkButton';
+import {ClusterButton} from '../stories/ClusterButton';
 import {ReactionButtons} from '../reactions/ReactionButtons';
 import {CommentThread} from '../comments/CommentThread';
 
@@ -98,7 +98,7 @@ const AssignBildToStoryButton = ({bild, stories}) => {
     );
 };
 
-export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, storyTexte = []}) => {
+export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, storyBilder = [], storyTexte = []}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({
         id: `bild-${bild.id}`
     });
@@ -288,7 +288,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
                     actionButtons={
                         <>
                             {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
-                            <TextBildLinkButton mode="bild" ownId={bild.id} storyId={bild.story?.id} storyTexte={storyTexte}/>
+                            <ClusterButton mode="bild" item={bild} storyBilder={storyBilder} storyTexte={storyTexte}/>
                             <Tooltip title={bild.hauptbild ? "Hauptbild – klicken zum Entfernen" : "Als Hauptbild markieren"}>
                                 <IconButton size="small"
                                     onClick={(e) => { e.stopPropagation(); setHauptbild({bild, hauptbild: !bild.hauptbild}); }}
@@ -322,5 +322,7 @@ export const SortableBildCard = memo(({bild, story, storiesLoaded, stories, onSe
     prev.bild?.hauptbild === next.bild?.hauptbild &&
     prev.story === next.story &&
     prev.storiesLoaded === next.storiesLoaded &&
-    prev.stories === next.stories
+    prev.stories === next.stories &&
+    prev.storyBilder === next.storyBilder &&
+    prev.storyTexte === next.storyTexte
 );
