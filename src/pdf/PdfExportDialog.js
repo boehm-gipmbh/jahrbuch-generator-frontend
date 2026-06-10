@@ -307,19 +307,6 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 label="Texte ohne Story einschließen"
               />
               <FormControlLabel
-                control={<Switch checked={coverPage} onChange={e => setCoverPage(e.target.checked)} size="small" />}
-                label="Deckblatt anzeigen"
-              />
-              {coverPage && (
-                <TextField
-                  size="small"
-                  label="Deckblatt-Titel"
-                  value={coverTitle}
-                  onChange={e => setCoverTitle(e.target.value)}
-                  sx={{ml: 4, mt: 0.5, maxWidth: 320}}
-                />
-              )}
-              <FormControlLabel
                 control={<Switch checked={pageNumbers} onChange={e => setPageNumbers(e.target.checked)} size="small" />}
                 label="Seitenzahlen"
               />
