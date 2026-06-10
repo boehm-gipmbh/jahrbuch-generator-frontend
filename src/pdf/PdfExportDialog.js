@@ -406,6 +406,19 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 <Divider />
 
                 <Typography variant="subtitle2" color="text.secondary">Titelblatt</Typography>
+                <FormControlLabel
+                  control={<Switch checked={coverPage} onChange={e => setCoverPage(e.target.checked)} size="small" />}
+                  label="Deckblatt anzeigen"
+                />
+                {coverPage && (
+                  <TextField
+                    size="small"
+                    label="Titel"
+                    value={coverTitle}
+                    onChange={e => setCoverTitle(e.target.value)}
+                    sx={{maxWidth: 320}}
+                  />
+                )}
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
                   <Typography variant="body2" sx={{minWidth: 100}}>Titelposition</Typography>
                   <ToggleButtonGroup
