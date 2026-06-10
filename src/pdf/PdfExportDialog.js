@@ -53,6 +53,8 @@ const SETTINGS_DEFAULTS = {
   tocEntrySize: 13,
   tocShowPageNumbers: true,
   tocColumns: 1,
+  coverTitlePosition: 'middle',
+  coverTitleColor: '#000000',
 };
 
 const FONT_FIELDS = [
@@ -459,6 +461,29 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 <Divider />
 
                 <Typography variant="subtitle2" color="text.secondary">Hintergrundbilder</Typography>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelposition</Typography>
+                  <ToggleButtonGroup
+                    value={settingsForm.coverTitlePosition}
+                    exclusive
+                    onChange={(_, v) => v && setSettingsField('coverTitlePosition', v)}
+                    size="small"
+                  >
+                    <ToggleButton value="top">Oben</ToggleButton>
+                    <ToggleButton value="middle">Mitte</ToggleButton>
+                    <ToggleButton value="bottom">Unten</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelfarbe</Typography>
+                  <input
+                    type="color"
+                    value={settingsForm.coverTitleColor}
+                    onChange={e => setSettingsField('coverTitleColor', e.target.value)}
+                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                  />
+                </Box>
+
                 <BackgroundImagePicker
                   label="Vorderdeckel"
                   value={settingsForm.coverFrontBackground}
