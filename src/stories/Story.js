@@ -54,16 +54,35 @@ const multiColCollision = (args) => {
 
 
 // Returns column-sorted items for a given column index.
+// Groups items with the same clusterId together (at the position of the first cluster member).
+// Items without a cluster stay in place.
+const groupByClusters = (sortedItems) => {
+    const seen = new Set();
+    const result = [];
+    for (const item of sortedItems) {
+        const cid = item.item.clusterId ?? null;
+        if (cid == null) {
+            result.push(item);
+        } else if (!seen.has(cid)) {
+            seen.add(cid);
+            sortedItems.filter(i => (i.item.clusterId ?? null) === cid).forEach(i => result.push(i));
+        }
+    }
+    return result;
+};
+
 // Items whose storyColumn >= columnCount are clamped into the last column
 // so they don't disappear when switching from a wider to a narrower layout.
 const colSorted = (items, colIdx, columnCount) =>
-    items
-        .filter(i => {
-            const col = i.item.storyColumn ?? 0;
-            const effective = columnCount != null ? Math.min(col, columnCount - 1) : col;
-            return effective === colIdx;
-        })
-        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+    groupByClusters(
+        items
+            .filter(i => {
+                const col = i.item.storyColumn ?? 0;
+                const effective = columnCount != null ? Math.min(col, columnCount - 1) : col;
+                return effective === colIdx;
+            })
+            .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
+    );
 
 // Splits items into a per-column map
 const toColMap = (items, columnCount) => {
@@ -294,11 +313,11 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
-    const itemsSorted1col = [...activeItems].sort((a, b) => {
+    const itemsSorted1col = groupByClusters([...activeItems].sort((a, b) => {
         const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
         if (colDiff !== 0) return colDiff;
         return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
-    });
+    }));
 
     const renderCard = (type, id, item) => type === 'video' ? (
         <SortableVideoCard
