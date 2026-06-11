@@ -5,6 +5,7 @@ import {Tooltip, IconButton, Popover, Box, Typography, List, ListItem,
 import HubIcon from '@mui/icons-material/Hub';
 import AuthImage from '../bilder/AuthImage';
 import {useLinkItemsMutation, useUnlinkItemMutation} from './clusterApi';
+import {clusterColor} from './clusterColor';
 
 const key = (type, id) => `${type}:${id}`;
 
@@ -116,7 +117,8 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                                     <AuthImage
                                                         src={b.pfad?.startsWith('/') ? `/api/bilder/extern${b.pfad}` : b.pfad}
                                                         alt="" thumb
-                                                        style={{width: 28, height: 28, objectFit: 'cover', borderRadius: 2}}/>
+                                                        style={{width: 28, height: 28, objectFit: 'cover', borderRadius: 2,
+                                                            borderLeft: b.clusterId ? `3px solid ${clusterColor(b.clusterId)}` : undefined}}/>
                                                 </ListItemIcon>
                                                 <ListItemText primary={b.title || 'Kein Titel'}
                                                               primaryTypographyProps={{noWrap: true, variant: 'body2'}}/>
@@ -141,6 +143,10 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                                               checked={selected.has(key('TEXT', t.id))}
                                                               sx={{p: 0}}/>
                                                 </ListItemIcon>
+                                                {t.clusterId && (
+                                                    <Box sx={{width: 4, alignSelf: 'stretch', borderRadius: 1, mr: 1,
+                                                        bgcolor: clusterColor(t.clusterId)}}/>
+                                                )}
                                                 <ListItemText primary={t.title || '(kein Titel)'}
                                                               primaryTypographyProps={{noWrap: true, variant: 'body2'}}/>
                                             </ListItemButton>
