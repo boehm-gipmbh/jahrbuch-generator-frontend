@@ -172,7 +172,7 @@ const ScrapbookBildCard = ({bild, onToggleHero, storyBilder = [], storyTexte = [
                     style={{
                         width: '100%', height: 140, objectFit: 'cover', display: 'block',
                         borderRadius: 6,
-                        boxShadow: bild.hauptbild ? '0 0 0 3px #f59e0b' : '0 1px 4px rgba(0,0,0,0.18)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
                         borderLeft: accent ? `4px solid ${accent}` : undefined,
                     }}
                 />
