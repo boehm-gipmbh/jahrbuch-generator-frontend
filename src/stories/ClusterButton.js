@@ -1,6 +1,7 @@
 import {useState, useCallback} from 'react';
 import {Tooltip, IconButton, Popover, Box, Typography, List, ListItem,
-    ListItemButton, ListItemText, ListItemIcon, Divider, Badge, Button, Checkbox} from '@mui/material';
+    ListItemButton, ListItemText, ListItemIcon, Divider, Badge, Button, Checkbox,
+    Snackbar, Alert} from '@mui/material';
 import HubIcon from '@mui/icons-material/Hub';
 import AuthImage from '../bilder/AuthImage';
 import {useLinkItemsMutation, useUnlinkItemMutation} from './clusterApi';
@@ -12,6 +13,7 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
     const [selected, setSelected] = useState(new Set());
     const [initial, setInitial] = useState(new Set());
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
 
     const [linkItems] = useLinkItemsMutation();
     const [unlinkItem] = useUnlinkItemMutation();
@@ -56,28 +58,28 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
 
     const handleSubmit = async () => {
         setSaving(true);
+        setError(null);
         try {
-            // Neu hinzugefügte Items verlinken (sequenziell wegen Cluster-Merge-Logik)
             for (const k of selected) {
                 if (!initial.has(k)) {
                     const [type, id] = k.split(':');
                     await linkItems({typeA: ownType, idA: ownId, typeB: type, idB: Number(id)}).unwrap();
                 }
             }
-            // Entfernte Items aus Cluster nehmen
             for (const k of initial) {
                 if (!selected.has(k)) {
                     const [type, id] = k.split(':');
                     await unlinkItem({type, id: Number(id)}).unwrap();
                 }
             }
-            // Sich selbst entfernen wenn keine anderen mehr im Cluster
             if (selected.size === 0 && clusterId != null) {
                 await unlinkItem({type: ownType, id: ownId}).unwrap();
             }
+            setAnchor(null);
+        } catch (e) {
+            setError('Fehler beim Speichern: ' + (e?.data?.message ?? e?.status ?? e?.message ?? 'Unbekannt'));
         } finally {
             setSaving(false);
-            setAnchor(null);
         }
     };
 
@@ -169,6 +171,10 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                     )}
                 </Box>
             </Popover>
+            <Snackbar open={Boolean(error)} autoHideDuration={5000} onClose={() => setError(null)}
+                      anchorOrigin={{vertical: 'bottom', horizontal: 'center'}}>
+                <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>
+            </Snackbar>
         </>
     );
 };
