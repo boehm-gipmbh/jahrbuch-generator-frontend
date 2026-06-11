@@ -1,12 +1,23 @@
 const COLORS = [
-    '#e53935', '#8e24aa', '#1e88e5', '#00897b',
-    '#fb8c00', '#6d4c41', '#e91e63', '#00acc1',
-    '#7cb342', '#546e7a', '#f4511e', '#3949ab',
-    '#00838f', '#c0ca33', '#8d6e63', '#5e35b1',
-    '#039be5', '#43a047', '#ffb300', '#d81b60',
+    '#e53935', // Rot
+    '#1e88e5', // Blau
+    '#43a047', // Grün
+    '#fb8c00', // Orange
+    '#8e24aa', // Lila
+    '#00acc1', // Cyan
+    '#f4511e', // Terrakotta
+    '#c0ca33', // Gelbgrün
+    '#5e35b1', // Indigo
+    '#00897b', // Teal
+    '#e91e63', // Pink
+    '#ffb300', // Gelb
+    '#546e7a', // Blaugrau
+    '#6d4c41', // Braun
+    '#3949ab', // Dunkelblau
+    '#7cb342', // Hellgrün
 ];
 
-// Primzahl-Multiplikator (13) sorgt dafür, dass aufeinanderfolgende IDs
-// weit auseinanderliegende Farben bekommen (vollständiger Zyklus über 20).
+// Primzahl-Multiplikator sorgt dafür, dass aufeinanderfolgende IDs
+// weit auseinanderliegende Farben bekommen (vollständiger Zyklus).
 export const clusterColor = (clusterId) =>
-    clusterId != null ? COLORS[(Number(clusterId) * 13) % COLORS.length] : null;
+    clusterId != null ? COLORS[(Number(clusterId) * 11) % COLORS.length] : null;
