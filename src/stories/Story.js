@@ -210,6 +210,40 @@ const ScrapbookBildCard = ({bild, onToggleHero, storyBilder = [], storyTexte = [
     );
 };
 
+const ScrapbookTextCard = ({text, storyBilder = [], storyTexte = []}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `scrap-text-${text.id}`});
+    const style = {transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1};
+    const accent = clusterColor(text.clusterId);
+    return (
+        <Box ref={setNodeRef} style={style} sx={{position: 'relative'}}>
+            <Box {...attributes} {...listeners} sx={{cursor: 'grab'}}>
+                <Paper variant="outlined" sx={{
+                    p: 1.5, borderRadius: 1.5, minHeight: 64,
+                    borderLeft: accent ? `4px solid ${accent}` : undefined,
+                }}>
+                    <Typography variant="caption" fontWeight="bold" sx={{
+                        display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                        {text.title || '(kein Titel)'}
+                    </Typography>
+                    {text.description && (
+                        <Typography variant="caption" color="text.secondary" sx={{
+                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                        }}>
+                            {text.description}
+                        </Typography>
+                    )}
+                </Paper>
+            </Box>
+            <Box sx={{position: 'absolute', bottom: 2, right: 2, zIndex: 1,
+                bgcolor: 'rgba(255,255,255,0.85)', borderRadius: '50%', boxShadow: 1}}>
+                <ClusterButton mode="text" item={text} storyBilder={storyBilder} storyTexte={storyTexte}/>
+            </Box>
+        </Box>
+    );
+};
+
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
     const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -626,6 +660,19 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                     )}
                                     {gridBilder.map(({item}) => (
                                         <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}
+                                            storyBilder={bildItems.map(i => i.item)} storyTexte={textItems.map(i => i.item)}/>
+                                    ))}
+                                </SortableContext>
+                            </ScrapbookDropZone>
+                            <ScrapbookDropZone id="zone-texte" label="Texte" color="#10b981">
+                                <SortableContext items={textItems.map(i => `scrap-text-${i.item.id}`)} strategy={verticalListSortingStrategy}>
+                                    {textItems.length === 0 && (
+                                        <Typography variant="body2" color="text.disabled" sx={{p: 2, gridColumn: '1/-1'}}>
+                                            Keine Texte in dieser Story
+                                        </Typography>
+                                    )}
+                                    {textItems.map(({item}) => (
+                                        <ScrapbookTextCard key={item.id} text={item}
                                             storyBilder={bildItems.map(i => i.item)} storyTexte={textItems.map(i => i.item)}/>
                                     ))}
                                 </SortableContext>
