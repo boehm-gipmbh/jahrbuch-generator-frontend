@@ -34,6 +34,8 @@ import {SortableTextCard} from '../texte/SortableTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
+import {ClusterButton} from './ClusterButton';
+import {clusterColor} from './clusterColor';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
 
@@ -152,13 +154,14 @@ const ScrapbookDropZone = ({id, label, color, children}) => {
     );
 };
 
-const ScrapbookBildCard = ({bild, onToggleHero}) => {
+const ScrapbookBildCard = ({bild, onToggleHero, storyBilder = [], storyTexte = []}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `scrap-${bild.id}`});
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
     };
+    const accent = clusterColor(bild.clusterId);
     return (
         <Box ref={setNodeRef} style={style} sx={{position: 'relative'}}>
             <Box {...attributes} {...listeners} sx={{cursor: 'grab'}}>
@@ -167,8 +170,10 @@ const ScrapbookBildCard = ({bild, onToggleHero}) => {
                     alt={bild.title || ''}
                     thumb
                     style={{
-                        width: '100%', height: 140, objectFit: 'cover', display: 'block', borderRadius: 6,
+                        width: '100%', height: 140, objectFit: 'cover', display: 'block',
+                        borderRadius: 6,
                         boxShadow: bild.hauptbild ? '0 0 0 3px #f59e0b' : '0 1px 4px rgba(0,0,0,0.18)',
+                        borderLeft: accent ? `4px solid ${accent}` : undefined,
                     }}
                 />
                 <Typography variant="caption" sx={{
@@ -178,6 +183,7 @@ const ScrapbookBildCard = ({bild, onToggleHero}) => {
                     {bild.title || '–'}
                 </Typography>
             </Box>
+            {/* Hero toggle */}
             <Box
                 onClick={(e) => { e.stopPropagation(); onToggleHero(bild); }}
                 sx={{
@@ -194,6 +200,11 @@ const ScrapbookBildCard = ({bild, onToggleHero}) => {
                     ? <StarIcon sx={{fontSize: 16, color: 'white'}}/>
                     : <StarBorderIcon sx={{fontSize: 16, color: 'text.secondary'}}/>
                 }
+            </Box>
+            {/* Cluster button */}
+            <Box sx={{position: 'absolute', bottom: 22, right: 2, zIndex: 1,
+                bgcolor: 'rgba(255,255,255,0.85)', borderRadius: '50%', boxShadow: 1}}>
+                <ClusterButton mode="bild" item={bild} storyBilder={storyBilder} storyTexte={storyTexte}/>
             </Box>
         </Box>
     );
@@ -601,7 +612,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                         </Typography>
                                     )}
                                     {heroBilder.map(({item}) => (
-                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}/>
+                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}
+                                            storyBilder={bildItems.map(i => i.item)} storyTexte={textItems.map(i => i.item)}/>
                                     ))}
                                 </SortableContext>
                             </ScrapbookDropZone>
@@ -613,7 +625,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                         </Typography>
                                     )}
                                     {gridBilder.map(({item}) => (
-                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}/>
+                                        <ScrapbookBildCard key={item.id} bild={item} onToggleHero={handleToggleHero}
+                                            storyBilder={bildItems.map(i => i.item)} storyTexte={textItems.map(i => i.item)}/>
                                     ))}
                                 </SortableContext>
                             </ScrapbookDropZone>
