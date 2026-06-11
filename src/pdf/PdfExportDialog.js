@@ -53,6 +53,9 @@ const SETTINGS_DEFAULTS = {
   tocEntrySize: 13,
   tocShowPageNumbers: true,
   tocColumns: 1,
+  coverTitlePosition: 'middle',
+  coverTitleColor: '#000000',
+  tocColor: '#000000',
 };
 
 const FONT_FIELDS = [
@@ -304,19 +307,6 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
                 label="Texte ohne Story einschließen"
               />
               <FormControlLabel
-                control={<Switch checked={coverPage} onChange={e => setCoverPage(e.target.checked)} size="small" />}
-                label="Deckblatt"
-              />
-              {coverPage && (
-                <TextField
-                  size="small"
-                  label="Deckblatt-Titel"
-                  value={coverTitle}
-                  onChange={e => setCoverTitle(e.target.value)}
-                  sx={{ml: 4, mt: 0.5, maxWidth: 320}}
-                />
-              )}
-              <FormControlLabel
                 control={<Switch checked={pageNumbers} onChange={e => setPageNumbers(e.target.checked)} size="small" />}
                 label="Seitenzahlen"
               />
@@ -402,11 +392,59 @@ export const PdfExportDialog = ({gruppe, onClose, onOptionsSelected, isGroupAdmi
 
                 <Divider />
 
+                <Typography variant="subtitle2" color="text.secondary">Titelblatt</Typography>
+                <FormControlLabel
+                  control={<Switch checked={coverPage} onChange={e => setCoverPage(e.target.checked)} size="small" />}
+                  label="Deckblatt anzeigen"
+                />
+                {coverPage && (
+                  <TextField
+                    size="small"
+                    label="Titel"
+                    value={coverTitle}
+                    onChange={e => setCoverTitle(e.target.value)}
+                    sx={{maxWidth: 320}}
+                  />
+                )}
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelposition</Typography>
+                  <ToggleButtonGroup
+                    value={settingsForm.coverTitlePosition}
+                    exclusive
+                    onChange={(_, v) => v && setSettingsField('coverTitlePosition', v)}
+                    size="small"
+                  >
+                    <ToggleButton value="top">Oben</ToggleButton>
+                    <ToggleButton value="middle">Mitte</ToggleButton>
+                    <ToggleButton value="bottom">Unten</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Titelfarbe</Typography>
+                  <input
+                    type="color"
+                    value={settingsForm.coverTitleColor}
+                    onChange={e => setSettingsField('coverTitleColor', e.target.value)}
+                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                  />
+                </Box>
+
+                <Divider />
+
                 <Typography variant="subtitle2" color="text.secondary">Inhaltsverzeichnis</Typography>
                 <FormControlLabel
                   control={<Switch checked={settingsForm.tocEnabled} onChange={e => setSettingsField('tocEnabled', e.target.checked)} size="small" />}
                   label="Inhaltsverzeichnis anzeigen"
                 />
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 2}}>
+                  <Typography variant="body2" sx={{minWidth: 100}}>Textfarbe</Typography>
+                  <input
+                    type="color"
+                    value={settingsForm.tocColor}
+                    onChange={e => setSettingsField('tocColor', e.target.value)}
+                    style={{width: 40, height: 32, border: 'none', cursor: 'pointer', padding: 0}}
+                  />
+                </Box>
                 {settingsForm.tocEnabled && (
                   <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5, ml: 1}}>
                     <TextField
