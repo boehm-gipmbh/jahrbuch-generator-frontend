@@ -11,8 +11,11 @@ import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import GridViewIcon from '@mui/icons-material/GridView';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import ImageIcon from '@mui/icons-material/Image';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -244,6 +247,113 @@ const ScrapbookTextCard = ({text, storyBilder = [], storyTexte = []}) => {
     );
 };
 
+const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => {
+    const accent = clusterColor(item.clusterId);
+    const border = accent ? `4px solid ${accent}` : isHero ? '4px solid #f59e0b' : '4px solid transparent';
+    return (
+        <Paper variant="outlined" sx={{
+            display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5,
+            borderLeft: border, borderRadius: 1.5, position: 'relative',
+        }}>
+            {type === 'bild' ? (
+                <AuthImage
+                    src={item.pfad?.startsWith('/') ? `/api/bilder/extern${item.pfad}` : item.pfad}
+                    alt={item.title || ''} thumb
+                    style={{width: 56, height: 56, objectFit: 'cover', borderRadius: 4, flexShrink: 0}}
+                />
+            ) : (
+                <Box sx={{width: 56, height: 56, borderRadius: 1, bgcolor: 'action.hover',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+                    <TextSnippetIcon fontSize="small" color="action"/>
+                </Box>
+            )}
+            <Box sx={{flex: 1, minWidth: 0}}>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                    {isHero && <StarIcon sx={{fontSize: 14, color: '#f59e0b'}}/>}
+                    {type === 'bild' && !isHero && <ImageIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
+                    {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
+                    <Typography variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap>
+                        {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
+                    </Typography>
+                </Box>
+                {item.description && (
+                    <Typography variant="caption" color="text.secondary" sx={{
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>
+                        {item.description}
+                    </Typography>
+                )}
+            </Box>
+            <Box sx={{flexShrink: 0}}>
+                <ClusterButton mode={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte}/>
+            </Box>
+        </Paper>
+    );
+};
+
+const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
+    const heroes = bildItems
+        .filter(i => i.item.hauptbild)
+        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+    const heroClusterIds = new Set(heroes.map(h => h.item.clusterId).filter(Boolean));
+
+    const heroNodes = heroes.map(h => ({
+        hero: h.item,
+        children: [
+            ...bildItems
+                .filter(i => !i.item.hauptbild && i.item.clusterId != null && i.item.clusterId === h.item.clusterId)
+                .map(i => ({type: 'bild', item: i.item})),
+            ...textItems
+                .filter(i => i.item.clusterId != null && i.item.clusterId === h.item.clusterId)
+                .map(i => ({type: 'text', item: i.item})),
+        ],
+    }));
+
+    const soloItems = [
+        ...bildItems
+            .filter(i => !i.item.hauptbild && (i.item.clusterId == null || !heroClusterIds.has(i.item.clusterId)))
+            .map(i => ({type: 'bild', item: i.item})),
+        ...textItems
+            .filter(i => i.item.clusterId == null || !heroClusterIds.has(i.item.clusterId))
+            .map(i => ({type: 'text', item: i.item})),
+    ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+    return (
+        <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
+            {heroNodes.map(({hero, children}) => {
+                const accent = clusterColor(hero.clusterId) ?? '#f59e0b';
+                return (
+                    <Box key={`hero-${hero.id}`}>
+                        <TreeItemCard type="bild" item={hero} isHero storyBilder={storyBilder} storyTexte={storyTexte}/>
+                        {children.length > 0 && (
+                            <Box sx={{ml: 3, mt: 0.5, pl: 1.5, borderLeft: `2px solid ${accent}`,
+                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                {children.map(({type, item}) => (
+                                    <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
+                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                ))}
+                            </Box>
+                        )}
+                    </Box>
+                );
+            })}
+            {soloItems.length > 0 && heroNodes.length > 0 && (
+                <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
+            )}
+            {soloItems.map(({type, item}) => (
+                <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
+                    storyBilder={storyBilder} storyTexte={storyTexte}/>
+            ))}
+            {heroNodes.length === 0 && soloItems.length === 0 && (
+                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                    Keine Items in dieser Story
+                </Typography>
+            )}
+        </Box>
+    );
+};
+
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
     const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -355,6 +465,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const activeItems = dragItems || serverItems;
 
     const isScrapbook = layout === 'scrapbook';
+    const isTree = layout === 'tree';
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
@@ -600,6 +711,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         <ToggleButton value="2col"><Tooltip title="2 Spalten"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="grid"><Tooltip title="Raster (3 Spalten)"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="scrapbook"><Tooltip title="Scrapbook (Polaroid-Layout)"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="tree"><Tooltip title="StoryFlow (Baum-Ansicht)"><AccountTreeIcon fontSize="small"/></Tooltip></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
@@ -633,7 +745,14 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             </Box>
 
             <Paper sx={{p: 2}}>
-                {isScrapbook ? (() => {
+                {isTree ? (
+                    <StoryTreeView
+                        bildItems={bildItems}
+                        textItems={textItems}
+                        storyBilder={bildItems.map(i => i.item)}
+                        storyTexte={textItems.map(i => i.item)}
+                    />
+                ) : isScrapbook ? (() => {
                     const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     const gridBilder = bildItems.filter(i => !i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     return (
