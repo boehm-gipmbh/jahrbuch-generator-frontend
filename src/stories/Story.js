@@ -1002,7 +1002,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         <ToggleButton value="tree"><Tooltip title="StoryFlow (Baum-Ansicht)"><AccountTreeIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="scrapbook"><Tooltip title="Hero-Layout"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="1col"><Tooltip title="1 Spalte"><ViewAgendaIcon fontSize="small"/></Tooltip></ToggleButton>
-                        <ToggleButton value="2col"><Tooltip title="2 Spalten"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="2col"><Tooltip title="2-Spalten Vorschau"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="grid"><Tooltip title="3 Spalten"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
