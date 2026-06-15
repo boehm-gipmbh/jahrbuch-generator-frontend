@@ -137,12 +137,12 @@ async function dndKitDrag(page, dragHandle, dropTarget, position = 'after') {
 }
 
 async function switch1Col(page) {
-    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(0).click();
+    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root[value="1col"]').click();
     await page.waitForTimeout(300);
 }
 
 async function switch3Col(page) {
-    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root').nth(2).click();
+    await page.locator('.MuiToggleButtonGroup-root .MuiToggleButton-root[value="grid"]').click();
     await page.waitForFunction(
         () => document.querySelectorAll('main .MuiTypography-subtitle1').length >= 7,
         {timeout: 15_000}
