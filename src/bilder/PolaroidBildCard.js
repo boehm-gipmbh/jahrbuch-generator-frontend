@@ -179,7 +179,7 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                 ) : (
                     <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
                         <Typography variant={hero ? 'subtitle1' : 'body2'} onClick={() => startEdit('title')}
-                            sx={{fontWeight: 'bold', textAlign: 'center', mb: 0.5,
+                            sx={{fontWeight: 'bold', textAlign: 'center', mb: 0.5, color: 'primary.main',
                                 cursor: isComplete ? 'default' : 'text',
                                 '&:hover': !isComplete ? {bgcolor: 'action.hover', borderRadius: 0.5} : {}}}>
                             {bild.title || 'Kein Titel'}
@@ -191,7 +191,7 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                 {editField === 'description' ? (
                     <TextField autoFocus size="small" multiline value={editValue} fullWidth
                         onChange={e => setEditValue(e.target.value)} onBlur={commitEdit} onKeyDown={handleKeyDown}
-                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.9rem', textAlign: 'center'}}}
+                        inputProps={{style: {fontFamily: "'Brush Script MT', cursive", fontSize: '0.9rem'}}}
                         InputProps={{endAdornment: editValue ? (
                             <InputAdornment position="end">
                                 <IconButton size="small" onMouseDown={e => { e.preventDefault(); setEditValue(''); }}>
@@ -205,7 +205,7 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                             sx={{
                                 fontFamily: "'Brush Script MT', cursive",
                                 fontSize: hero ? '1.1rem' : '0.9rem',
-                                textAlign: 'center', color: bild.description ? 'text.primary' : 'text.disabled',
+                                textAlign: 'left', color: bild.description ? 'text.primary' : 'text.disabled',
                                 cursor: isComplete ? 'default' : 'text', minHeight: '1.4em',
                                 '&:hover': !isComplete ? {bgcolor: 'action.hover', borderRadius: 0.5} : {},
                             }}>
