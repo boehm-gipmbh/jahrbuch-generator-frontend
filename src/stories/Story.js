@@ -293,18 +293,21 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
 
 const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
     // Group items by clusterId; each cluster has heroes (root) and children
+    // Normalize clusterId to Number to avoid string/number key collisions in Map
     const clusterMap = new Map();
     bildItems.forEach(i => {
-        const cid = i.item.clusterId;
-        if (cid == null) return;
+        const raw = i.item.clusterId;
+        if (raw == null) return;
+        const cid = Number(raw);
         if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
         const g = clusterMap.get(cid);
         if (i.item.hauptbild) g.heroes.push({type: 'bild', item: i.item});
         else g.children.push({type: 'bild', item: i.item});
     });
     textItems.forEach(i => {
-        const cid = i.item.clusterId;
-        if (cid == null) return;
+        const raw = i.item.clusterId;
+        if (raw == null) return;
+        const cid = Number(raw);
         if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
         clusterMap.get(cid).children.push({type: 'text', item: i.item});
     });
@@ -336,6 +339,7 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
                 const accent = clusterColor(cid) ?? '#f59e0b';
                 return (
                     <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
+                        <Typography variant="caption" color="text.disabled" sx={{fontSize: 10}}>cluster#{cid}</Typography>
                         {heroes.length > 0 && (
                             <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
                                 {heroes.map(({item}) => (
