@@ -40,9 +40,18 @@ import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 import {ClusterButton} from './ClusterButton';
 import {clusterColor} from './clusterColor';
-import {useLinkItemsMutation, useUnlinkItemMutation} from './clusterApi';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
+// Custom collision for tree view: item drag → only tree-* targets; cluster drag → only cluster-* targets
+const treeCollision = (args) => {
+    const activeId = args.active.id?.toString() ?? '';
+    const prefix = activeId.startsWith('cluster-') ? 'cluster-' : 'tree-';
+    return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(c => c.id.toString().startsWith(prefix)),
+    });
+};
 
 const multiColCollision = (args) => {
     const activeId = args.active.id;
@@ -374,27 +383,19 @@ const StoryTreeView = ({clusterGroups, soloItems, storyBilder, storyTexte}) => {
             <SortableContext items={clusterGroups.map(([cid]) => `cluster-${cid}`)} strategy={verticalListSortingStrategy}>
                 {clusterGroups.map(([cid, {heroes, children: clChildren}]) => {
                     const accent = clusterColor(cid) ?? '#f59e0b';
-                    const itemIds = [
-                        ...heroes.map(({item}) => `tree-bild-${item.id}`),
-                        ...clChildren.map(({type, item}) => `tree-${type}-${item.id}`),
-                    ];
+                    const allClusterItems = [
+                        ...heroes.map(i => ({...i, isHero: true})),
+                        ...clChildren.map(i => ({...i, isHero: false})),
+                    ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                    const itemIds = allClusterItems.map(({type, item}) => `tree-${type}-${item.id}`);
                     return (
                         <SortableClusterBlock key={`cluster-${cid}`} cid={cid} accent={accent}>
                             <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
                                 <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                    {heroes.map(({item}) => (
-                                        <SortableTreeItemCard key={`tree-bild-${item.id}`} type="bild" item={item} isHero
-                                            storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                    {allClusterItems.map(({type, item, isHero}) => (
+                                        <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
+                                            isHero={isHero} storyBilder={storyBilder} storyTexte={storyTexte}/>
                                     ))}
-                                    {clChildren.length > 0 && (
-                                        <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
-                                            display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                            {clChildren.map(({type, item}) => (
-                                                <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
-                                                    storyBilder={storyBilder} storyTexte={storyTexte}/>
-                                            ))}
-                                        </Box>
-                                    )}
                                 </Box>
                             </SortableContext>
                         </SortableClusterBlock>
@@ -497,8 +498,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
     const [updateText] = texteApi.endpoints.updateText.useMutation();
     const [reorderStory] = storyApi.endpoints.reorderStory.useMutation();
-    const [linkItems] = useLinkItemsMutation();
-    const [unlinkItem] = useUnlinkItemMutation();
     const [triggerCapture] = bilderApi.endpoints.triggerCapture.useMutation();
     const {data: capturesConfig} = bilderApi.endpoints.getCapturesConfig.useQuery();
 
@@ -717,61 +716,24 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 return;
 
             } else if (activeIdStr.startsWith('tree-')) {
-                // --- ITEM DRAG: reorder, optionally change cluster ---
+                // --- ITEM DRAG: reorder within or across clusters (position only, no clusterId change) ---
                 const canonicalActiveId = activeIdStr.replace(/^tree-/, '');
                 const canonicalOverId = overIdStr.startsWith('tree-') ? overIdStr.replace(/^tree-/, '') : null;
-                if (canonicalActiveId === canonicalOverId) { updateDragItems(null); return; }
-
-                const activeItemData = current.find(i => i.id === canonicalActiveId);
-                if (!activeItemData) { updateDragItems(null); return; }
-                const sourceCid = activeItemData.item.clusterId != null ? Number(activeItemData.item.clusterId) : null;
-
-                // Determine target cluster
-                let targetCid;
-                if (canonicalOverId) {
-                    const overItem = current.find(i => i.id === canonicalOverId);
-                    targetCid = overItem?.item.clusterId != null ? Number(overItem.item.clusterId) : null;
-                } else if (overIdStr.startsWith('cluster-')) {
-                    targetCid = Number(overIdStr.replace('cluster-', ''));
-                } else {
-                    targetCid = sourceCid;
-                }
+                if (!canonicalOverId || canonicalActiveId === canonicalOverId) { updateDragItems(null); return; }
 
                 // Flat position reorder among all tree items
                 const treeItems = current.filter(i => i.type !== 'video')
                     .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
                 const oldIndex = treeItems.findIndex(i => i.id === canonicalActiveId);
-                const newIndex = canonicalOverId ? treeItems.findIndex(i => i.id === canonicalOverId) : -1;
-                let reorderedTree = (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex)
-                    ? arrayMove(treeItems, oldIndex, newIndex)
-                    : treeItems;
+                const newIndex = treeItems.findIndex(i => i.id === canonicalOverId);
+                if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) { updateDragItems(null); return; }
 
+                let reorderedTree = arrayMove(treeItems, oldIndex, newIndex);
                 let pos = 0;
                 reorderedTree = reorderedTree.map(item => ({...item, item: {...item.item, storyPosition: pos++}}));
 
                 pendingReorderRef.current = true;
                 updateDragItems([...reorderedTree, ...current.filter(i => i.type === 'video')]);
-
-                // Handle cross-cluster membership change (fire-and-forget)
-                if (sourceCid !== targetCid) {
-                    if (targetCid != null) {
-                        const anchor = current.find(i =>
-                            i.id !== canonicalActiveId &&
-                            i.item.clusterId != null && Number(i.item.clusterId) === targetCid
-                        );
-                        if (anchor) {
-                            linkItems({
-                                typeA: activeItemData.type.toUpperCase(), idA: activeItemData.item.id,
-                                typeB: anchor.type.toUpperCase(), idB: anchor.item.id,
-                            }).unwrap().catch(() => {});
-                        }
-                    } else {
-                        unlinkItem({
-                            type: activeItemData.type.toUpperCase(), id: activeItemData.item.id,
-                        }).unwrap().catch(() => {});
-                    }
-                }
-
                 reorderStory({
                     storyId: story.id,
                     items: reorderedTree.map(i => ({type: i.type, id: i.item.id, column: 0})),
@@ -962,7 +924,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                 {isTree ? (
                     <DndContext
                         sensors={sensors}
-                        collisionDetection={closestCenter}
+                        collisionDetection={treeCollision}
                         modifiers={[restrictToVerticalAxis]}
                         onDragStart={handleDragStart}
                         onDragMove={handleDragMove}
