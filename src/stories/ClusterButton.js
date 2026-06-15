@@ -5,7 +5,6 @@ import {Tooltip, IconButton, Popover, Box, Typography, List, ListItem,
 import HubIcon from '@mui/icons-material/Hub';
 import AuthImage from '../bilder/AuthImage';
 import {useLinkItemsMutation, useUnlinkItemMutation} from './clusterApi';
-import {clusterColor} from './clusterColor';
 
 const key = (type, id) => `${type}:${id}`;
 
