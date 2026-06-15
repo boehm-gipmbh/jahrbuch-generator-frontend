@@ -1124,10 +1124,19 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                     {colItems.map(({type, id, item}) => (
                                         <Box key={id}>
                                             {type === 'bild'
-                                                ? <PreviewBildCard bild={item}/>
+                                                ? <PreviewBildCard bild={item} story={story}
+                                                    storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                                    onSetComplete={(args) => setBildComplete(args)}
+                                                    storyBilder={bildItems.map(i => i.item)}
+                                                    storyTexte={textItems.map(i => i.item)}/>
                                                 : type === 'text'
-                                                    ? <PreviewTextCard text={item}/>
-                                                    : <PreviewVideoCard video={item}/>
+                                                    ? <PreviewTextCard text={item} story={story}
+                                                        storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                                        onSetComplete={(args) => setTextComplete(args)}
+                                                        storyBilder={bildItems.map(i => i.item)}
+                                                        storyTexte={textItems.map(i => i.item)}/>
+                                                    : <PreviewVideoCard video={item} story={story}
+                                                        storiesLoaded={storiesLoaded} stories={storiesData || []}/>
                                             }
                                         </Box>
                                     ))}
