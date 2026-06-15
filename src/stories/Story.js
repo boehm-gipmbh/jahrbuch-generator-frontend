@@ -8,9 +8,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
-import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import GridViewIcon from '@mui/icons-material/GridView';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import StarIcon from '@mui/icons-material/Star';
@@ -30,16 +28,13 @@ import {Layout, newText} from '../layout';
 import {api as storyApi} from './api.js';
 import {BilderUploadDialog} from '../bilder/BilderUploadDialog';
 import {VideoUploadDialog} from '../videos/VideoUploadDialog';
-import {SortableVideoCard} from '../videos/SortableVideoCard';
 import {
-    DndContext, DragOverlay, closestCenter, closestCorners, pointerWithin, rectIntersection,
+    DndContext, DragOverlay, closestCenter,
     PointerSensor, useSensor, useSensors, useDroppable
 } from '@dnd-kit/core';
 import {SortableContext, arrayMove, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable';
 import {restrictToVerticalAxis, restrictToWindowEdges} from '@dnd-kit/modifiers';
 import {CSS} from '@dnd-kit/utilities';
-import {SortableBildCard} from '../bilder/SortableBildCard';
-import {SortableTextCard} from '../texte/SortableTextCard';
 import {PreviewBildCard} from '../bilder/PreviewBildCard';
 import {PreviewTextCard} from '../texte/PreviewTextCard';
 import {PreviewVideoCard} from '../videos/PreviewVideoCard';
@@ -60,22 +55,6 @@ const treeCollision = (args) => {
         droppableContainers: args.droppableContainers.filter(c => c.id.toString().startsWith(prefix)),
     });
 };
-
-const multiColCollision = (args) => {
-    const activeId = args.active.id;
-    // Primary: pointer within a droppable (reliable for columns)
-    const pointerHits = pointerWithin(args).filter(h => h.id !== activeId);
-    if (pointerHits.length > 0) {
-        // Prefer item hits over column hits so position can be computed precisely
-        const itemHits = pointerHits.filter(h => !h.id.toString().startsWith('col-'));
-        return itemHits.length > 0 ? itemHits : pointerHits;
-    }
-    // Fallback: dragged rect overlaps with a droppable (generous hit area for tall cards)
-    const rectHits = rectIntersection(args).filter(h => h.id !== activeId);
-    if (rectHits.length > 0) return rectHits;
-    return closestCorners(args).filter(h => h.id !== activeId);
-};
-
 
 // Returns column-sorted items for a given column index.
 // Groups items with the same clusterId together (at the position of the first cluster member).
@@ -107,43 +86,6 @@ const colSorted = (items, colIdx, columnCount) =>
             })
             .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
     );
-
-// Splits items into a per-column map
-const toColMap = (items, columnCount) => {
-    const map = {};
-    for (let c = 0; c < columnCount; c++) map[c] = colSorted(items, c, columnCount);
-    return map;
-};
-
-// Flattens colMap col0…colN into a flat array
-const flattenColMap = (colMap, columnCount) => {
-    const result = [];
-    for (let c = 0; c < columnCount; c++) result.push(...(colMap[c] || []));
-    return result;
-};
-
-const DroppableColumn = ({id, children}) => {
-    const {setNodeRef, isOver} = useDroppable({id});
-    return (
-        <Box
-            ref={setNodeRef}
-            sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                minHeight: 80,
-                p: 1,
-                borderRadius: 1,
-                outline: '2px dashed',
-                outlineColor: isOver ? 'primary.light' : 'transparent',
-                transition: 'outline-color 0.15s',
-            }}
-        >
-            {children}
-        </Box>
-    );
-};
 
 const ScrapbookDropZone = ({id, label, color, children}) => {
     const {setNodeRef, isOver} = useDroppable({id});
@@ -604,9 +546,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
         const bg = value ? {bildId: value.bildId, opacity: value.opacity, tint: value.tint, offsetX: value.offsetX ?? 0, offsetY: value.offsetY ?? 0, zoom: value.zoom || 1, outpaintedPfad: value.outpaintedPfad ?? null} : null;
         updateStory({...story, background: bg ? JSON.stringify(bg) : null});
     };
-    const [deleteVideo] = videoApi.endpoints.deleteVideo.useMutation();
-    const [setVideoComplete] = videoApi.endpoints.setComplete.useMutation();
-    const [updateVideo] = videoApi.endpoints.updateVideo.useMutation();
     const {data: storiesData, isSuccess: storiesLoaded} = storyApi.endpoints.getStories.useQuery(undefined);
     const [setTextComplete] = texteApi.endpoints.setComplete.useMutation();
     const [setBildComplete] = bilderApi.endpoints.setComplete.useMutation();
@@ -622,7 +561,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const [dragItems, setDragItems] = useState(null);
     const dragItemsRef = useRef(null);
     const pendingReorderRef = useRef(false);
-    const pointerYRef = useRef(0);
 
     // Clear optimistic state when server data arrives (only when not actively dragging and no reorder pending)
     useEffect(() => {
@@ -651,98 +589,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
     const isScrapbook = layout === 'scrapbook';
     const isTree = layout === 'tree';
-    const is1col = layout === '1col';
     const is2col = layout === '2col';
-    const columnCount = is2col ? 2 : layout === 'grid' ? 3 : 1;
 
     const treeGroups = isTree
         ? buildTreeGroups(activeItems.filter(i => i.type === 'bild'), activeItems.filter(i => i.type === 'text'))
         : {clusterGroups: [], soloItems: []};
 
-    const itemsSorted1col = groupByClusters([...activeItems].sort((a, b) => {
-        const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
-        if (colDiff !== 0) return colDiff;
-        return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
-    }));
-
-    const renderCard = (type, id, item) => type === 'video' ? (
-        <SortableVideoCard
-            key={id}
-            video={item}
-            story={story}
-            storiesLoaded={storiesLoaded}
-            stories={storiesData || []}
-            onSetComplete={(args) => setVideoComplete(args)}
-            onUpdate={(v) => updateVideo(v).unwrap()
-                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                .catch(e => console.error(e))}
-            onDelete={() => deleteVideo(item).unwrap()
-                .then(() => dispatch(videoApi.util.invalidateTags(['Video'])))
-                .catch(e => console.error(e))}
-        />
-    ) : type === 'bild' ? (
-        <SortableBildCard
-            key={id}
-            bild={item}
-            story={story}
-            storiesLoaded={storiesLoaded}
-            stories={storiesData || []}
-            onSetComplete={(args) => setBildComplete(args)}
-            storyBilder={bildItems.map(i => i.item)}
-            storyTexte={textItems.map(i => i.item)}
-        />
-    ) : (
-        <SortableTextCard
-            key={id}
-            text={item}
-            story={story}
-            storiesLoaded={storiesLoaded}
-            stories={storiesData || []}
-            onSetComplete={(args) => setTextComplete(args)}
-            storyBilder={bildItems.map(i => i.item)}
-            storyTexte={textItems.map(i => i.item)}
-        />
-    );
-
-    const handleDragStart = ({active, activatorEvent}) => {
-        pointerYRef.current = activatorEvent?.clientY ?? 0;
+    const handleDragStart = ({active}) => {
         updateDragItems([...serverItems]);
         const canonicalId = active.id.toString().replace(/^(tree-|cluster-)/, '');
         setActiveItem(serverItems.find(i => i.id === canonicalId) || null);
-    };
-
-    const handleDragMove = ({activatorEvent, delta}) => {
-        pointerYRef.current = (activatorEvent?.clientY ?? 0) + (delta?.y ?? 0);
-    };
-
-    const handleDragOver = ({active, over, collisions}) => {
-        if (!over || is1col || isTree) return;
-        const current = dragItemsRef.current || [...serverItems];
-
-        // Prefer a col-X hit from the full collisions list — it uses pointer-within
-        // boundaries and is more reliable than the primary over.id (which may be a
-        // card whose storyColumn in dragItems is stale after a previous over-event).
-        const colCollision = collisions?.find(c => c.id.toString().startsWith('col-'));
-        let overColumn;
-        if (colCollision) {
-            overColumn = parseInt(colCollision.id.replace('col-', ''));
-        } else if (over.id.toString().startsWith('col-')) {
-            overColumn = parseInt(over.id.replace('col-', ''));
-        } else {
-            // Last resort: use server column of the over-item (not dragItems, to avoid
-            // stale state cascading into the wrong column)
-            overColumn = serverItems.find(i => i.id === over.id)?.item.storyColumn
-                ?? current.find(i => i.id === over.id)?.item.storyColumn
-                ?? 0;
-        }
-
-        const activeIdx = current.findIndex(i => i.id === active.id);
-        if (activeIdx === -1) return;
-        if ((current[activeIdx].item.storyColumn ?? 0) === overColumn) return;
-
-        updateDragItems(current.map((item, idx) =>
-            idx === activeIdx ? {...item, item: {...item.item, storyColumn: overColumn}} : item
-        ));
     };
 
     const handleDragEnd = ({active, over}) => {
@@ -754,20 +610,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             return;
         }
 
-        let reordered;
-
-        if (is1col) {
-            if (active.id === over.id) return;
-            const sorted = [...current].sort((a, b) => {
-                const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
-                if (colDiff !== 0) return colDiff;
-                return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
-            });
-            const oldIndex = sorted.findIndex(i => i.id === active.id);
-            const newIndex = sorted.findIndex(i => i.id === over.id);
-            if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
-            reordered = arrayMove(sorted, oldIndex, newIndex);
-        } else if (isTree) {
+        if (isTree) {
             const activeIdStr = active.id.toString();
             const overIdStr = over.id.toString();
 
@@ -867,81 +710,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             }
 
             updateDragItems(null);
-            return;
-        } else {
-            // Target column = what handleDragOver set in dragItems (user's intention)
-            const activeEntry = current.find(i => i.id === active.id);
-            const overColumn = activeEntry?.item.storyColumn ?? 0;
-
-            // Build per-column sorted arrays, remove active from all columns
-            const colMap = toColMap(current, columnCount);
-            for (let c = 0; c < columnCount; c++) {
-                colMap[c] = colMap[c].filter(i => i.id !== active.id);
-            }
-
-            const updated = {...activeEntry, item: {...activeEntry.item, storyColumn: overColumn}};
-
-            // Position within target column: use over.id only if it's in the target column
-            const overItemInTarget = !over.id.toString().startsWith('col-') &&
-                colMap[overColumn].some(i => i.id === over.id);
-
-            if (overItemInTarget) {
-                const overIdx = colMap[overColumn].findIndex(i => i.id === over.id);
-                // Use pointer Y at drop — more reliable than dragged card center when cards are tall
-                // (card center can be far from the pointer when dragging across long distances).
-                const overThreshold = over.rect.top + over.rect.height * 0.5;
-                const insertIdx = pointerYRef.current > overThreshold ? overIdx + 1 : overIdx;
-                colMap[overColumn] = [
-                    ...colMap[overColumn].slice(0, insertIdx),
-                    updated,
-                    ...colMap[overColumn].slice(insertIdx)
-                ];
-            } else if (colMap[overColumn].length > 0) {
-                // Pointer over column background (not on any item): use column midpoint to
-                // decide prepend vs append — more robust than a fixed 50 px offset.
-                const pointerY = pointerYRef.current;
-                const colMidY = over.rect.top + over.rect.height / 2;
-                const insertAtStart = pointerY < colMidY;
-                colMap[overColumn] = insertAtStart
-                    ? [updated, ...colMap[overColumn]]
-                    : [...colMap[overColumn], updated];
-            } else {
-                colMap[overColumn] = [updated];
-            }
-
-            reordered = flattenColMap(colMap, columnCount);
-        }
-
-        // Update storyPosition optimistically so colSorted/itemsSorted1col display the correct order
-        if (reordered) {
-            const posCounters = {};
-            reordered = reordered.map(item => {
-                const col = item.item.storyColumn ?? 0;
-                posCounters[col] = posCounters[col] ?? 0;
-                return {...item, item: {...item.item, storyPosition: posCounters[col]++}};
-            });
-        }
-
-        if (story && reordered) {
-            // Optimistic: keep reordered state visible immediately
-            pendingReorderRef.current = true;
-            updateDragItems(reordered);
-            reorderStory({
-                storyId: story.id,
-                items: reordered.map(i => ({type: i.type, id: i.item.id, column: i.item.storyColumn ?? 0}))
-            }).unwrap()
-                .then(() => {
-                    pendingReorderRef.current = false;
-                    dispatch(bilderApi.util.invalidateTags(['Bild']));
-                    dispatch(texteApi.util.invalidateTags(['Text']));
-                    dispatch(videoApi.util.invalidateTags(['Video']));
-                })
-                .catch((err) => {
-                    pendingReorderRef.current = false;
-                    updateDragItems(null);
-                });
-        } else {
-            updateDragItems(null);
         }
     };
 
@@ -1001,9 +769,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
                         <ToggleButton value="tree"><Tooltip title="StoryFlow (Baum-Ansicht)"><AccountTreeIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="scrapbook"><Tooltip title="Hero-Layout"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
-                        <ToggleButton value="1col"><Tooltip title="1 Spalte"><ViewAgendaIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="2col"><Tooltip title="2-Spalten Vorschau"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
-                        <ToggleButton value="grid"><Tooltip title="3 Spalten"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
@@ -1043,8 +809,6 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         collisionDetection={treeCollision}
                         modifiers={[restrictToVerticalAxis]}
                         onDragStart={handleDragStart}
-                        onDragMove={handleDragMove}
-                        onDragOver={handleDragOver}
                         onDragEnd={handleDragEnd}
                         onDragCancel={handleDragCancel}
                     >
@@ -1144,88 +908,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             );
                         })}
                     </Box>
-                ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={is1col ? closestCenter : multiColCollision}
-                    modifiers={is1col ? [restrictToVerticalAxis] : []}
-                    onDragStart={handleDragStart}
-                    onDragMove={handleDragMove}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}
-                >
-                    {is1col ? (
-                        <SortableContext
-                            items={itemsSorted1col.map(i => i.id)}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
-                                {itemsSorted1col.map(({type, id, item}) => (
-                                    <Box key={id}>{renderCard(type, id, item)}</Box>
-                                ))}
-                            </Box>
-                        </SortableContext>
-                    ) : (
-                        <Box sx={{
-                            display: 'grid',
-                            gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-                            gap: 2,
-                        }}>
-                            {Array.from({length: columnCount}).map((_, colIdx) => {
-                                const colItems = colSorted(activeItems, colIdx, columnCount);
-                                return (
-                                    <SortableContext
-                                        key={colIdx}
-                                        items={colItems.map(i => i.id)}
-                                        strategy={verticalListSortingStrategy}
-                                    >
-                                        <DroppableColumn id={`col-${colIdx}`}>
-                                            {colItems.map(({type, id, item}) => (
-                                                <Box key={id}>{renderCard(type, id, item)}</Box>
-                                            ))}
-                                        </DroppableColumn>
-                                    </SortableContext>
-                                );
-                            })}
-                        </Box>
-                    )}
-
-                    <DragOverlay>
-                        {activeItem && (
-                            <Paper elevation={8} sx={{p: 2, opacity: 0.92, display: 'flex', flexDirection: 'column', position: 'relative'}}>
-                                <Typography variant="subtitle1" color="primary"
-                                            sx={{mb: 1, fontWeight: 'bold', textAlign: 'center', pt: 2}}>
-                                    {activeItem.item.title || 'Kein Titel'}
-                                </Typography>
-                                {activeItem.type === 'bild' ? (
-                                    <Box sx={{mb: 2}}>
-                                        <AuthImage
-                                            src={activeItem.item.pfad?.startsWith('/') ? `/api/bilder/extern${activeItem.item.pfad}` : activeItem.item.pfad}
-                                            alt={activeItem.item.description || ''}
-                                            thumb
-                                            style={{width: '100%', height: 'auto', display: 'block'}}
-                                        />
-                                        {activeItem.item.description && (
-                                            <pre className="wrap-pre" style={{margin: '8px 0 0 0'}}>
-                                                {activeItem.item.description}
-                                            </pre>
-                                        )}
-                                    </Box>
-                                ) : activeItem.type === 'video' ? (
-                                    <Box sx={{mb: 2, textAlign: 'center', color: 'text.secondary'}}>
-                                        🎬 Video
-                                    </Box>
-                                ) : (
-                                    <pre className="wrap-pre" style={{margin: 0}}>
-                                        {activeItem.item.description}
-                                    </pre>
-                                )}
-                            </Paper>
-                        )}
-                    </DragOverlay>
-                </DndContext>
-                )}
+                ) : null}
             </Paper>
         </Container>
 
