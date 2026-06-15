@@ -100,12 +100,12 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                 <Box sx={{minWidth: 260, maxHeight: 480, display: 'flex', flexDirection: 'column'}}>
                     <Box sx={{flex: 1, overflowY: 'auto'}}>
                         {(() => {
+                            const sameBilder = clusterId != null ? otherBilder.filter(b => b.clusterId === clusterId) : [];
+                            const sameTexte  = clusterId != null ? otherTexte.filter(t => t.clusterId === clusterId) : [];
                             const freiBilder = otherBilder.filter(b => !b.clusterId);
-                            const freTexte  = otherTexte.filter(t => !t.clusterId);
-                            const mergeBilder = otherBilder.filter(b => b.clusterId);
-                            const mergeTexte  = otherTexte.filter(t => t.clusterId);
-                            const hasFreie = freiBilder.length > 0 || freTexte.length > 0;
-                            const hasMerge = mergeBilder.length > 0 || mergeTexte.length > 0;
+                            const freiTexte  = otherTexte.filter(t => !t.clusterId);
+                            const hasSame  = sameBilder.length > 0 || sameTexte.length > 0;
+                            const hasFreie = freiBilder.length > 0 || freiTexte.length > 0;
                             const renderBild = b => (
                                 <ListItem key={b.id} disablePadding>
                                     <ListItemButton onClick={() => toggle('BILD', b.id)}>
@@ -117,8 +117,7 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                             <AuthImage
                                                 src={b.pfad?.startsWith('/') ? `/api/bilder/extern${b.pfad}` : b.pfad}
                                                 alt="" thumb
-                                                style={{width: 28, height: 28, objectFit: 'cover', borderRadius: 2,
-                                                    borderLeft: b.clusterId ? `3px solid ${clusterColor(b.clusterId)}` : undefined}}/>
+                                                style={{width: 28, height: 28, objectFit: 'cover', borderRadius: 2}}/>
                                         </ListItemIcon>
                                         <ListItemText primary={b.title || 'Kein Titel'}
                                                       primaryTypographyProps={{noWrap: true, variant: 'body2'}}/>
@@ -132,40 +131,35 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                             <Checkbox size="small" edge="start" disableRipple
                                                       checked={selected.has(key('TEXT', t.id))} sx={{p: 0}}/>
                                         </ListItemIcon>
-                                        {t.clusterId && (
-                                            <Box sx={{width: 4, alignSelf: 'stretch', borderRadius: 1, mr: 1,
-                                                bgcolor: clusterColor(t.clusterId)}}/>
-                                        )}
                                         <ListItemText primary={t.title || '(kein Titel)'}
                                                       primaryTypographyProps={{noWrap: true, variant: 'body2'}}/>
                                     </ListItemButton>
                                 </ListItem>
                             );
                             return (<>
+                                {hasSame && (<>
+                                    <Box sx={{px: 2, pt: 1.5, pb: 0.5}}>
+                                        <Typography variant="caption" color="text.secondary" fontWeight="bold">IM CLUSTER</Typography>
+                                    </Box>
+                                    <List dense disablePadding>
+                                        {sameBilder.map(renderBild)}
+                                        {sameTexte.map(renderText)}
+                                    </List>
+                                </>)}
+                                {hasSame && hasFreie && <Divider/>}
                                 {hasFreie && (<>
                                     <Box sx={{px: 2, pt: 1.5, pb: 0.5}}>
                                         <Typography variant="caption" color="text.secondary" fontWeight="bold">FREIE ITEMS</Typography>
                                     </Box>
                                     <List dense disablePadding>
                                         {freiBilder.map(renderBild)}
-                                        {freTexte.map(renderText)}
+                                        {freiTexte.map(renderText)}
                                     </List>
                                 </>)}
-                                {hasFreie && hasMerge && <Divider/>}
-                                {hasMerge && (<>
-                                    <Box sx={{px: 2, pt: 1.5, pb: 0.5, display: 'flex', alignItems: 'baseline', gap: 1}}>
-                                        <Typography variant="caption" color="text.secondary" fontWeight="bold">ANDERE CLUSTER</Typography>
-                                        <Typography variant="caption" color="warning.main">· Auswählen merged</Typography>
-                                    </Box>
-                                    <List dense disablePadding>
-                                        {mergeBilder.map(renderBild)}
-                                        {mergeTexte.map(renderText)}
-                                    </List>
-                                </>)}
-                                {!hasFreie && !hasMerge && (
+                                {!hasSame && !hasFreie && (
                                     <Box sx={{p: 2}}>
                                         <Typography variant="body2" color="text.secondary">
-                                            Keine anderen Items in dieser Story
+                                            Keine freien Items in dieser Story
                                         </Typography>
                                     </Box>
                                 )}
