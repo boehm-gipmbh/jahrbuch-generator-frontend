@@ -2,7 +2,8 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, IconButton, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
+    Box, Button, Container, Divider, IconButton, Menu, MenuItem, Paper, TextField,
+    ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
@@ -17,6 +18,10 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import ImageIcon from '@mui/icons-material/Image';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -259,13 +264,59 @@ const ScrapbookTextCard = ({text, storyBilder = [], storyTexte = []}) => {
 };
 
 const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => {
+    const [updateBild] = bilderApi.endpoints.updateBild.useMutation();
+    const [deleteBild] = bilderApi.endpoints.deleteBild.useMutation();
+    const [bilderSetComplete] = bilderApi.endpoints.setComplete.useMutation();
     const [setHauptbild] = bilderApi.endpoints.setHauptbild.useMutation();
+    const [updateText] = texteApi.endpoints.updateText.useMutation();
+    const [deleteText] = texteApi.endpoints.deleteText.useMutation();
+    const [texteSetComplete] = texteApi.endpoints.setComplete.useMutation();
+
+    const [editField, setEditField] = useState(null); // 'title' | 'description' | null
+    const [editValue, setEditValue] = useState('');
+    const [menuAnchor, setMenuAnchor] = useState(null);
+
     const accent = clusterColor(item.clusterId);
     const border = accent ? `4px solid ${accent}` : isHero ? '4px solid #f59e0b' : '4px solid transparent';
+    const isComplete = Boolean(item.complete);
+
+    const startEdit = (field, e) => {
+        e.stopPropagation();
+        if (isComplete) return;
+        setEditField(field);
+        setEditValue(item[field] ?? '');
+    };
+
+    const commitEdit = () => {
+        if (editField && editValue !== (item[editField] ?? '')) {
+            if (type === 'bild') updateBild({...item, [editField]: editValue});
+            else updateText({...item, [editField]: editValue});
+        }
+        setEditField(null);
+    };
+
+    const handleKeyDown = (e) => {
+        if (editField === 'title' && e.key === 'Enter') { e.preventDefault(); commitEdit(); }
+        if (e.key === 'Escape') { setEditField(null); }
+    };
+
+    const handleToggleComplete = () => {
+        setMenuAnchor(null);
+        if (type === 'bild') bilderSetComplete({bild: item, complete: !isComplete});
+        else texteSetComplete({text: item, complete: !isComplete});
+    };
+
+    const handleDelete = () => {
+        setMenuAnchor(null);
+        if (type === 'bild') deleteBild(item);
+        else deleteText(item);
+    };
+
     return (
         <Paper variant="outlined" sx={{
             display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5,
             borderLeft: border, borderRadius: 1.5, position: 'relative',
+            opacity: isComplete ? 0.55 : 1,
         }}>
             {type === 'bild' ? (
                 <AuthImage
@@ -281,18 +332,62 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
             )}
             <Box sx={{flex: 1, minWidth: 0}}>
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
-                    {isHero && <StarIcon sx={{fontSize: 14, color: '#f59e0b'}}/>}
-                    {type === 'bild' && !isHero && <ImageIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
-                    {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
-                    <Typography variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap>
-                        {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
-                    </Typography>
+                    {isHero && <StarIcon sx={{fontSize: 14, color: '#f59e0b', flexShrink: 0}}/>}
+                    {type === 'bild' && !isHero && <ImageIcon sx={{fontSize: 14, color: 'text.disabled', flexShrink: 0}}/>}
+                    {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled', flexShrink: 0}}/>}
+                    {editField === 'title' ? (
+                        <TextField
+                            size="small" variant="standard" fullWidth autoFocus
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={handleKeyDown}
+                            inputProps={{style: {fontSize: '0.875rem', fontWeight: isHero ? 'bold' : 'normal'}}}
+                            onClick={e => e.stopPropagation()}
+                        />
+                    ) : (
+                        <Typography
+                            variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap
+                            onClick={e => startEdit('title', e)}
+                            sx={!isComplete ? {cursor: 'text', '&:hover': {color: 'primary.main'}} : {}}
+                        >
+                            {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
+                        </Typography>
+                    )}
                 </Box>
-                {item.description && (
-                    <Typography variant="caption" color="text.secondary" sx={{
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}>
-                        {item.description}
+                {(editField === 'description' || item.description) && (
+                    editField === 'description' ? (
+                        <TextField
+                            size="small" variant="standard" fullWidth multiline autoFocus
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitEdit}
+                            onKeyDown={handleKeyDown}
+                            inputProps={{style: {fontSize: '0.75rem'}}}
+                            onClick={e => e.stopPropagation()}
+                            sx={{mt: 0.25}}
+                        />
+                    ) : (
+                        <Typography
+                            variant="caption" color="text.secondary"
+                            onClick={e => startEdit('description', e)}
+                            sx={{
+                                display: '-webkit-box', WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                ...(!isComplete ? {cursor: 'text', '&:hover': {color: 'text.primary'}} : {}),
+                            }}
+                        >
+                            {item.description}
+                        </Typography>
+                    )
+                )}
+                {!item.description && editField !== 'description' && !isComplete && (
+                    <Typography
+                        variant="caption" color="text.disabled"
+                        onClick={e => startEdit('description', e)}
+                        sx={{cursor: 'text', '&:hover': {color: 'text.secondary'}}}
+                    >
+                        Beschreibung hinzufügen…
                     </Typography>
                 )}
             </Box>
@@ -306,6 +401,23 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
                     </Tooltip>
                 )}
                 <ClusterButton mode={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte}/>
+                <IconButton size="small" onClick={e => { e.stopPropagation(); setMenuAnchor(e.currentTarget); }}>
+                    <MoreVertIcon fontSize="small"/>
+                </IconButton>
+                <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}
+                      anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
+                      transformOrigin={{vertical: 'top', horizontal: 'right'}}>
+                    <MenuItem onClick={handleToggleComplete} dense>
+                        {isComplete
+                            ? <><RadioButtonUncheckedIcon fontSize="small" sx={{mr: 1}}/> Als offen markieren</>
+                            : <><TaskAltIcon fontSize="small" sx={{mr: 1}}/> Als fertig markieren</>
+                        }
+                    </MenuItem>
+                    <Divider/>
+                    <MenuItem onClick={handleDelete} dense sx={{color: 'error.main'}}>
+                        <DeleteOutlineIcon fontSize="small" sx={{mr: 1}}/> Löschen
+                    </MenuItem>
+                </Menu>
             </Box>
         </Paper>
     );
