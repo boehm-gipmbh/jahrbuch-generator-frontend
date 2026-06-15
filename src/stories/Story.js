@@ -35,7 +35,7 @@ import {
 import {SortableContext, arrayMove, verticalListSortingStrategy, useSortable} from '@dnd-kit/sortable';
 import {restrictToVerticalAxis, restrictToWindowEdges} from '@dnd-kit/modifiers';
 import {CSS} from '@dnd-kit/utilities';
-import {PreviewBildCard} from '../bilder/PreviewBildCard';
+import {PolaroidBildCard} from '../bilder/PolaroidBildCard';
 import {PreviewTextCard} from '../texte/PreviewTextCard';
 import {PreviewVideoCard} from '../videos/PreviewVideoCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
@@ -56,36 +56,6 @@ const treeCollision = (args) => {
     });
 };
 
-// Returns column-sorted items for a given column index.
-// Groups items with the same clusterId together (at the position of the first cluster member).
-// Items without a cluster stay in place.
-const groupByClusters = (sortedItems) => {
-    const seen = new Set();
-    const result = [];
-    for (const item of sortedItems) {
-        const cid = item.item.clusterId ?? null;
-        if (cid == null) {
-            result.push(item);
-        } else if (!seen.has(cid)) {
-            seen.add(cid);
-            sortedItems.filter(i => (i.item.clusterId ?? null) === cid).forEach(i => result.push(i));
-        }
-    }
-    return result;
-};
-
-// Items whose storyColumn >= columnCount are clamped into the last column
-// so they don't disappear when switching from a wider to a narrower layout.
-const colSorted = (items, colIdx, columnCount) =>
-    groupByClusters(
-        items
-            .filter(i => {
-                const col = i.item.storyColumn ?? 0;
-                const effective = columnCount != null ? Math.min(col, columnCount - 1) : col;
-                return effective === colIdx;
-            })
-            .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
-    );
 
 const ScrapbookDropZone = ({id, label, color, children}) => {
     const {setNodeRef, isOver} = useDroppable({id});
@@ -879,36 +849,77 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             </ScrapbookDropZone>
                         </DndContext>
                     );
-                })() : is2col ? (
-                    <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
-                        {Array.from({length: 2}).map((_, colIdx) => {
-                            const colItems = colSorted(serverItems, colIdx, 2);
-                            return (
-                                <Box key={colIdx} sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
-                                    {colItems.map(({type, id, item}) => (
-                                        <Box key={id}>
-                                            {type === 'bild'
-                                                ? <PreviewBildCard bild={item} story={story}
-                                                    storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                                    onSetComplete={(args) => setBildComplete(args)}
-                                                    storyBilder={bildItems.map(i => i.item)}
-                                                    storyTexte={textItems.map(i => i.item)}/>
-                                                : type === 'text'
-                                                    ? <PreviewTextCard text={item} story={story}
-                                                        storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                                        onSetComplete={(args) => setTextComplete(args)}
-                                                        storyBilder={bildItems.map(i => i.item)}
-                                                        storyTexte={textItems.map(i => i.item)}/>
-                                                    : <PreviewVideoCard video={item} story={story}
-                                                        storiesLoaded={storiesLoaded} stories={storiesData || []}/>
-                                            }
+                })() : is2col ? (() => {
+                    const heroBilder = bildItems.filter(i => i.item.hauptbild)
+                        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                    const nonHeroPool = serverItems.filter(i => !(i.type === 'bild' && i.item.hauptbild));
+
+                    const heroSections = heroBilder.map(({item: hero}) => {
+                        const clusterItems = hero.clusterId != null
+                            ? nonHeroPool.filter(i => {
+                                const cid = i.type === 'bild' ? i.item.clusterId
+                                    : i.type === 'text' ? i.item.clusterId : null;
+                                return cid != null && Number(cid) === Number(hero.clusterId);
+                            }).sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
+                            : [];
+                        return {hero, clusterItems};
+                    });
+
+                    const usedInCluster = new Set(heroSections.flatMap(({clusterItems}) => clusterItems.map(i => i.id)));
+                    const remaining = nonHeroPool.filter(i => !usedInCluster.has(i.id))
+                        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+                    const renderFlowCard = ({type, id, item}) => (
+                        <Box key={id}>
+                            {type === 'bild'
+                                ? <PolaroidBildCard bild={item} hero={false} story={story}
+                                    storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                    onSetComplete={(args) => setBildComplete(args)}
+                                    storyBilder={bildItems.map(i => i.item)}
+                                    storyTexte={textItems.map(i => i.item)}/>
+                                : type === 'text'
+                                    ? <PreviewTextCard text={item} story={story}
+                                        storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                        onSetComplete={(args) => setTextComplete(args)}
+                                        storyBilder={bildItems.map(i => i.item)}
+                                        storyTexte={textItems.map(i => i.item)}/>
+                                    : <PreviewVideoCard video={item} story={story}
+                                        storiesLoaded={storiesLoaded} stories={storiesData || []}/>
+                            }
+                        </Box>
+                    );
+
+                    const renderGrid = (items) => (
+                        <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
+                            {items.map(renderFlowCard)}
+                        </Box>
+                    );
+
+                    return (
+                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 3}}>
+                            {heroSections.length === 0 && remaining.length === 0 && (
+                                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                                    Keine Items in dieser Story
+                                </Typography>
+                            )}
+                            {heroSections.map(({hero, clusterItems}) => (
+                                <Box key={hero.id}>
+                                    <Box sx={{display: 'flex', justifyContent: 'center', mb: clusterItems.length > 0 ? 2 : 0}}>
+                                        <Box sx={{width: '94%'}}>
+                                            <PolaroidBildCard bild={hero} hero={true} story={story}
+                                                storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                                onSetComplete={(args) => setBildComplete(args)}
+                                                storyBilder={bildItems.map(i => i.item)}
+                                                storyTexte={textItems.map(i => i.item)}/>
                                         </Box>
-                                    ))}
+                                    </Box>
+                                    {clusterItems.length > 0 && renderGrid(clusterItems)}
                                 </Box>
-                            );
-                        })}
-                    </Box>
-                ) : null}
+                            ))}
+                            {remaining.length > 0 && renderGrid(remaining)}
+                        </Box>
+                    );
+                })() : null}
             </Paper>
         </Container>
 
