@@ -42,6 +42,7 @@ import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
 import {PreviewBildCard} from '../bilder/PreviewBildCard';
 import {PreviewTextCard} from '../texte/PreviewTextCard';
+import {PreviewVideoCard} from '../videos/PreviewVideoCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
@@ -1126,7 +1127,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                                 ? <PreviewBildCard bild={item}/>
                                                 : type === 'text'
                                                     ? <PreviewTextCard text={item}/>
-                                                    : null
+                                                    : <PreviewVideoCard video={item}/>
                                             }
                                         </Box>
                                     ))}
