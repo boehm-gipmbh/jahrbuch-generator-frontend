@@ -16,6 +16,7 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import ImageIcon from '@mui/icons-material/Image';
 import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -41,6 +42,16 @@ import {ClusterButton} from './ClusterButton';
 import {clusterColor} from './clusterColor';
 
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+
+// Custom collision for tree view: item drag → only tree-* targets; cluster drag → only cluster-* targets
+const treeCollision = (args) => {
+    const activeId = args.active.id?.toString() ?? '';
+    const prefix = activeId.startsWith('cluster-') ? 'cluster-' : 'tree-';
+    return closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(c => c.id.toString().startsWith(prefix)),
+    });
+};
 
 const multiColCollision = (args) => {
     const activeId = args.active.id;
@@ -300,9 +311,7 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
     );
 };
 
-const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
-    // Group items by clusterId; each cluster has heroes (root) and children
-    // Normalize clusterId to Number to avoid string/number key collisions in Map
+const buildTreeGroups = (bildItems, textItems) => {
     const clusterMap = new Map();
     bildItems.forEach(i => {
         const raw = i.item.clusterId;
@@ -320,61 +329,92 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
         if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
         clusterMap.get(cid).children.push({type: 'text', item: i.item});
     });
-
-    // All clusters sorted by earliest item position (hero first, then child)
     const clusterGroups = [...clusterMap.entries()]
         .sort(([, a], [, b]) => {
             const firstPos = g => Math.min(...[...g.heroes, ...g.children].map(i => i.item.storyPosition ?? 0));
             return firstPos(a) - firstPos(b);
         });
-
-    // Items in any cluster are already accounted for
     const clusteredKeys = new Set();
     clusterGroups.forEach(([, g]) => {
         g.heroes.forEach(h => clusteredKeys.add(`bild-${h.item.id}`));
         g.children.forEach(c => clusteredKeys.add(`${c.type}-${c.item.id}`));
     });
-
     const soloItems = [
         ...bildItems.filter(i => !clusteredKeys.has(`bild-${i.item.id}`)).map(i => ({type: 'bild', item: i.item})),
         ...textItems.filter(i => !clusteredKeys.has(`text-${i.item.id}`)).map(i => ({type: 'text', item: i.item})),
     ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+    return {clusterGroups, soloItems};
+};
 
+const SortableClusterBlock = ({cid, accent, children}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
+        useSortable({id: `cluster-${cid}`});
+    return (
+        <Box ref={setNodeRef} sx={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1}}>
+            <Box sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
+                <Tooltip title="Cluster verschieben">
+                    <Box {...attributes} {...listeners} sx={{
+                        cursor: 'grab', display: 'inline-flex', alignItems: 'center',
+                        color: accent, opacity: 0.35, mb: 0.25, '&:hover': {opacity: 0.75},
+                    }}>
+                        <DragIndicatorIcon sx={{fontSize: 13}}/>
+                    </Box>
+                </Tooltip>
+                {children}
+            </Box>
+        </Box>
+    );
+};
+
+const SortableTreeItemCard = ({type, item, storyBilder, storyTexte, isHero}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `tree-${type}-${item.id}`});
+    return (
+        <Box ref={setNodeRef} style={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1}}
+             {...attributes} {...listeners}>
+            <TreeItemCard type={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte} isHero={isHero}/>
+        </Box>
+    );
+};
+
+const StoryTreeView = ({clusterGroups, soloItems, storyBilder, storyTexte}) => {
     const hasContent = clusterGroups.length > 0 || soloItems.length > 0;
-
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
-            {clusterGroups.map(([cid, {heroes, children}]) => {
-                const accent = clusterColor(cid) ?? '#f59e0b';
-                return (
-                    <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
-                        {heroes.length > 0 && (
-                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                {heroes.map(({item}) => (
-                                    <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
-                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
-                                ))}
-                            </Box>
-                        )}
-                        {children.length > 0 && (
-                            <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
-                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                {children.map(({type, item}) => (
-                                    <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
-                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
-                                ))}
-                            </Box>
-                        )}
-                    </Box>
-                );
-            })}
+            <SortableContext items={clusterGroups.map(([cid]) => `cluster-${cid}`)} strategy={verticalListSortingStrategy}>
+                {clusterGroups.map(([cid, {heroes, children: clChildren}]) => {
+                    const accent = clusterColor(cid) ?? '#f59e0b';
+                    const allClusterItems = [
+                        ...heroes.map(i => ({...i, isHero: true})),
+                        ...clChildren.map(i => ({...i, isHero: false})),
+                    ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                    const itemIds = allClusterItems.map(({type, item}) => `tree-${type}-${item.id}`);
+                    return (
+                        <SortableClusterBlock key={`cluster-${cid}`} cid={cid} accent={accent}>
+                            <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+                                <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                    {allClusterItems.map(({type, item, isHero}) => (
+                                        <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
+                                            isHero={isHero} storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                    ))}
+                                </Box>
+                            </SortableContext>
+                        </SortableClusterBlock>
+                    );
+                })}
+            </SortableContext>
             {soloItems.length > 0 && clusterGroups.length > 0 && (
                 <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
             )}
-            {soloItems.map(({type, item}) => (
-                <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
-                    storyBilder={storyBilder} storyTexte={storyTexte}/>
-            ))}
+            {soloItems.length > 0 && (
+                <SortableContext items={soloItems.map(({type, item}) => `tree-${type}-${item.id}`)} strategy={verticalListSortingStrategy}>
+                    <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                        {soloItems.map(({type, item}) => (
+                            <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
+                                storyBilder={storyBilder} storyTexte={storyTexte}/>
+                        ))}
+                    </Box>
+                </SortableContext>
+            )}
             {!hasContent && (
                 <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
                     Keine Items in dieser Story
@@ -499,6 +539,10 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
+    const treeGroups = isTree
+        ? buildTreeGroups(activeItems.filter(i => i.type === 'bild'), activeItems.filter(i => i.type === 'text'))
+        : {clusterGroups: [], soloItems: []};
+
     const itemsSorted1col = groupByClusters([...activeItems].sort((a, b) => {
         const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
         if (colDiff !== 0) return colDiff;
@@ -547,7 +591,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const handleDragStart = ({active, activatorEvent}) => {
         pointerYRef.current = activatorEvent?.clientY ?? 0;
         updateDragItems([...serverItems]);
-        setActiveItem(serverItems.find(i => i.id === active.id) || null);
+        const canonicalId = active.id.toString().replace(/^(tree-|cluster-)/, '');
+        setActiveItem(serverItems.find(i => i.id === canonicalId) || null);
     };
 
     const handleDragMove = ({activatorEvent, delta}) => {
@@ -555,7 +600,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     };
 
     const handleDragOver = ({active, over, collisions}) => {
-        if (!over || is1col) return;
+        if (!over || is1col || isTree) return;
         const current = dragItemsRef.current || [...serverItems];
 
         // Prefer a col-X hit from the full collisions list — it uses pointer-within
@@ -604,8 +649,109 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             });
             const oldIndex = sorted.findIndex(i => i.id === active.id);
             const newIndex = sorted.findIndex(i => i.id === over.id);
-            if (oldIndex === newIndex) return;
+            if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
             reordered = arrayMove(sorted, oldIndex, newIndex);
+        } else if (isTree) {
+            const activeIdStr = active.id.toString();
+            const overIdStr = over.id.toString();
+
+            if (activeIdStr.startsWith('cluster-')) {
+                // --- CLUSTER DRAG: move entire cluster block ---
+                const activeCid = Number(activeIdStr.replace('cluster-', ''));
+                let overCid;
+                if (overIdStr.startsWith('cluster-')) {
+                    overCid = Number(overIdStr.replace('cluster-', ''));
+                } else {
+                    const overCanonical = overIdStr.replace(/^tree-/, '');
+                    const overEntry = current.find(i => i.id === overCanonical);
+                    const raw = overEntry?.item.clusterId;
+                    overCid = raw != null ? Number(raw) : null;
+                }
+                if (overCid == null || overCid === activeCid) { updateDragItems(null); return; }
+
+                // Build cluster order from current items
+                const cMap = new Map();
+                current.filter(i => i.type !== 'video').forEach(i => {
+                    const cid = i.item.clusterId != null ? Number(i.item.clusterId) : null;
+                    if (cid == null) return;
+                    if (!cMap.has(cid)) cMap.set(cid, []);
+                    cMap.get(cid).push(i);
+                });
+                const cidsSorted = [...cMap.entries()]
+                    .sort(([, a], [, b]) =>
+                        Math.min(...a.map(i => i.item.storyPosition ?? 0)) -
+                        Math.min(...b.map(i => i.item.storyPosition ?? 0))
+                    ).map(([cid]) => cid);
+                const oldIdx = cidsSorted.indexOf(activeCid);
+                const newIdx = cidsSorted.indexOf(overCid);
+                if (oldIdx === -1 || newIdx === -1) { updateDragItems(null); return; }
+
+                const newClusterOrder = arrayMove(cidsSorted, oldIdx, newIdx);
+                const clusteredSet = new Set([...cMap.values()].flat().map(i => i.id));
+                const soloInOrder = current.filter(i => i.type !== 'video' && !clusteredSet.has(i.id))
+                    .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                const orderedItems = [
+                    ...newClusterOrder.flatMap(cid =>
+                        (cMap.get(cid) ?? []).sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
+                    ),
+                    ...soloInOrder,
+                ];
+                let pos = 0;
+                const optimisticOrdered = orderedItems.map(i => ({...i, item: {...i.item, storyPosition: pos++}}));
+                pendingReorderRef.current = true;
+                updateDragItems([...optimisticOrdered, ...current.filter(i => i.type === 'video')]);
+                reorderStory({
+                    storyId: story.id,
+                    items: optimisticOrdered.map(i => ({type: i.type, id: i.item.id, column: 0})),
+                }).unwrap()
+                    .then(() => {
+                        pendingReorderRef.current = false;
+                        dispatch(bilderApi.util.invalidateTags(['Bild']));
+                        dispatch(texteApi.util.invalidateTags(['Text']));
+                    })
+                    .catch(() => {
+                        pendingReorderRef.current = false;
+                        updateDragItems(null);
+                    });
+                return;
+
+            } else if (activeIdStr.startsWith('tree-')) {
+                // --- ITEM DRAG: reorder within or across clusters (position only, no clusterId change) ---
+                const canonicalActiveId = activeIdStr.replace(/^tree-/, '');
+                const canonicalOverId = overIdStr.startsWith('tree-') ? overIdStr.replace(/^tree-/, '') : null;
+                if (!canonicalOverId || canonicalActiveId === canonicalOverId) { updateDragItems(null); return; }
+
+                // Flat position reorder among all tree items
+                const treeItems = current.filter(i => i.type !== 'video')
+                    .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                const oldIndex = treeItems.findIndex(i => i.id === canonicalActiveId);
+                const newIndex = treeItems.findIndex(i => i.id === canonicalOverId);
+                if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) { updateDragItems(null); return; }
+
+                let reorderedTree = arrayMove(treeItems, oldIndex, newIndex);
+                let pos = 0;
+                reorderedTree = reorderedTree.map(item => ({...item, item: {...item.item, storyPosition: pos++}}));
+
+                pendingReorderRef.current = true;
+                updateDragItems([...reorderedTree, ...current.filter(i => i.type === 'video')]);
+                reorderStory({
+                    storyId: story.id,
+                    items: reorderedTree.map(i => ({type: i.type, id: i.item.id, column: 0})),
+                }).unwrap()
+                    .then(() => {
+                        pendingReorderRef.current = false;
+                        dispatch(bilderApi.util.invalidateTags(['Bild']));
+                        dispatch(texteApi.util.invalidateTags(['Text']));
+                    })
+                    .catch(() => {
+                        pendingReorderRef.current = false;
+                        updateDragItems(null);
+                    });
+                return;
+            }
+
+            updateDragItems(null);
+            return;
         } else {
             // Target column = what handleDragOver set in dragItems (user's intention)
             const activeEntry = current.find(i => i.id === active.id);
@@ -776,12 +922,37 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
             <Paper sx={{p: 2}}>
                 {isTree ? (
-                    <StoryTreeView
-                        bildItems={bildItems}
-                        textItems={textItems}
-                        storyBilder={bildItems.map(i => i.item)}
-                        storyTexte={textItems.map(i => i.item)}
-                    />
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={treeCollision}
+                        modifiers={[restrictToVerticalAxis]}
+                        onDragStart={handleDragStart}
+                        onDragMove={handleDragMove}
+                        onDragOver={handleDragOver}
+                        onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
+                    >
+                        <StoryTreeView
+                            clusterGroups={treeGroups.clusterGroups}
+                            soloItems={treeGroups.soloItems}
+                            storyBilder={bildItems.map(i => i.item)}
+                            storyTexte={textItems.map(i => i.item)}
+                        />
+                        <DragOverlay dropAnimation={null}>
+                            {activeItem ? (
+                                <Box sx={{opacity: 0.85, pointerEvents: 'none'}}>
+                                    <TreeItemCard type={activeItem.type} item={activeItem.item}
+                                        storyBilder={bildItems.map(i => i.item)}
+                                        storyTexte={textItems.map(i => i.item)}/>
+                                </Box>
+                            ) : (
+                                <Box sx={{bgcolor: 'background.paper', border: '1px solid',
+                                    borderColor: 'divider', borderRadius: 1.5, p: 1, opacity: 0.85}}>
+                                    <Typography variant="body2" color="text.secondary">Cluster</Typography>
+                                </Box>
+                            )}
+                        </DragOverlay>
+                    </DndContext>
                 ) : isScrapbook ? (() => {
                     const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     const gridBilder = bildItems.filter(i => !i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
