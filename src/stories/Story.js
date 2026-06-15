@@ -292,43 +292,66 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
 };
 
 const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
-    const heroes = bildItems
-        .filter(i => i.item.hauptbild)
-        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+    // Group items by clusterId; each cluster has heroes (root) and children
+    const clusterMap = new Map();
+    bildItems.forEach(i => {
+        const cid = i.item.clusterId;
+        if (cid == null) return;
+        if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
+        const g = clusterMap.get(cid);
+        if (i.item.hauptbild) g.heroes.push({type: 'bild', item: i.item});
+        else g.children.push({type: 'bild', item: i.item});
+    });
+    textItems.forEach(i => {
+        const cid = i.item.clusterId;
+        if (cid == null) return;
+        if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
+        clusterMap.get(cid).children.push({type: 'text', item: i.item});
+    });
 
-    const heroClusterIds = new Set(heroes.map(h => h.item.clusterId).filter(Boolean));
+    // Clusters with at least one hero, sorted by earliest hero position
+    const clusterGroups = [...clusterMap.entries()]
+        .filter(([, g]) => g.heroes.length > 0)
+        .sort(([, a], [, b]) => {
+            const minA = Math.min(...a.heroes.map(h => h.item.storyPosition ?? 0));
+            const minB = Math.min(...b.heroes.map(h => h.item.storyPosition ?? 0));
+            return minA - minB;
+        });
 
-    const heroNodes = heroes.map(h => ({
-        hero: h.item,
-        children: [
-            ...bildItems
-                .filter(i => !i.item.hauptbild && i.item.clusterId != null && i.item.clusterId === h.item.clusterId)
-                .map(i => ({type: 'bild', item: i.item})),
-            ...textItems
-                .filter(i => i.item.clusterId != null && i.item.clusterId === h.item.clusterId)
-                .map(i => ({type: 'text', item: i.item})),
-        ],
-    }));
+    // Track all items already shown in cluster groups
+    const shownKeys = new Set();
+    clusterGroups.forEach(([, g]) => {
+        g.heroes.forEach(h => shownKeys.add(`bild-${h.item.id}`));
+        g.children.forEach(c => shownKeys.add(`${c.type}-${c.item.id}`));
+    });
+    // Orphan clusters (no hero) – also exclude from solo
+    [...clusterMap.values()].filter(g => g.heroes.length === 0)
+        .forEach(g => g.children.forEach(c => shownKeys.add(`${c.type}-${c.item.id}`)));
 
     const soloItems = [
-        ...bildItems
-            .filter(i => !i.item.hauptbild && (i.item.clusterId == null || !heroClusterIds.has(i.item.clusterId)))
-            .map(i => ({type: 'bild', item: i.item})),
-        ...textItems
-            .filter(i => i.item.clusterId == null || !heroClusterIds.has(i.item.clusterId))
-            .map(i => ({type: 'text', item: i.item})),
+        ...bildItems.filter(i => !shownKeys.has(`bild-${i.item.id}`)).map(i => ({type: 'bild', item: i.item})),
+        ...textItems.filter(i => !shownKeys.has(`text-${i.item.id}`)).map(i => ({type: 'text', item: i.item})),
     ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+    const orphanItems = [...clusterMap.values()].filter(g => g.heroes.length === 0)
+        .flatMap(g => g.children);
+
+    const hasContent = clusterGroups.length > 0 || soloItems.length > 0 || orphanItems.length > 0;
 
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
-            {heroNodes.map(({hero, children}) => {
-                const accent = clusterColor(hero.clusterId) ?? '#f59e0b';
+            {clusterGroups.map(([cid, {heroes, children}]) => {
+                const accent = clusterColor(cid) ?? '#f59e0b';
                 return (
-                    <Box key={`hero-${hero.id}`}>
-                        <TreeItemCard type="bild" item={hero} isHero storyBilder={storyBilder} storyTexte={storyTexte}/>
+                    <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
+                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                            {heroes.map(({item}) => (
+                                <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
+                                    storyBilder={storyBilder} storyTexte={storyTexte}/>
+                            ))}
+                        </Box>
                         {children.length > 0 && (
-                            <Box sx={{ml: 3, mt: 0.5, pl: 1.5, borderLeft: `2px solid ${accent}`,
-                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                            <Box sx={{ml: 2, mt: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75}}>
                                 {children.map(({type, item}) => (
                                     <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
                                         storyBilder={storyBilder} storyTexte={storyTexte}/>
@@ -338,14 +361,14 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
                     </Box>
                 );
             })}
-            {soloItems.length > 0 && heroNodes.length > 0 && (
+            {(soloItems.length > 0 || orphanItems.length > 0) && clusterGroups.length > 0 && (
                 <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
             )}
-            {soloItems.map(({type, item}) => (
+            {[...soloItems, ...orphanItems].map(({type, item}) => (
                 <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
                     storyBilder={storyBilder} storyTexte={storyTexte}/>
             ))}
-            {heroNodes.length === 0 && soloItems.length === 0 && (
+            {!hasContent && (
                 <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
                     Keine Items in dieser Story
                 </Typography>
