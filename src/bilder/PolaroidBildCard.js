@@ -110,8 +110,6 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
     };
     const setPriority = (p) => { setPriorityState(p); updateBild({...bild, priority: p}); };
 
-    const imageHeight = hero ? 360 : 200;
-
     return (
         <Paper elevation={2} sx={{
             display: 'flex', flexDirection: 'column', position: 'relative',
@@ -155,7 +153,7 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                 <AuthImage
                     src={bild.pfad?.startsWith('/') ? `/api/bilder/extern${bild.pfad}` : bild.pfad}
                     alt={bild.title || ''} thumb
-                    style={{width: '100%', height: imageHeight, objectFit: 'cover', display: 'block'}}
+                    style={{width: '100%', height: 'auto', display: 'block'}}
                 />
             </Box>
 
