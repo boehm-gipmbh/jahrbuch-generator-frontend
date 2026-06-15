@@ -300,7 +300,17 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
     );
 };
 
-const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
+const SortableTreeItemCard = ({type, item, storyBilder, storyTexte, isHero}) => {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `tree-${type}-${item.id}`});
+    return (
+        <Box ref={setNodeRef} style={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1}}
+             {...attributes} {...listeners}>
+            <TreeItemCard type={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte} isHero={isHero}/>
+        </Box>
+    );
+};
+
+const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte, sortableIds}) => {
     // Group items by clusterId; each cluster has heroes (root) and children
     // Normalize clusterId to Number to avoid string/number key collisions in Map
     const clusterMap = new Map();
@@ -343,44 +353,46 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
     const hasContent = clusterGroups.length > 0 || soloItems.length > 0;
 
     return (
-        <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
-            {clusterGroups.map(([cid, {heroes, children}]) => {
-                const accent = clusterColor(cid) ?? '#f59e0b';
-                return (
-                    <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
-                        {heroes.length > 0 && (
-                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                {heroes.map(({item}) => (
-                                    <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
-                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
-                                ))}
-                            </Box>
-                        )}
-                        {children.length > 0 && (
-                            <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
-                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                                {children.map(({type, item}) => (
-                                    <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
-                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
-                                ))}
-                            </Box>
-                        )}
-                    </Box>
-                );
-            })}
-            {soloItems.length > 0 && clusterGroups.length > 0 && (
-                <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
-            )}
-            {soloItems.map(({type, item}) => (
-                <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
-                    storyBilder={storyBilder} storyTexte={storyTexte}/>
-            ))}
-            {!hasContent && (
-                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
-                    Keine Items in dieser Story
-                </Typography>
-            )}
-        </Box>
+        <SortableContext items={sortableIds ?? []} strategy={verticalListSortingStrategy}>
+            <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
+                {clusterGroups.map(([cid, {heroes, children}]) => {
+                    const accent = clusterColor(cid) ?? '#f59e0b';
+                    return (
+                        <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
+                            {heroes.length > 0 && (
+                                <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                    {heroes.map(({item}) => (
+                                        <SortableTreeItemCard key={`tree-bild-${item.id}`} type="bild" item={item} isHero
+                                            storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                    ))}
+                                </Box>
+                            )}
+                            {children.length > 0 && (
+                                <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
+                                    display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                    {children.map(({type, item}) => (
+                                        <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
+                                            storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                    ))}
+                                </Box>
+                            )}
+                        </Box>
+                    );
+                })}
+                {soloItems.length > 0 && clusterGroups.length > 0 && (
+                    <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
+                )}
+                {soloItems.map(({type, item}) => (
+                    <SortableTreeItemCard key={`tree-solo-${type}-${item.id}`} type={type} item={item}
+                        storyBilder={storyBilder} storyTexte={storyTexte}/>
+                ))}
+                {!hasContent && (
+                    <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                        Keine Items in dieser Story
+                    </Typography>
+                )}
+            </Box>
+        </SortableContext>
     );
 };
 
@@ -499,6 +511,12 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
+    // Flat sorted order for the tree DnD context (mirrors 1col sort; video excluded from tree)
+    const treeItemsSorted = [...activeItems]
+        .filter(i => i.type !== 'video')
+        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+    const treeItemIds = treeItemsSorted.map(i => `tree-${i.id}`);
+
     const itemsSorted1col = groupByClusters([...activeItems].sort((a, b) => {
         const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
         if (colDiff !== 0) return colDiff;
@@ -547,7 +565,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const handleDragStart = ({active, activatorEvent}) => {
         pointerYRef.current = activatorEvent?.clientY ?? 0;
         updateDragItems([...serverItems]);
-        setActiveItem(serverItems.find(i => i.id === active.id) || null);
+        const canonicalId = active.id.toString().replace(/^tree-/, '');
+        setActiveItem(serverItems.find(i => i.id === canonicalId) || null);
     };
 
     const handleDragMove = ({activatorEvent, delta}) => {
@@ -555,7 +574,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     };
 
     const handleDragOver = ({active, over, collisions}) => {
-        if (!over || is1col) return;
+        if (!over || is1col || isTree) return;
         const current = dragItemsRef.current || [...serverItems];
 
         // Prefer a col-X hit from the full collisions list — it uses pointer-within
@@ -595,16 +614,20 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
         let reordered;
 
-        if (is1col) {
-            if (active.id === over.id) return;
+        if (is1col || isTree) {
+            // For tree layout, active/over IDs use the "tree-*" prefix — map back to canonical IDs
+            const toCanonical = id => id.toString().replace(/^tree-/, '');
+            const activeId = toCanonical(active.id);
+            const overId = toCanonical(over.id);
+            if (activeId === overId) return;
             const sorted = [...current].sort((a, b) => {
                 const colDiff = (a.item.storyColumn ?? 0) - (b.item.storyColumn ?? 0);
                 if (colDiff !== 0) return colDiff;
                 return (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0);
             });
-            const oldIndex = sorted.findIndex(i => i.id === active.id);
-            const newIndex = sorted.findIndex(i => i.id === over.id);
-            if (oldIndex === newIndex) return;
+            const oldIndex = sorted.findIndex(i => i.id === activeId);
+            const newIndex = sorted.findIndex(i => i.id === overId);
+            if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
             reordered = arrayMove(sorted, oldIndex, newIndex);
         } else {
             // Target column = what handleDragOver set in dragItems (user's intention)
@@ -776,12 +799,24 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
 
             <Paper sx={{p: 2}}>
                 {isTree ? (
-                    <StoryTreeView
-                        bildItems={bildItems}
-                        textItems={textItems}
-                        storyBilder={bildItems.map(i => i.item)}
-                        storyTexte={textItems.map(i => i.item)}
-                    />
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        modifiers={[restrictToVerticalAxis]}
+                        onDragStart={handleDragStart}
+                        onDragMove={handleDragMove}
+                        onDragOver={handleDragOver}
+                        onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
+                    >
+                        <StoryTreeView
+                            bildItems={activeItems.filter(i => i.type === 'bild')}
+                            textItems={activeItems.filter(i => i.type === 'text')}
+                            storyBilder={bildItems.map(i => i.item)}
+                            storyTexte={textItems.map(i => i.item)}
+                            sortableIds={treeItemIds}
+                        />
+                    </DndContext>
                 ) : isScrapbook ? (() => {
                     const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     const gridBilder = bildItems.filter(i => !i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
