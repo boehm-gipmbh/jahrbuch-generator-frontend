@@ -274,7 +274,6 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
                     {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
                     <Typography variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap>
                         {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
-                        {item.clusterId != null && <Typography component="span" variant="caption" color="text.disabled" sx={{ml: 0.5}}>[c{item.clusterId}]</Typography>}
                     </Typography>
                 </Box>
                 {item.description && (
@@ -340,7 +339,6 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
                 const accent = clusterColor(cid) ?? '#f59e0b';
                 return (
                     <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
-                        <Typography variant="caption" color="text.disabled" sx={{fontSize: 10}}>cluster#{cid}</Typography>
                         {heroes.length > 0 && (
                             <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
                                 {heroes.map(({item}) => (
