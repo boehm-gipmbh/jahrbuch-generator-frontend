@@ -274,6 +274,7 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
                     {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
                     <Typography variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap>
                         {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
+                        {item.clusterId != null && <Typography component="span" variant="caption" color="text.disabled" sx={{ml: 0.5}}>[c{item.clusterId}]</Typography>}
                     </Typography>
                 </Box>
                 {item.description && (
