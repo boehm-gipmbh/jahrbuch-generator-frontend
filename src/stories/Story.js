@@ -341,7 +341,7 @@ const SortableClusterBlock = ({cid, accent, children}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
         useSortable({id: `cluster-${cid}`});
     return (
-        <Box ref={setNodeRef} sx={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1}}>
+        <Box ref={setNodeRef} sx={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1}}>
             <Box sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
                 <Tooltip title="Cluster verschieben">
                     <Box {...attributes} {...listeners} sx={{
@@ -360,7 +360,7 @@ const SortableClusterBlock = ({cid, accent, children}) => {
 const SortableTreeItemCard = ({type, item, storyBilder, storyTexte, isHero}) => {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} = useSortable({id: `tree-${type}-${item.id}`});
     return (
-        <Box ref={setNodeRef} style={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1}}
+        <Box ref={setNodeRef} style={{transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1}}
              {...attributes} {...listeners}>
             <TreeItemCard type={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte} isHero={isHero}/>
         </Box>
@@ -697,18 +697,23 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     ),
                     ...soloInOrder,
                 ];
+                let pos = 0;
+                const optimisticOrdered = orderedItems.map(i => ({...i, item: {...i.item, storyPosition: pos++}}));
                 pendingReorderRef.current = true;
+                updateDragItems([...optimisticOrdered, ...current.filter(i => i.type === 'video')]);
                 reorderStory({
                     storyId: story.id,
-                    items: orderedItems.map(i => ({type: i.type, id: i.item.id, column: 0})),
+                    items: optimisticOrdered.map(i => ({type: i.type, id: i.item.id, column: 0})),
                 }).unwrap()
                     .then(() => {
                         pendingReorderRef.current = false;
                         dispatch(bilderApi.util.invalidateTags(['Bild']));
                         dispatch(texteApi.util.invalidateTags(['Text']));
                     })
-                    .catch(() => { pendingReorderRef.current = false; });
-                updateDragItems(null);
+                    .catch(() => {
+                        pendingReorderRef.current = false;
+                        updateDragItems(null);
+                    });
                 return;
 
             } else if (activeIdStr.startsWith('tree-')) {
@@ -971,6 +976,20 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             storyBilder={bildItems.map(i => i.item)}
                             storyTexte={textItems.map(i => i.item)}
                         />
+                        <DragOverlay dropAnimation={null}>
+                            {activeItem ? (
+                                <Box sx={{opacity: 0.85, pointerEvents: 'none'}}>
+                                    <TreeItemCard type={activeItem.type} item={activeItem.item}
+                                        storyBilder={bildItems.map(i => i.item)}
+                                        storyTexte={textItems.map(i => i.item)}/>
+                                </Box>
+                            ) : (
+                                <Box sx={{bgcolor: 'background.paper', border: '1px solid',
+                                    borderColor: 'divider', borderRadius: 1.5, p: 1, opacity: 0.85}}>
+                                    <Typography variant="body2" color="text.secondary">Cluster</Typography>
+                                </Box>
+                            )}
+                        </DragOverlay>
                     </DndContext>
                 ) : isScrapbook ? (() => {
                     const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
