@@ -136,18 +136,6 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                         '&.Mui-checked': {color: t => t.palette.success.main}}}/>
             </Tooltip>
 
-            {/* Hero star */}
-            {hero && (
-                <Box sx={{position: 'absolute', top: 36, right: 4, zIndex: 2}}>
-                    <Tooltip title="Hero entfernen">
-                        <IconButton size="small" onClick={() => setHauptbild({bild, hauptbild: false})}
-                            sx={{color: 'warning.main'}}>
-                            <StarIcon fontSize="small"/>
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            )}
-
             {/* Image */}
             <Box sx={{overflow: 'hidden', flexShrink: 0}}>
                 <AuthImage
@@ -169,21 +157,31 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                     </Typography>
                 )}
 
-                {/* Titel */}
-                {editField === 'title' ? (
-                    <TextField autoFocus size="small" value={editValue} fullWidth sx={{mb: 0.5}}
-                        onChange={e => setEditValue(e.target.value)} onBlur={commitEdit} onKeyDown={handleKeyDown}
-                        inputProps={{style: {textAlign: 'center', fontWeight: 'bold'}}}/>
-                ) : (
-                    <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
-                        <Typography variant={hero ? 'subtitle1' : 'body2'} onClick={() => startEdit('title')}
-                            sx={{fontWeight: 'bold', textAlign: 'center', mb: 0.5, color: 'primary.main',
-                                cursor: isComplete ? 'default' : 'text',
-                                '&:hover': !isComplete ? {bgcolor: 'action.hover', borderRadius: 0.5} : {}}}>
-                            {bild.title || 'Kein Titel'}
-                        </Typography>
-                    </Tooltip>
-                )}
+                {/* Titel + Hero-Badge */}
+                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mb: 0.5}}>
+                    {hero && (
+                        <Tooltip title="Hero entfernen">
+                            <IconButton size="small" onClick={() => setHauptbild({bild, hauptbild: false})}
+                                sx={{color: 'warning.main', flexShrink: 0}}>
+                                <StarIcon fontSize="small"/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                    {editField === 'title' ? (
+                        <TextField autoFocus size="small" value={editValue} fullWidth
+                            onChange={e => setEditValue(e.target.value)} onBlur={commitEdit} onKeyDown={handleKeyDown}
+                            inputProps={{style: {textAlign: 'center', fontWeight: 'bold'}}}/>
+                    ) : (
+                        <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
+                            <Typography variant={hero ? 'subtitle1' : 'body2'} onClick={() => startEdit('title')}
+                                sx={{fontWeight: 'bold', textAlign: 'center', color: 'primary.main',
+                                    cursor: isComplete ? 'default' : 'text',
+                                    '&:hover': !isComplete ? {bgcolor: 'action.hover', borderRadius: 0.5} : {}}}>
+                                {bild.title || 'Kein Titel'}
+                            </Typography>
+                        </Tooltip>
+                    )}
+                </Box>
 
                 {/* Beschreibung in Kursivschrift wie PDF */}
                 {editField === 'description' ? (
@@ -220,13 +218,12 @@ export const PolaroidBildCard = memo(({bild, hero = false, story, storiesLoaded,
                     <>
                         {storiesLoaded && <AssignBildToStoryButton bild={bild} stories={stories}/>}
                         <ClusterButton mode="bild" item={bild} storyBilder={storyBilder} storyTexte={storyTexte}/>
-                        {!hero && (
-                            <Tooltip title="Als Hero markieren">
-                                <IconButton size="small" onClick={() => setHauptbild({bild, hauptbild: true})}>
-                                    <StarBorderIcon fontSize="small"/>
-                                </IconButton>
-                            </Tooltip>
-                        )}
+                        <Tooltip title={hero ? 'Hero entfernen' : 'Als Hero markieren'}>
+                            <IconButton size="small" onClick={() => setHauptbild({bild, hauptbild: !hero})}
+                                sx={hero ? {color: 'warning.main'} : {}}>
+                                {hero ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                            </IconButton>
+                        </Tooltip>
                         <Tooltip title="In Papierkorb legen">
                             <span onClick={() => isComplete && setLockMsg(true)}>
                                 <IconButton disabled={isComplete} size="small"
