@@ -40,6 +40,8 @@ import {restrictToVerticalAxis, restrictToWindowEdges} from '@dnd-kit/modifiers'
 import {CSS} from '@dnd-kit/utilities';
 import {SortableBildCard} from '../bilder/SortableBildCard';
 import {SortableTextCard} from '../texte/SortableTextCard';
+import {PreviewBildCard} from '../bilder/PreviewBildCard';
+import {PreviewTextCard} from '../texte/PreviewTextCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
@@ -649,7 +651,8 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const isScrapbook = layout === 'scrapbook';
     const isTree = layout === 'tree';
     const is1col = layout === '1col';
-    const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
+    const is2col = layout === '2col';
+    const columnCount = is2col ? 2 : layout === 'grid' ? 3 : 1;
 
     const treeGroups = isTree
         ? buildTreeGroups(activeItems.filter(i => i.type === 'bild'), activeItems.filter(i => i.type === 'text'))
@@ -1111,7 +1114,27 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             </ScrapbookDropZone>
                         </DndContext>
                     );
-                })() : (
+                })() : is2col ? (
+                    <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
+                        {Array.from({length: 2}).map((_, colIdx) => {
+                            const colItems = colSorted(serverItems, colIdx, 2);
+                            return (
+                                <Box key={colIdx} sx={{display: 'flex', flexDirection: 'column', gap: 2}}>
+                                    {colItems.map(({type, id, item}) => (
+                                        <Box key={id}>
+                                            {type === 'bild'
+                                                ? <PreviewBildCard bild={item}/>
+                                                : type === 'text'
+                                                    ? <PreviewTextCard text={item}/>
+                                                    : null
+                                            }
+                                        </Box>
+                                    ))}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                ) : (
                 <DndContext
                     sensors={sensors}
                     collisionDetection={is1col ? closestCenter : multiColCollision}
