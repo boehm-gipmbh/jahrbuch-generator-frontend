@@ -309,34 +309,26 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
         clusterMap.get(cid).children.push({type: 'text', item: i.item});
     });
 
-    // Clusters with at least one hero, sorted by earliest hero position
+    // All clusters sorted by earliest item position (hero first, then child)
     const clusterGroups = [...clusterMap.entries()]
-        .filter(([, g]) => g.heroes.length > 0)
         .sort(([, a], [, b]) => {
-            const minA = Math.min(...a.heroes.map(h => h.item.storyPosition ?? 0));
-            const minB = Math.min(...b.heroes.map(h => h.item.storyPosition ?? 0));
-            return minA - minB;
+            const firstPos = g => Math.min(...[...g.heroes, ...g.children].map(i => i.item.storyPosition ?? 0));
+            return firstPos(a) - firstPos(b);
         });
 
-    // Track all items already shown in cluster groups
-    const shownKeys = new Set();
+    // Items in any cluster are already accounted for
+    const clusteredKeys = new Set();
     clusterGroups.forEach(([, g]) => {
-        g.heroes.forEach(h => shownKeys.add(`bild-${h.item.id}`));
-        g.children.forEach(c => shownKeys.add(`${c.type}-${c.item.id}`));
+        g.heroes.forEach(h => clusteredKeys.add(`bild-${h.item.id}`));
+        g.children.forEach(c => clusteredKeys.add(`${c.type}-${c.item.id}`));
     });
-    // Orphan clusters (no hero) – also exclude from solo
-    [...clusterMap.values()].filter(g => g.heroes.length === 0)
-        .forEach(g => g.children.forEach(c => shownKeys.add(`${c.type}-${c.item.id}`)));
 
     const soloItems = [
-        ...bildItems.filter(i => !shownKeys.has(`bild-${i.item.id}`)).map(i => ({type: 'bild', item: i.item})),
-        ...textItems.filter(i => !shownKeys.has(`text-${i.item.id}`)).map(i => ({type: 'text', item: i.item})),
+        ...bildItems.filter(i => !clusteredKeys.has(`bild-${i.item.id}`)).map(i => ({type: 'bild', item: i.item})),
+        ...textItems.filter(i => !clusteredKeys.has(`text-${i.item.id}`)).map(i => ({type: 'text', item: i.item})),
     ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
 
-    const orphanItems = [...clusterMap.values()].filter(g => g.heroes.length === 0)
-        .flatMap(g => g.children);
-
-    const hasContent = clusterGroups.length > 0 || soloItems.length > 0 || orphanItems.length > 0;
+    const hasContent = clusterGroups.length > 0 || soloItems.length > 0;
 
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
@@ -344,14 +336,17 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
                 const accent = clusterColor(cid) ?? '#f59e0b';
                 return (
                     <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
-                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
-                            {heroes.map(({item}) => (
-                                <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
-                                    storyBilder={storyBilder} storyTexte={storyTexte}/>
-                            ))}
-                        </Box>
+                        {heroes.length > 0 && (
+                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                {heroes.map(({item}) => (
+                                    <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
+                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                ))}
+                            </Box>
+                        )}
                         {children.length > 0 && (
-                            <Box sx={{ml: 2, mt: 0.75, display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                            <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
+                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
                                 {children.map(({type, item}) => (
                                     <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
                                         storyBilder={storyBilder} storyTexte={storyTexte}/>
@@ -361,10 +356,10 @@ const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
                     </Box>
                 );
             })}
-            {(soloItems.length > 0 || orphanItems.length > 0) && clusterGroups.length > 0 && (
+            {soloItems.length > 0 && clusterGroups.length > 0 && (
                 <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
             )}
-            {[...soloItems, ...orphanItems].map(({type, item}) => (
+            {soloItems.map(({type, item}) => (
                 <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
                     storyBilder={storyBilder} storyTexte={storyTexte}/>
             ))}
