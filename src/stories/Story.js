@@ -2,7 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
+    Box, Button, Container, IconButton, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
@@ -11,8 +11,11 @@ import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import GridViewIcon from '@mui/icons-material/GridView';
 import AutoAwesomeMosaicIcon from '@mui/icons-material/AutoAwesomeMosaic';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import ImageIcon from '@mui/icons-material/Image';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 import '../App.css';
 import {api as texteApi} from '../texte/api';
 import {api as bilderApi} from '../bilder/api';
@@ -244,6 +247,143 @@ const ScrapbookTextCard = ({text, storyBilder = [], storyTexte = []}) => {
     );
 };
 
+const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => {
+    const [setHauptbild] = bilderApi.endpoints.setHauptbild.useMutation();
+    const accent = clusterColor(item.clusterId);
+    const border = accent ? `4px solid ${accent}` : isHero ? '4px solid #f59e0b' : '4px solid transparent';
+    return (
+        <Paper variant="outlined" sx={{
+            display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5,
+            borderLeft: border, borderRadius: 1.5, position: 'relative',
+        }}>
+            {type === 'bild' ? (
+                <AuthImage
+                    src={item.pfad?.startsWith('/') ? `/api/bilder/extern${item.pfad}` : item.pfad}
+                    alt={item.title || ''} thumb
+                    style={{width: 56, height: 56, objectFit: 'cover', borderRadius: 4, flexShrink: 0}}
+                />
+            ) : (
+                <Box sx={{width: 56, height: 56, borderRadius: 1, bgcolor: 'action.hover',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+                    <TextSnippetIcon fontSize="small" color="action"/>
+                </Box>
+            )}
+            <Box sx={{flex: 1, minWidth: 0}}>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5}}>
+                    {isHero && <StarIcon sx={{fontSize: 14, color: '#f59e0b'}}/>}
+                    {type === 'bild' && !isHero && <ImageIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
+                    {type === 'text' && <TextSnippetIcon sx={{fontSize: 14, color: 'text.disabled'}}/>}
+                    <Typography variant="body2" fontWeight={isHero ? 'bold' : 'normal'} noWrap>
+                        {item.title || (type === 'bild' ? 'Kein Titel' : '(kein Titel)')}
+                    </Typography>
+                </Box>
+                {item.description && (
+                    <Typography variant="caption" color="text.secondary" sx={{
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>
+                        {item.description}
+                    </Typography>
+                )}
+            </Box>
+            <Box sx={{flexShrink: 0, display: 'flex', alignItems: 'center'}}>
+                {type === 'bild' && (
+                    <Tooltip title={item.hauptbild ? 'Hero entfernen' : 'Als Hero setzen'}>
+                        <IconButton size="small" onClick={() => setHauptbild({bild: item, hauptbild: !item.hauptbild})}
+                            sx={{color: item.hauptbild ? 'warning.main' : 'action.disabled'}}>
+                            {item.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
+                )}
+                <ClusterButton mode={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte}/>
+            </Box>
+        </Paper>
+    );
+};
+
+const StoryTreeView = ({bildItems, textItems, storyBilder, storyTexte}) => {
+    // Group items by clusterId; each cluster has heroes (root) and children
+    // Normalize clusterId to Number to avoid string/number key collisions in Map
+    const clusterMap = new Map();
+    bildItems.forEach(i => {
+        const raw = i.item.clusterId;
+        if (raw == null) return;
+        const cid = Number(raw);
+        if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
+        const g = clusterMap.get(cid);
+        if (i.item.hauptbild) g.heroes.push({type: 'bild', item: i.item});
+        else g.children.push({type: 'bild', item: i.item});
+    });
+    textItems.forEach(i => {
+        const raw = i.item.clusterId;
+        if (raw == null) return;
+        const cid = Number(raw);
+        if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
+        clusterMap.get(cid).children.push({type: 'text', item: i.item});
+    });
+
+    // All clusters sorted by earliest item position (hero first, then child)
+    const clusterGroups = [...clusterMap.entries()]
+        .sort(([, a], [, b]) => {
+            const firstPos = g => Math.min(...[...g.heroes, ...g.children].map(i => i.item.storyPosition ?? 0));
+            return firstPos(a) - firstPos(b);
+        });
+
+    // Items in any cluster are already accounted for
+    const clusteredKeys = new Set();
+    clusterGroups.forEach(([, g]) => {
+        g.heroes.forEach(h => clusteredKeys.add(`bild-${h.item.id}`));
+        g.children.forEach(c => clusteredKeys.add(`${c.type}-${c.item.id}`));
+    });
+
+    const soloItems = [
+        ...bildItems.filter(i => !clusteredKeys.has(`bild-${i.item.id}`)).map(i => ({type: 'bild', item: i.item})),
+        ...textItems.filter(i => !clusteredKeys.has(`text-${i.item.id}`)).map(i => ({type: 'text', item: i.item})),
+    ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+    const hasContent = clusterGroups.length > 0 || soloItems.length > 0;
+
+    return (
+        <Box sx={{display: 'flex', flexDirection: 'column', gap: 1.5}}>
+            {clusterGroups.map(([cid, {heroes, children}]) => {
+                const accent = clusterColor(cid) ?? '#f59e0b';
+                return (
+                    <Box key={`cluster-${cid}`} sx={{borderLeft: `3px solid ${accent}`, pl: 1.5}}>
+                        {heroes.length > 0 && (
+                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                {heroes.map(({item}) => (
+                                    <TreeItemCard key={`bild-${item.id}`} type="bild" item={item} isHero
+                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                ))}
+                            </Box>
+                        )}
+                        {children.length > 0 && (
+                            <Box sx={{ml: heroes.length > 0 ? 2 : 0, mt: heroes.length > 0 ? 0.75 : 0,
+                                display: 'flex', flexDirection: 'column', gap: 0.75}}>
+                                {children.map(({type, item}) => (
+                                    <TreeItemCard key={`${type}-${item.id}`} type={type} item={item}
+                                        storyBilder={storyBilder} storyTexte={storyTexte}/>
+                                ))}
+                            </Box>
+                        )}
+                    </Box>
+                );
+            })}
+            {soloItems.length > 0 && clusterGroups.length > 0 && (
+                <Box sx={{borderTop: '1px solid', borderColor: 'divider', pt: 1.5, mt: 0.5}}/>
+            )}
+            {soloItems.map(({type, item}) => (
+                <TreeItemCard key={`solo-${type}-${item.id}`} type={type} item={item}
+                    storyBilder={storyBilder} storyTexte={storyTexte}/>
+            ))}
+            {!hasContent && (
+                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                    Keine Items in dieser Story
+                </Typography>
+            )}
+        </Box>
+    );
+};
+
 export const Story = ({title = 'Deine Geschichte', filterText = () => false, filterBild = () => false}) => {
     const {storyId} = useParams();
     const {story} = storyApi.endpoints.getStories.useQuery(undefined, {
@@ -355,6 +495,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
     const activeItems = dragItems || serverItems;
 
     const isScrapbook = layout === 'scrapbook';
+    const isTree = layout === 'tree';
     const is1col = layout === '1col';
     const columnCount = layout === '2col' ? 2 : layout === 'grid' ? 3 : 1;
 
@@ -596,10 +737,11 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         )}
                     </Box>
                     <ToggleButtonGroup value={layout} exclusive onChange={handleLayout} size="small">
+                        <ToggleButton value="tree"><Tooltip title="StoryFlow (Baum-Ansicht)"><AccountTreeIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="scrapbook"><Tooltip title="Hero-Layout"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="1col"><Tooltip title="1 Spalte"><ViewAgendaIcon fontSize="small"/></Tooltip></ToggleButton>
                         <ToggleButton value="2col"><Tooltip title="2 Spalten"><ViewColumnIcon fontSize="small"/></Tooltip></ToggleButton>
-                        <ToggleButton value="grid"><Tooltip title="Raster (3 Spalten)"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
-                        <ToggleButton value="scrapbook"><Tooltip title="Scrapbook (Polaroid-Layout)"><AutoAwesomeMosaicIcon fontSize="small"/></Tooltip></ToggleButton>
+                        <ToggleButton value="grid"><Tooltip title="3 Spalten"><GridViewIcon fontSize="small"/></Tooltip></ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
@@ -633,7 +775,14 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
             </Box>
 
             <Paper sx={{p: 2}}>
-                {isScrapbook ? (() => {
+                {isTree ? (
+                    <StoryTreeView
+                        bildItems={bildItems}
+                        textItems={textItems}
+                        storyBilder={bildItems.map(i => i.item)}
+                        storyTexte={textItems.map(i => i.item)}
+                    />
+                ) : isScrapbook ? (() => {
                     const heroBilder = bildItems.filter(i => i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     const gridBilder = bildItems.filter(i => !i.item.hauptbild).sort((a,b) => (a.item.storyPosition??0)-(b.item.storyPosition??0));
                     return (
