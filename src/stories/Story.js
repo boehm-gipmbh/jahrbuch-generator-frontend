@@ -2,7 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {useDispatch} from 'react-redux';
 import {useParams} from 'react-router-dom';
 import {
-    Box, Button, Container, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
+    Box, Button, Container, IconButton, Paper, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
@@ -248,6 +248,7 @@ const ScrapbookTextCard = ({text, storyBilder = [], storyTexte = []}) => {
 };
 
 const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => {
+    const [setHauptbild] = bilderApi.endpoints.setHauptbild.useMutation();
     const accent = clusterColor(item.clusterId);
     const border = accent ? `4px solid ${accent}` : isHero ? '4px solid #f59e0b' : '4px solid transparent';
     return (
@@ -284,7 +285,15 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
                     </Typography>
                 )}
             </Box>
-            <Box sx={{flexShrink: 0}}>
+            <Box sx={{flexShrink: 0, display: 'flex', alignItems: 'center'}}>
+                {type === 'bild' && (
+                    <Tooltip title={item.hauptbild ? 'Hero entfernen' : 'Als Hero setzen'}>
+                        <IconButton size="small" onClick={() => setHauptbild({bild: item, hauptbild: !item.hauptbild})}
+                            sx={{color: item.hauptbild ? 'warning.main' : 'action.disabled'}}>
+                            {item.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
+                )}
                 <ClusterButton mode={type} item={item} storyBilder={storyBilder} storyTexte={storyTexte}/>
             </Box>
         </Paper>
