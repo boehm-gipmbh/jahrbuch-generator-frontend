@@ -896,7 +896,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     );
 
                     return (
-                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 3}}>
+                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 3, px: '3%'}}>
                             {heroSections.length === 0 && remaining.length === 0 && (
                                 <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
                                     Keine Items in dieser Story
@@ -904,14 +904,12 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             )}
                             {heroSections.map(({hero, clusterItems}) => (
                                 <Box key={hero.id}>
-                                    <Box sx={{display: 'flex', justifyContent: 'center', mb: clusterItems.length > 0 ? 2 : 0}}>
-                                        <Box sx={{width: '94%'}}>
-                                            <PolaroidBildCard bild={hero} hero={true} story={story}
-                                                storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                                onSetComplete={(args) => setBildComplete(args)}
-                                                storyBilder={bildItems.map(i => i.item)}
-                                                storyTexte={textItems.map(i => i.item)}/>
-                                        </Box>
+                                    <Box sx={{mb: clusterItems.length > 0 ? 2 : 0}}>
+                                        <PolaroidBildCard bild={hero} hero={true} story={story}
+                                            storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                            onSetComplete={(args) => setBildComplete(args)}
+                                            storyBilder={bildItems.map(i => i.item)}
+                                            storyTexte={textItems.map(i => i.item)}/>
                                     </Box>
                                     {clusterItems.length > 0 && renderGrid(clusterItems)}
                                 </Box>
