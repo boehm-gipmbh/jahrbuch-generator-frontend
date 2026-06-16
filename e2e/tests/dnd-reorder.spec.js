@@ -172,7 +172,11 @@ async function screenshotAfter(page, testInfo) {
 // Tests
 // ---------------------------------------------------------------------------
 
-test.describe('DnD Reorder — 3-Spalten-Layout', () => {
+// TODO: 1col/grid wurden entfernt (siehe feature/86ca955kd-storyflow-inline-editing).
+// Aktuelle Layouts: tree (Cluster-Blöcke + flache Item-Liste, eigenes DnD-Modell),
+// scrapbook (Hero/Grid/Texte-Zonen) und 2col (statische PDF-Vorschau, kein DnD).
+// Diese Tests müssen gegen das Tree-View-DnD neu geschrieben werden.
+test.describe.skip('DnD Reorder — 3-Spalten-Layout (TODO: auf Tree-View migrieren)', () => {
 
     test.beforeEach(async ({page}) => {
         resetStoryState();
@@ -324,7 +328,8 @@ test.describe('DnD Reorder — 3-Spalten-Layout', () => {
 // Flat-Reihenfolge = INITIAL_TITLES (sortiert nach storyColumn, dann storyPosition).
 // ---------------------------------------------------------------------------
 
-test.describe('DnD Reorder — 1-Spalten-Layout', () => {
+// TODO: Layout "1col" existiert nicht mehr (siehe feature/86ca955kd-storyflow-inline-editing).
+test.describe.skip('DnD Reorder — 1-Spalten-Layout (TODO: entfällt, Layout existiert nicht mehr)', () => {
 
     test.beforeEach(async ({page}) => {
         resetStoryState();
