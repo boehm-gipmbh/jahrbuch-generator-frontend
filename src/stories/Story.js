@@ -890,35 +890,54 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         </Box>
                     );
 
-                    const renderGrid = (items) => (
-                        <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
-                            {items.map(renderFlowCard)}
-                        </Box>
-                    );
+                    const chunkPairs = (items) => {
+                        const rows = [];
+                        for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+                        return rows;
+                    };
+
+                    const segments = [];
+                    heroSections.forEach(({hero, clusterItems}) => {
+                        segments.push({
+                            key: `hero-${hero.id}`,
+                            node: <PolaroidBildCard bild={hero} hero={true} story={story}
+                                storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                onSetComplete={(args) => setBildComplete(args)}
+                                storyBilder={bildItems.map(i => i.item)}
+                                storyTexte={textItems.map(i => i.item)}/>,
+                        });
+                        chunkPairs(clusterItems).forEach((pair, rowIdx) => {
+                            segments.push({
+                                key: `cluster-${hero.id}-row-${rowIdx}`,
+                                node: (
+                                    <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
+                                        {pair.map(renderFlowCard)}
+                                    </Box>
+                                ),
+                            });
+                        });
+                    });
+                    chunkPairs(remaining).forEach((pair, rowIdx) => {
+                        segments.push({
+                            key: `remaining-row-${rowIdx}`,
+                            node: (
+                                <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
+                                    {pair.map(renderFlowCard)}
+                                </Box>
+                            ),
+                        });
+                    });
 
                     return (
-                        <A4PageBreakOverlay>
-                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 3, px: '3%'}}>
-                                {heroSections.length === 0 && remaining.length === 0 && (
-                                    <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
-                                        Keine Items in dieser Story
-                                    </Typography>
-                                )}
-                                {heroSections.map(({hero, clusterItems}) => (
-                                    <Box key={hero.id}>
-                                        <Box sx={{mb: clusterItems.length > 0 ? 2 : 0}}>
-                                            <PolaroidBildCard bild={hero} hero={true} story={story}
-                                                storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                                onSetComplete={(args) => setBildComplete(args)}
-                                                storyBilder={bildItems.map(i => i.item)}
-                                                storyTexte={textItems.map(i => i.item)}/>
-                                        </Box>
-                                        {clusterItems.length > 0 && renderGrid(clusterItems)}
-                                    </Box>
-                                ))}
-                                {remaining.length > 0 && renderGrid(remaining)}
-                            </Box>
-                        </A4PageBreakOverlay>
+                        <Box sx={{px: '3%'}}>
+                            {segments.length === 0 ? (
+                                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                                    Keine Items in dieser Story
+                                </Typography>
+                            ) : (
+                                <A4PageBreakOverlay segments={segments}/>
+                            )}
+                        </Box>
                     );
                 })() : null}
             </Paper>
