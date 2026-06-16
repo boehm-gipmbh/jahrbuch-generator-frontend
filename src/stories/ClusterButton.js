@@ -105,6 +105,54 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                             const freiTexte  = otherTexte.filter(t => !t.clusterId);
                             const hasSame  = sameBilder.length > 0 || sameTexte.length > 0;
                             const hasFreie = freiBilder.length > 0 || freiTexte.length > 0;
+
+                            // Items, die bereits in einem ANDEREN Cluster stecken – nach Cluster gruppiert,
+                            // damit man einer bestehenden Gruppe beitreten kann (nicht nur neue aus freien Items bilden).
+                            const otherClusters = new Map();
+                            otherBilder.forEach(b => {
+                                if (b.clusterId != null && b.clusterId !== clusterId) {
+                                    if (!otherClusters.has(b.clusterId)) otherClusters.set(b.clusterId, {bilder: [], texte: []});
+                                    otherClusters.get(b.clusterId).bilder.push(b);
+                                }
+                            });
+                            otherTexte.forEach(t => {
+                                if (t.clusterId != null && t.clusterId !== clusterId) {
+                                    if (!otherClusters.has(t.clusterId)) otherClusters.set(t.clusterId, {bilder: [], texte: []});
+                                    otherClusters.get(t.clusterId).texte.push(t);
+                                }
+                            });
+                            const hasOtherClusters = otherClusters.size > 0;
+
+                            const renderOtherCluster = ([cid, group]) => {
+                                const members = [...group.bilder, ...group.texte];
+                                const rep = group.bilder[0]
+                                    ? {type: 'BILD', id: group.bilder[0].id}
+                                    : {type: 'TEXT', id: group.texte[0].id};
+                                const repKey = key(rep.type, rep.id);
+                                const thumb = group.bilder[0];
+                                return (
+                                    <ListItem key={`cluster-${cid}`} disablePadding>
+                                        <ListItemButton onClick={() => toggle(rep.type, rep.id)}>
+                                            <ListItemIcon sx={{minWidth: 36}}>
+                                                <Checkbox size="small" edge="start" disableRipple
+                                                          checked={selected.has(repKey)} sx={{p: 0}}/>
+                                            </ListItemIcon>
+                                            <ListItemIcon sx={{minWidth: 36}}>
+                                                {thumb
+                                                    ? <AuthImage
+                                                        src={thumb.pfad?.startsWith('/') ? `/api/bilder/extern${thumb.pfad}` : thumb.pfad}
+                                                        alt="" thumb
+                                                        style={{width: 28, height: 28, objectFit: 'cover', borderRadius: 2}}/>
+                                                    : <HubIcon fontSize="small" color="action"/>
+                                                }
+                                            </ListItemIcon>
+                                            <ListItemText primary={`Cluster · ${members.length} Items`}
+                                                          primaryTypographyProps={{noWrap: true, variant: 'body2'}}/>
+                                        </ListItemButton>
+                                    </ListItem>
+                                );
+                            };
+
                             const renderBild = b => (
                                 <ListItem key={b.id} disablePadding>
                                     <ListItemButton onClick={() => toggle('BILD', b.id)}>
@@ -145,7 +193,7 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                         {sameTexte.map(renderText)}
                                     </List>
                                 </>)}
-                                {hasSame && hasFreie && <Divider/>}
+                                {hasSame && (hasFreie || hasOtherClusters) && <Divider/>}
                                 {hasFreie && (<>
                                     <Box sx={{px: 2, pt: 1.5, pb: 0.5}}>
                                         <Typography variant="caption" color="text.secondary" fontWeight="bold">FREIE ITEMS</Typography>
@@ -155,7 +203,16 @@ export const ClusterButton = ({mode, item, storyBilder = [], storyTexte = []}) =
                                         {freiTexte.map(renderText)}
                                     </List>
                                 </>)}
-                                {!hasSame && !hasFreie && (
+                                {hasFreie && hasOtherClusters && <Divider/>}
+                                {hasOtherClusters && (<>
+                                    <Box sx={{px: 2, pt: 1.5, pb: 0.5}}>
+                                        <Typography variant="caption" color="text.secondary" fontWeight="bold">ANDERE CLUSTER</Typography>
+                                    </Box>
+                                    <List dense disablePadding>
+                                        {[...otherClusters.entries()].map(renderOtherCluster)}
+                                    </List>
+                                </>)}
+                                {!hasSame && !hasFreie && !hasOtherClusters && (
                                     <Box sx={{p: 2}}>
                                         <Typography variant="body2" color="text.secondary">
                                             Keine freien Items in dieser Story
