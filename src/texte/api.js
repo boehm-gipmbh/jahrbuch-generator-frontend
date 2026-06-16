@@ -41,6 +41,14 @@ export const api = createApi({
       }),
       invalidatesTags: ['Text'],
     }),
+    setHero: builder.mutation({
+      query: ({text, hero}) => ({
+        url: `/${text.id}/hero`,
+        method: 'PUT',
+        body: JSON.stringify(hero)
+      }),
+      invalidatesTags: ['Text'],
+    }),
     getPapierkorb: builder.query({
       query: () => '/papierkorb',
       providesTags: ['Text'],

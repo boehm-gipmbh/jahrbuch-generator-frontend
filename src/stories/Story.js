@@ -40,6 +40,7 @@ import {PreviewTextCard} from '../texte/PreviewTextCard';
 import {PreviewVideoCard} from '../videos/PreviewVideoCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
 import {A4PageBreakOverlay} from './A4PageBreakOverlay';
+import {TextColumnFlow} from './TextColumnFlow';
 import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 import {ClusterButton} from './ClusterButton';
@@ -187,6 +188,7 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
     const [updateText] = texteApi.endpoints.updateText.useMutation();
     const [deleteText] = texteApi.endpoints.deleteText.useMutation();
     const [texteSetComplete] = texteApi.endpoints.setComplete.useMutation();
+    const [setTextHero] = texteApi.endpoints.setHero.useMutation();
 
     const [editField, setEditField] = useState(null); // 'title' | 'description' | null
     const [editValue, setEditValue] = useState('');
@@ -308,11 +310,18 @@ const TreeItemCard = ({type, item, storyBilder, storyTexte, isHero = false}) => 
                 )}
             </Box>
             <Box sx={{flexShrink: 0, display: 'flex', alignItems: 'center'}}>
-                {type === 'bild' && (
+                {type === 'bild' ? (
                     <Tooltip title={item.hauptbild ? 'Hero entfernen' : 'Als Hero setzen'}>
                         <IconButton size="small" onClick={() => setHauptbild({bild: item, hauptbild: !item.hauptbild})}
                             sx={{color: item.hauptbild ? 'warning.main' : 'action.disabled'}}>
                             {item.hauptbild ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                        </IconButton>
+                    </Tooltip>
+                ) : (
+                    <Tooltip title={item.hero ? 'Hero entfernen' : 'Als Hero setzen (volle Breite)'}>
+                        <IconButton size="small" onClick={() => setTextHero({text: item, hero: !item.hero})}
+                            sx={{color: item.hero ? 'warning.main' : 'action.disabled'}}>
+                            {item.hero ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
                         </IconButton>
                     </Tooltip>
                 )}
@@ -355,7 +364,9 @@ const buildTreeGroups = (bildItems, textItems) => {
         if (raw == null) return;
         const cid = Number(raw);
         if (!clusterMap.has(cid)) clusterMap.set(cid, {heroes: [], children: []});
-        clusterMap.get(cid).children.push({type: 'text', item: i.item});
+        const g = clusterMap.get(cid);
+        if (i.item.hero) g.heroes.push({type: 'text', item: i.item});
+        else g.children.push({type: 'text', item: i.item});
     });
     const clusterGroups = [...clusterMap.entries()]
         .sort(([, a], [, b]) => {
@@ -364,7 +375,7 @@ const buildTreeGroups = (bildItems, textItems) => {
         });
     const clusteredKeys = new Set();
     clusterGroups.forEach(([, g]) => {
-        g.heroes.forEach(h => clusteredKeys.add(`bild-${h.item.id}`));
+        g.heroes.forEach(h => clusteredKeys.add(`${h.type}-${h.item.id}`));
         g.children.forEach(c => clusteredKeys.add(`${c.type}-${c.item.id}`));
     });
     const soloItems = [
@@ -438,6 +449,7 @@ const StoryTreeView = ({clusterGroups, soloItems, storyBilder, storyTexte}) => {
                     <Box sx={{display: 'flex', flexDirection: 'column', gap: 0.75}}>
                         {soloItems.map(({type, item}) => (
                             <SortableTreeItemCard key={`tree-${type}-${item.id}`} type={type} item={item}
+                                isHero={type === 'bild' ? item.hauptbild : item.hero}
                                 storyBilder={storyBilder} storyTexte={storyTexte}/>
                         ))}
                     </Box>
@@ -851,11 +863,15 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                         </DndContext>
                     );
                 })() : is2col ? (() => {
-                    const heroBilder = bildItems.filter(i => i.item.hauptbild)
-                        .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
-                    const nonHeroPool = serverItems.filter(i => !(i.type === 'bild' && i.item.hauptbild));
+                    // Heroes: Bild (hauptbild) + Text (hero) gemeinsam, nach Position sortiert – mirrors PdfService.renderScrapbook.
+                    const heroes = [
+                        ...bildItems.filter(i => i.item.hauptbild).map(i => ({type: 'bild', item: i.item})),
+                        ...textItems.filter(i => i.item.hero).map(i => ({type: 'text', item: i.item})),
+                    ].sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+                    const nonHeroPool = serverItems.filter(i =>
+                        !((i.type === 'bild' && i.item.hauptbild) || (i.type === 'text' && i.item.hero)));
 
-                    const heroSections = heroBilder.map(({item: hero}) => {
+                    const heroSections = heroes.map(({type, item: hero}) => {
                         const clusterItems = hero.clusterId != null
                             ? nonHeroPool.filter(i => {
                                 const cid = i.type === 'bild' ? i.item.clusterId
@@ -863,12 +879,17 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                                 return cid != null && Number(cid) === Number(hero.clusterId);
                             }).sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0))
                             : [];
-                        return {hero, clusterItems};
+                        return {type, hero, clusterItems};
                     });
 
                     const usedInCluster = new Set(heroSections.flatMap(({clusterItems}) => clusterItems.map(i => i.id)));
-                    const remaining = nonHeroPool.filter(i => !usedInCluster.has(i.id))
+                    const remainingAll = nonHeroPool.filter(i => !usedInCluster.has(i.id))
                         .sort((a, b) => (a.item.storyPosition ?? 0) - (b.item.storyPosition ?? 0));
+
+                    // Bilder + bereits geclusterte Texte bleiben im klassischen 2-Spalten-Grid (Paarbildung);
+                    // freie (nicht geclusterte) Texte fließen echt zweispaltig – mirrors PdfService.renderTextColumnFlow.
+                    const gridItems = remainingAll.filter(i => i.type !== 'text' || i.item.clusterId != null);
+                    const soloTexte = remainingAll.filter(i => i.type === 'text' && i.item.clusterId == null).map(i => i.item);
 
                     const renderFlowCard = ({type, id, item}) => (
                         <Box key={id}>
@@ -897,18 +918,24 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     };
 
                     const segments = [];
-                    heroSections.forEach(({hero, clusterItems}) => {
+                    heroSections.forEach(({type, hero, clusterItems}) => {
                         segments.push({
-                            key: `hero-${hero.id}`,
-                            node: <PolaroidBildCard bild={hero} hero={true} story={story}
-                                storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                onSetComplete={(args) => setBildComplete(args)}
-                                storyBilder={bildItems.map(i => i.item)}
-                                storyTexte={textItems.map(i => i.item)}/>,
+                            key: `hero-${type}-${hero.id}`,
+                            node: type === 'bild'
+                                ? <PolaroidBildCard bild={hero} hero={true} story={story}
+                                    storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                    onSetComplete={(args) => setBildComplete(args)}
+                                    storyBilder={bildItems.map(i => i.item)}
+                                    storyTexte={textItems.map(i => i.item)}/>
+                                : <PreviewTextCard text={hero} hero={true} story={story}
+                                    storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                    onSetComplete={(args) => setTextComplete(args)}
+                                    storyBilder={bildItems.map(i => i.item)}
+                                    storyTexte={textItems.map(i => i.item)}/>,
                         });
                         chunkPairs(clusterItems).forEach((pair, rowIdx) => {
                             segments.push({
-                                key: `cluster-${hero.id}-row-${rowIdx}`,
+                                key: `cluster-${type}-${hero.id}-row-${rowIdx}`,
                                 node: (
                                     <Box sx={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2}}>
                                         {pair.map(renderFlowCard)}
@@ -917,7 +944,7 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             });
                         });
                     });
-                    chunkPairs(remaining).forEach((pair, rowIdx) => {
+                    chunkPairs(gridItems).forEach((pair, rowIdx) => {
                         segments.push({
                             key: `remaining-row-${rowIdx}`,
                             node: (
@@ -927,6 +954,16 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                             ),
                         });
                     });
+                    if (soloTexte.length > 0) {
+                        segments.push({
+                            key: 'solo-texte-flow',
+                            node: <TextColumnFlow texte={soloTexte} story={story}
+                                storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                onSetComplete={(args) => setTextComplete(args)}
+                                storyBilder={bildItems.map(i => i.item)}
+                                storyTexte={textItems.map(i => i.item)}/>,
+                        });
+                    }
 
                     return (
                         <Box sx={{px: '3%'}}>

@@ -8,6 +8,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddLinkIcon from '@mui/icons-material/AddLink';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {useDispatch} from 'react-redux';
 import {EditTextPriority} from './Priority';
 import {StoryChip} from './StoryChip';
@@ -79,9 +81,10 @@ const AssignTextToStoryButton = ({text, stories}) => {
     );
 };
 
-export const PreviewTextCard = memo(({text, story, storiesLoaded, stories, onSetComplete, storyBilder = [], storyTexte = []}) => {
+export const PreviewTextCard = memo(({text, hero = false, story, storiesLoaded, stories, onSetComplete, storyBilder = [], storyTexte = []}) => {
     const [updateText] = api.endpoints.updateText.useMutation();
     const [deleteText] = api.endpoints.deleteText.useMutation();
+    const [setHero] = api.endpoints.setHero.useMutation();
     const [editField, setEditField] = useState(null);
     const [editValue, setEditValue] = useState('');
     const [priority, setPriorityState] = useState(text.priority);
@@ -104,8 +107,9 @@ export const PreviewTextCard = memo(({text, story, storiesLoaded, stories, onSet
     const setPriority = (p) => { setPriorityState(p); updateText({...text, priority: p}); };
 
     return (
-        <Paper elevation={1} sx={{p: 2, display: 'flex', flexDirection: 'column', position: 'relative',
-            borderLeft: text.clusterId ? `4px solid ${clusterColor(text.clusterId)}` : undefined}}>
+        <Paper elevation={hero ? 2 : 1} sx={{p: hero ? 3 : 2, display: 'flex', flexDirection: 'column', position: 'relative',
+            borderLeft: text.clusterId ? `4px solid ${clusterColor(text.clusterId)}` : hero ? '4px solid #f59e0b' : undefined,
+            boxShadow: hero ? '0 4px 16px rgba(0,0,0,0.18)' : undefined}}>
             <Box sx={{position: 'absolute', top: 0, left: 4, zIndex: 1}}>
                 <span onClick={() => isComplete && setLockMsg(true)}>
                     <EditTextPriority priority={priority} setPriority={setPriority} disabled={isComplete}/>
@@ -125,7 +129,7 @@ export const PreviewTextCard = memo(({text, story, storiesLoaded, stories, onSet
                         onChange={e => setEditValue(e.target.value)} onBlur={commitEdit} onKeyDown={handleKeyDown}/>
                 ) : (
                     <Tooltip title={isComplete ? '' : 'Titel bearbeiten'} followCursor>
-                        <Typography variant="subtitle1" component="div" color="primary" onClick={() => startEdit('title')}
+                        <Typography variant={hero ? 'h6' : 'subtitle1'} component="div" color="primary" onClick={() => startEdit('title')}
                             sx={{mb: 0.5, fontWeight: 'bold', textAlign: 'center',
                                 cursor: isComplete ? 'default' : 'text',
                                 '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}>
@@ -170,6 +174,12 @@ export const PreviewTextCard = memo(({text, story, storiesLoaded, stories, onSet
                     <>
                         {storiesLoaded && <AssignTextToStoryButton text={text} stories={stories}/>}
                         <ClusterButton mode="text" item={text} storyBilder={storyBilder} storyTexte={storyTexte}/>
+                        <Tooltip title={text.hero ? 'Hero entfernen' : 'Als Hero markieren (volle Breite)'}>
+                            <IconButton size="small" onClick={() => setHero({text, hero: !text.hero})}
+                                sx={text.hero ? {color: 'warning.main'} : {}}>
+                                {text.hero ? <StarIcon fontSize="small"/> : <StarBorderIcon fontSize="small"/>}
+                            </IconButton>
+                        </Tooltip>
                         <Tooltip title="In Papierkorb legen">
                             <span onClick={() => isComplete && setLockMsg(true)}>
                                 <IconButton disabled={isComplete} size="small"
@@ -186,6 +196,7 @@ export const PreviewTextCard = memo(({text, story, storiesLoaded, stories, onSet
     );
 }, (prev, next) =>
     prev.text === next.text &&
+    prev.hero === next.hero &&
     prev.story === next.story &&
     prev.storiesLoaded === next.storiesLoaded &&
     prev.stories === next.stories &&
