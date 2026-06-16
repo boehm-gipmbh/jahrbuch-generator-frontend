@@ -39,6 +39,7 @@ import {PolaroidBildCard} from '../bilder/PolaroidBildCard';
 import {PreviewTextCard} from '../texte/PreviewTextCard';
 import {PreviewVideoCard} from '../videos/PreviewVideoCard';
 import {PendingItemsDrawer} from './PendingItemsDrawer';
+import {A4PageBreakOverlay} from './A4PageBreakOverlay';
 import AuthImage from '../bilder/AuthImage';
 import {BackgroundImagePicker} from '../pdf/BackgroundImagePicker';
 import {ClusterButton} from './ClusterButton';
@@ -896,26 +897,28 @@ export const Story = ({title = 'Deine Geschichte', filterText = () => false, fil
                     );
 
                     return (
-                        <Box sx={{display: 'flex', flexDirection: 'column', gap: 3, px: '3%'}}>
-                            {heroSections.length === 0 && remaining.length === 0 && (
-                                <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
-                                    Keine Items in dieser Story
-                                </Typography>
-                            )}
-                            {heroSections.map(({hero, clusterItems}) => (
-                                <Box key={hero.id}>
-                                    <Box sx={{mb: clusterItems.length > 0 ? 2 : 0}}>
-                                        <PolaroidBildCard bild={hero} hero={true} story={story}
-                                            storiesLoaded={storiesLoaded} stories={storiesData || []}
-                                            onSetComplete={(args) => setBildComplete(args)}
-                                            storyBilder={bildItems.map(i => i.item)}
-                                            storyTexte={textItems.map(i => i.item)}/>
+                        <A4PageBreakOverlay>
+                            <Box sx={{display: 'flex', flexDirection: 'column', gap: 3, px: '3%'}}>
+                                {heroSections.length === 0 && remaining.length === 0 && (
+                                    <Typography variant="body2" color="text.disabled" sx={{p: 2, textAlign: 'center'}}>
+                                        Keine Items in dieser Story
+                                    </Typography>
+                                )}
+                                {heroSections.map(({hero, clusterItems}) => (
+                                    <Box key={hero.id}>
+                                        <Box sx={{mb: clusterItems.length > 0 ? 2 : 0}}>
+                                            <PolaroidBildCard bild={hero} hero={true} story={story}
+                                                storiesLoaded={storiesLoaded} stories={storiesData || []}
+                                                onSetComplete={(args) => setBildComplete(args)}
+                                                storyBilder={bildItems.map(i => i.item)}
+                                                storyTexte={textItems.map(i => i.item)}/>
+                                        </Box>
+                                        {clusterItems.length > 0 && renderGrid(clusterItems)}
                                     </Box>
-                                    {clusterItems.length > 0 && renderGrid(clusterItems)}
-                                </Box>
-                            ))}
-                            {remaining.length > 0 && renderGrid(remaining)}
-                        </Box>
+                                ))}
+                                {remaining.length > 0 && renderGrid(remaining)}
+                            </Box>
+                        </A4PageBreakOverlay>
                     );
                 })() : null}
             </Paper>
