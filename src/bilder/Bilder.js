@@ -171,7 +171,7 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                     <Typography variant="subtitle1" component="div" sx={{mb: 0.5, fontWeight: 'medium', textAlign: 'center',
                         cursor: isComplete ? 'default' : 'text', '&:hover': !isComplete ? {backgroundColor: 'action.hover', borderRadius: 1} : {}}}
                         onClick={() => startEdit('title')}>
-                        {bild.title || 'Kein Titel'}
+                        {hasRealTitle(bild) ? bild.title : 'Kein Titel'}
                     </Typography>
                     </Tooltip>
                 )}
@@ -208,11 +208,11 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
                         <Tooltip title={isComplete ? '' : 'Beschreibung bearbeiten'} followCursor>
                         <pre className="wrap-pre" onClick={() => startEdit('description')}
                             style={{cursor: isComplete ? 'default' : 'text', minHeight: '1.5em',
-                                border: !bild.description ? '1px solid rgba(0,0,0,0.23)' : 'none',
+                                border: !hasRealDescription(bild) ? '1px solid rgba(0,0,0,0.23)' : 'none',
                                 borderRadius: 4,
                                 padding: '8.5px 14px',
-                                color: bild.description ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
-                            {bild.description || 'Beschreibung hinzufügen …'}
+                                color: hasRealDescription(bild) ? 'inherit' : 'rgba(0,0,0,0.38)'}}>
+                            {hasRealDescription(bild) ? bild.description : 'Beschreibung hinzufügen …'}
                         </pre>
                         </Tooltip>
                     </Box>
@@ -286,10 +286,10 @@ const BildCard = memo(({bild, story, storiesLoaded, stories, onSetComplete, onUp
 );
 
 const hasRealTitle = (bild) =>
-    bild.title && !bild.title.startsWith('Bild mit Titel ');
+    bild.title && bild.titleSource !== 'AUTO';
 
 const hasRealDescription = (bild) =>
-    bild.description && !bild.description.startsWith('Bild von ') && !bild.description.endsWith(' aufgenommen');
+    bild.description && bild.descriptionSource !== 'AUTO';
 
 export const Bilder = ({title = 'Bilder', filter = () => true}) => {
     const {storyId} = useParams();
