@@ -11,6 +11,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import {useGetAnnouncementHistoryQuery, usePreviewRecipientsMutation, useSendAnnouncementMutation} from './api';
 import {api as groupApi} from '../groups/api';
+import {api as usersApi} from '../users';
 import {PdfExportDialog} from '../pdf/PdfExportDialog';
 import SettingsIcon from '@mui/icons-material/Settings';
 
@@ -35,6 +36,7 @@ export default function AnnouncementDialog({open, onClose}) {
   const emailFileInputRef = useRef(null);
   const attachmentFileInputRef = useRef(null);
   const {data: groups = []} = groupApi.endpoints.getGroups.useQuery();
+  const {data: invitations = []} = usersApi.endpoints.getInvitations.useQuery();
   const {data: history = []} = useGetAnnouncementHistoryQuery();
   const [previewRecipients, {isLoading: isPreviewing}] = usePreviewRecipientsMutation();
   const [sendAnnouncement, {isLoading: isSending}] = useSendAnnouncementMutation();
@@ -195,15 +197,29 @@ export default function AnnouncementDialog({open, onClose}) {
             </>
           )}
 
-          <TextField
-            label="Registrierungslink (optional)"
-            value={registrationLink}
-            onChange={e => setRegistrationLink(e.target.value)}
-            fullWidth
-            placeholder="https://jahrbuch.jamsintown.de/register?token=..."
-            helperText="Ersetzt {{REGISTRATION_LINK}} im Mail-Body"
-            size="small"
-          />
+          <FormControl fullWidth size="small">
+            <InputLabel>Einladungstoken (optional)</InputLabel>
+            <Select
+              value={registrationLink}
+              label="Einladungstoken (optional)"
+              onChange={e => setRegistrationLink(e.target.value)}
+            >
+              <MenuItem value=""><em>Kein Link</em></MenuItem>
+              {invitations.filter(inv => inv.active).map(inv => (
+                <MenuItem
+                  key={inv.id}
+                  value={`${window.location.origin}/register?token=${inv.token}`}
+                >
+                  {inv.label || `Token #${inv.id}`}
+                  {inv.expiresAt && (
+                    <Typography variant="caption" color="text.secondary" sx={{ml: 1}}>
+                      (bis {new Date(inv.expiresAt).toLocaleDateString()})
+                    </Typography>
+                  )}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           <Divider/>
 
