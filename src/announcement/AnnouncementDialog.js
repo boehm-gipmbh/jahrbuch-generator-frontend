@@ -22,6 +22,7 @@ export default function AnnouncementDialog({open, onClose}) {
   const [recipientFilter, setRecipientFilter] = useState('ALL');
   const [groupId, setGroupId] = useState('');
   const [externalEmailsText, setExternalEmailsText] = useState('');
+  const [registrationLink, setRegistrationLink] = useState('');
   const [recipients, setRecipients] = useState(null);
   const [result, setResult] = useState(null);
 
@@ -60,6 +61,7 @@ export default function AnnouncementDialog({open, onClose}) {
     attachmentContent: attachmentMode === 'FILE' ? attachmentFile?.content : null,
     attachmentGroupId: attachmentMode === 'GROUP_PDF' ? Number(attachmentGroupId) : null,
     pdfOptions: attachmentMode === 'GROUP_PDF' ? pdfOptions : null,
+    registrationLink: registrationLink.trim() || null,
   });
 
   const handlePreview = async () => {
@@ -192,6 +194,16 @@ export default function AnnouncementDialog({open, onClose}) {
               </Box>
             </>
           )}
+
+          <TextField
+            label="Registrierungslink (optional)"
+            value={registrationLink}
+            onChange={e => setRegistrationLink(e.target.value)}
+            fullWidth
+            placeholder="https://jahrbuch.jamsintown.de/register?token=..."
+            helperText="Ersetzt {{REGISTRATION_LINK}} im Mail-Body"
+            size="small"
+          />
 
           <Divider/>
 
